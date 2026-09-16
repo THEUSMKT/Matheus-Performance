@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img" aria-label="Espaço reservado para a foto principal">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111111"/><stop offset=".55" stop-color="#191919"/><stop offset="1" stop-color="#0A0A0A"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".72" cy=".38" r=".52">
+      <stop offset="0" stop-color="#C8A96A" stop-opacity=".30"/><stop offset="1" stop-color="#C8A96A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fig" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A352B"/><stop offset="1" stop-color="#121212"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#glow)"/>
+  <g opacity=".92" transform="translate(1075 235)">
+    <circle cx="0" cy="0" r="132" fill="url(#fig)"/>
+    <path d="M-250 660 C-250 400 -132 250 0 250 C132 250 250 400 250 660 Z" fill="url(#fig)"/>
+  </g>
+  <g fill="#C8A96A" font-family="Inter,Helvetica,Arial,sans-serif" opacity=".62">
+    <text x="90" y="880" font-size="30" letter-spacing="10">[ INSIRA AQUI A SUA FOTO ]</text>
+    <text x="90" y="928" font-size="20" letter-spacing="3" fill="#8A8A8A">assets/img/hero.jpg  ·  recomendado 2000x1250px  ·  WebP ou JPG</text>
+  </g>
+</svg>

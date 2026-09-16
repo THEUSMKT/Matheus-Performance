@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000" role="img" aria-label="Espaço reservado para a foto secundária">
+  <defs>
+    <linearGradient id="b2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EDEBE4"/><stop offset="1" stop-color="#DCD8CC"/>
+    </linearGradient>
+    <linearGradient id="f2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C8A96A" stop-opacity=".55"/><stop offset="1" stop-color="#8E8677" stop-opacity=".45"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#b2)"/>
+  <g transform="translate(400 300)">
+    <circle cx="0" cy="0" r="118" fill="url(#f2)"/>
+    <path d="M-215 600 C-215 375 -108 235 0 235 C108 235 215 375 215 600 Z" fill="url(#f2)"/>
+  </g>
+  <g font-family="Inter,Helvetica,Arial,sans-serif" text-anchor="middle" fill="#6B6B6B">
+    <text x="400" y="900" font-size="24" letter-spacing="6">[ FOTO SECUNDÁRIA ]</text>
+    <text x="400" y="938" font-size="16" letter-spacing="2">assets/img/sobre.jpg · 800x1000px</text>
+  </g>
+</svg>
