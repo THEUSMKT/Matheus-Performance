@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" width="112" height="112" role="img" aria-label="Foto do cliente">
+  <circle cx="56" cy="56" r="56" fill="#EDEBE4"/>
+  <circle cx="56" cy="43" r="19" fill="#C9C3B4"/>
+  <path d="M18 104c0-20 17-33 38-33s38 13 38 33z" fill="#C9C3B4"/>
+</svg>

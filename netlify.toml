@@ -1,0 +1,19 @@
+# Deploy de site estático (Netlify, Vercel, Cloudflare Pages…).
+# Não há build: os arquivos da raiz já são o site final.
+
+[build]
+  publish = "."
+  command = ""
+
+# Cache longo para assets versionáveis, sem cache para o HTML.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
