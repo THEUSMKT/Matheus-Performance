@@ -1,0 +1,33 @@
+# Deploy do configurador de sites.
+#
+# Na Netlify, crie um site novo apontando para este repositório e defina
+# "Base directory" como `apps/configurador`. O restante já está aqui.
+# O site de tráfego pago, na raiz do repositório, continua com o deploy dele.
+
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Os arquivos com hash no nome nunca mudam de conteúdo.
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# A imagem de compartilhamento sai do build sem extensão; sem esta linha
+# os robôs do WhatsApp e do Facebook recebem octet-stream e ignoram a prévia.
+[[headers]]
+  for = "/opengraph-image"
+  [headers.values]
+    Content-Type = "image/png"
+    Cache-Control = "public, max-age=604800"

@@ -158,3 +158,19 @@ Tudo está em `assets/css/style.css`, no bloco `:root` (primeiras linhas):
 
 Trocar a cor de destaque = mudar `--gold` e `--gold-ink`.
 Trocar as fontes = ajustar `--serif` e `--sans` e o link do Google Fonts no `<head>`.
+
+---
+
+## Este repositório tem dois sites
+
+| Pasta | Site | Stack | Deploy |
+|---|---|---|---|
+| raiz (`index.html`) | Tráfego pago e posicionamento | HTML/CSS/JS, sem build | `netlify.toml` da raiz |
+| `apps/configurador/` | Criação de sites: configurador + orçamento pelo WhatsApp | Next.js · TypeScript · Tailwind | `apps/configurador/netlify.toml` |
+
+São independentes: mexer em um não afeta o outro. Para publicar o
+configurador, crie um segundo site na Netlify apontando para este
+repositório com **Base directory: `apps/configurador`**.
+
+Documentação do configurador — inclusive onde trocar preços, prazos e o
+número do WhatsApp — em [`apps/configurador/README.md`](apps/configurador/README.md).
