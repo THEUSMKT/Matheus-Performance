@@ -53,8 +53,10 @@ export const pricing = {
   /** Funcionalidades (chaves = id em features.ts). */
   byFeature: {
     whatsapp: 0,
+    // Só o trabalho de implementação. A assinatura da plataforma externa
+    // nunca entra aqui — ela aparece à parte, como possível custo externo.
     formularioWhatsapp: 50,
-    formularioEmail: 50,
+    formularioEmail: 80,
     galeria: 80,
     depoimentos: 40,
     faq: 40,

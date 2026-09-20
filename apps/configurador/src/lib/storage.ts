@@ -18,9 +18,10 @@ function read(): Stored | null {
     const parsed = JSON.parse(raw) as Partial<Stored>;
     if (!parsed.selection) return null;
     const selection = { ...emptySelection, ...parsed.selection };
-    // 'formulario' foi dividido em duas opções; quem tinha a antiga salva
-    // recebe a versão por e-mail, que era o comportamento que ela descrevia.
-    selection.features = selection.features.map((f) => (f === 'formulario' ? 'formularioEmail' : f));
+    // 'formulario' foi dividido em duas opções. A antiga é descartada em vez
+    // de convertida: escolher entre WhatsApp e e-mail é decisão de quem está
+    // montando o site, não nossa. O resto das escolhas fica intacto.
+    selection.features = selection.features.filter((f) => f !== 'formulario');
     return {
       selection,
       step: typeof parsed.step === 'number' ? parsed.step : 0,

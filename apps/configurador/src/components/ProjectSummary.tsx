@@ -63,25 +63,34 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
     <div className="anim-step">
       <dl className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface">
         {rows.map((row) => (
-          <div key={row.label} className="flex items-start gap-3 px-5 py-3.5">
-            <dt className="w-20 flex-none pt-0.5 text-sm text-muted sm:w-36">{row.label}</dt>
-            <dd className="flex-1 text-[0.9375rem] font-medium leading-snug tracking-[-0.01em]">
-              {row.value || <span className="text-faint">Não escolhido</span>}
-            </dd>
+          <div key={row.label} className="  grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-5 py-3.5
+                  sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-start">
+            <dt className="col-start-1 row-start-1 text-sm text-muted sm:pt-0.5">{row.label}</dt>
             <button
               type="button"
               onClick={() => onEdit(row.step)}
-              className="flex-none cursor-pointer rounded-xs px-2 py-0.5 text-[0.8125rem] text-muted transition-colors hover:text-brand"
+              className="col-start-2 row-start-1 h-6 cursor-pointer justify-self-end rounded-xs px-2 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
             >
               Editar
             </button>
+            <dd className="col-span-2 col-start-1 row-start-2 mt-1 text-[0.9375rem] font-medium leading-snug tracking-[-0.01em] sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:mt-0">
+              {row.value || <span className="text-faint">Não escolhido</span>}
+            </dd>
           </div>
         ))}
 
         {form && (
-          <div className="flex items-start gap-3 px-5 py-3.5">
-            <dt className="w-20 flex-none pt-0.5 text-sm text-muted sm:w-36">Formulário</dt>
-            <dd className="flex-1 text-[0.9375rem] font-medium leading-snug tracking-[-0.01em]">
+          <div className="  grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-5 py-3.5
+                  sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-start">
+            <dt className="col-start-1 row-start-1 text-sm text-muted sm:pt-0.5">Formulário</dt>
+            <button
+              type="button"
+              onClick={() => onEdit(5)}
+              className="col-start-2 row-start-1 h-6 cursor-pointer justify-self-end rounded-xs px-2 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
+            >
+              Editar
+            </button>
+            <dd className="col-span-2 col-start-1 row-start-2 mt-1 text-[0.9375rem] font-medium leading-snug tracking-[-0.01em] sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:mt-0">
               {form.value}
               <span className="mt-1 block text-[0.8125rem] font-normal leading-snug text-muted">
                 {form.note}
@@ -92,13 +101,6 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
                 </span>
               )}
             </dd>
-            <button
-              type="button"
-              onClick={() => onEdit(5)}
-              className="flex-none cursor-pointer rounded-xs px-2 py-0.5 text-[0.8125rem] text-muted transition-colors hover:text-brand"
-            >
-              Editar
-            </button>
           </div>
         )}
 

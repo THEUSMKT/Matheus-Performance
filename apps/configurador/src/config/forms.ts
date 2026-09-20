@@ -18,7 +18,9 @@ export const emailFormNotice = {
     'O formulário utiliza um serviço externo para receber e encaminhar as mensagens ao seu e-mail. ' +
     'O plano gratuito possui um limite mensal de envios e, dependendo do volume de contatos da empresa, ' +
     'pode ser necessário contratar um plano pago.',
-  limit: `Plano gratuito: aproximadamente ${FORM_FREE_MONTHLY_LIMIT} envios por mês.`,
+  limit:
+    `Plano gratuito: aproximadamente ${FORM_FREE_MONTHLY_LIMIT} envios por mês, ` +
+    'conforme as condições atuais da plataforma.',
   separateCost: 'A assinatura da plataforma é um custo separado do valor de criação do site.',
   firstMonth:
     'Caso seja necessário um plano pago, o primeiro mês pode ser incluído na configuração inicial. ' +
