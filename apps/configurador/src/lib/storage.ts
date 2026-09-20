@@ -17,8 +17,12 @@ function read(): Stored | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<Stored>;
     if (!parsed.selection) return null;
+    const selection = { ...emptySelection, ...parsed.selection };
+    // 'formulario' foi dividido em duas opções; quem tinha a antiga salva
+    // recebe a versão por e-mail, que era o comportamento que ela descrevia.
+    selection.features = selection.features.map((f) => (f === 'formulario' ? 'formularioEmail' : f));
     return {
-      selection: { ...emptySelection, ...parsed.selection },
+      selection,
       step: typeof parsed.step === 'number' ? parsed.step : 0,
     };
   } catch {

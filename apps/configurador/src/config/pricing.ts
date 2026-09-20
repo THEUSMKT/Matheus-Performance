@@ -53,7 +53,8 @@ export const pricing = {
   /** Funcionalidades (chaves = id em features.ts). */
   byFeature: {
     whatsapp: 0,
-    formulario: 50,
+    formularioWhatsapp: 50,
+    formularioEmail: 50,
     galeria: 80,
     depoimentos: 40,
     faq: 40,

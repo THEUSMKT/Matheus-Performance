@@ -5,7 +5,8 @@
 import {
   ArrowLeft, ArrowRight, ArrowUpRight, BriefcaseBusiness, Building2, CalendarCheck,
   Camera, Check, ChevronDown, CircleHelp, FilePlus2, Images, LayoutGrid, Mail,
-  Map, MapPin, MessageCircle, MousePointerClick, Package, Palette, PenLine, Quote,
+  Info, Map, MapPin, MessageCircle, MessageSquareText, MousePointerClick, Package,
+  Palette, PenLine, Quote,
   RotateCcw, Share2, Smartphone, Sparkles, Type, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -13,7 +14,8 @@ import type { LucideIcon } from 'lucide-react';
 const registry = {
   ArrowLeft, ArrowRight, ArrowUpRight, BriefcaseBusiness, Building2, CalendarCheck,
   Camera, Check, ChevronDown, CircleHelp, FilePlus2, Images, LayoutGrid, Mail,
-  Map, MapPin, MessageCircle, MousePointerClick, Package, Palette, PenLine, Quote,
+  Info, Map, MapPin, MessageCircle, MessageSquareText, MousePointerClick, Package,
+  Palette, PenLine, Quote,
   RotateCcw, Share2, Smartphone, Sparkles, Type, X,
 } satisfies Record<string, LucideIcon>;
 

@@ -271,7 +271,7 @@ function Extras({ spec }: { spec: PreviewSpec }) {
     );
   }
 
-  if (has('formulario') || has('agendamento')) {
+  if (has('formularioWhatsapp') || has('formularioEmail') || has('agendamento')) {
     blocks.push(
       <span className="pv-form" key="form">
         <i /> <i />

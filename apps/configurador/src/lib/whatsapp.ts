@@ -9,6 +9,7 @@ import { siteTypes } from '@/config/siteTypes';
 import { templates } from '@/config/templates';
 import { visualStyles } from '@/config/styles';
 import { brl } from '@/config/pricing';
+import { FORM_EMAIL, FORM_WHATSAPP, volumeOptions } from '@/config/forms';
 import type { Estimate } from './estimate';
 import type { Selection } from './types';
 
@@ -69,6 +70,21 @@ export function buildMessage(selection: Selection, result: Estimate): string {
     lines.push('');
     lines.push('Funcionalidades:');
     for (const nome of funcionalidades) lines.push(`• ${nome}`);
+  }
+
+  // Formulário: o aviso de plataforma externa só faz sentido no caso do
+  // e-mail. Quem escolhe o envio para WhatsApp não tem assinatura nenhuma.
+  if (selection.features.includes(FORM_WHATSAPP)) {
+    lines.push('');
+    lines.push('Formulário: Envio para WhatsApp');
+  } else if (selection.features.includes(FORM_EMAIL)) {
+    const volume = volumeOptions.find((v) => v.id === selection.emailVolume);
+    lines.push('');
+    lines.push('Formulário: Recebimento por e-mail');
+    if (volume) lines.push(`Volume esperado: ${volume.messageLabel}`);
+    lines.push(
+      `Plataforma externa: ${volume?.messagePlatform ?? 'plano conforme o volume de mensagens'}`,
+    );
   }
 
   lines.push('');

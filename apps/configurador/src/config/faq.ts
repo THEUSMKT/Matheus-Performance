@@ -19,6 +19,10 @@ export const faq = [
     a: 'Sim. Duas rodadas de ajustes estão incluídas no projeto, antes da publicação.',
   },
   {
+    q: 'O formulário do site tem mensalidade?',
+    a: 'O formulário pode enviar as solicitações diretamente para o WhatsApp sem mensalidade de plataforma. Para recebimento por e-mail, pode ser utilizado um serviço externo com limite gratuito e planos pagos conforme o volume de mensagens.',
+  },
+  {
     q: 'O site funciona bem no celular?',
     a: 'Sim — o celular é a prioridade. Cada tela é testada em telas pequenas antes de ir ao ar.',
   },

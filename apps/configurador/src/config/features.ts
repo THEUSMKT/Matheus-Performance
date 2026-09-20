@@ -3,10 +3,24 @@
    Os ids precisam existir em pricing.ts (byFeature).
    ========================================================================== */
 import type { Feature } from '@/lib/types';
+import { FORM_EMAIL, FORM_WHATSAPP } from './forms';
 
 export const features: Feature[] = [
   { id: 'whatsapp', name: 'Botão de WhatsApp', pitch: 'Flutuante, em toda a página.', icon: 'MessageCircle' },
-  { id: 'formulario', name: 'Formulário de contato', pitch: 'As mensagens chegam no seu e-mail.', icon: 'Mail' },
+  {
+    id: FORM_WHATSAPP,
+    name: 'Formulário para WhatsApp',
+    pitch: 'O visitante preenche os dados e envia a solicitação diretamente pelo WhatsApp.',
+    icon: 'MessageSquareText',
+    hint: 'Sem mensalidade de plataforma.',
+  },
+  {
+    id: FORM_EMAIL,
+    name: 'Formulário por e-mail',
+    pitch: 'Receba as solicitações do site diretamente no seu e-mail.',
+    icon: 'Mail',
+    hint: 'Pode utilizar uma plataforma externa conforme o volume de mensagens.',
+  },
   { id: 'galeria', name: 'Galeria de fotos', pitch: 'Seus trabalhos em grade, com zoom.', icon: 'Images' },
   { id: 'depoimentos', name: 'Depoimentos', pitch: 'Prova de quem já é seu cliente.', icon: 'Quote' },
   { id: 'faq', name: 'Perguntas frequentes', pitch: 'Responde antes de o cliente perguntar.', icon: 'CircleHelp' },

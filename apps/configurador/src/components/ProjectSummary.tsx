@@ -9,6 +9,14 @@ import { siteTypes } from '@/config/siteTypes';
 import { templates } from '@/config/templates';
 import { visualStyles } from '@/config/styles';
 import { brl } from '@/config/pricing';
+import {
+  FORM_EMAIL,
+  FORM_WHATSAPP,
+  externalCost,
+  externalServicesNote,
+  formSummary,
+  volumeOptions,
+} from '@/config/forms';
 import { buildMessage, featureNames, joinPt, whatsappLink } from '@/lib/whatsapp';
 import type { Estimate } from '@/lib/estimate';
 import type { Selection } from '@/lib/types';
@@ -38,6 +46,17 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
     { step: 5, label: 'Funcionalidades', value: joinPt(featureNames(selection)) },
   ];
 
+  // O formulário ganha linha própria: é onde cabe a ressalva que a lista de
+  // funcionalidades não comporta.
+  const formId = selection.features.includes(FORM_EMAIL)
+    ? FORM_EMAIL
+    : selection.features.includes(FORM_WHATSAPP)
+      ? FORM_WHATSAPP
+      : null;
+  const form = formId ? formSummary[formId] : null;
+  const volume = volumeOptions.find((v) => v.id === selection.emailVolume);
+  const aviso = formId === FORM_EMAIL ? volume?.summaryWarning : undefined;
+
   const message = buildMessage(selection, result);
 
   return (
@@ -59,6 +78,30 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
           </div>
         ))}
 
+        {form && (
+          <div className="flex items-start gap-3 px-5 py-3.5">
+            <dt className="w-20 flex-none pt-0.5 text-sm text-muted sm:w-36">Formulário</dt>
+            <dd className="flex-1 text-[0.9375rem] font-medium leading-snug tracking-[-0.01em]">
+              {form.value}
+              <span className="mt-1 block text-[0.8125rem] font-normal leading-snug text-muted">
+                {form.note}
+              </span>
+              {aviso && (
+                <span className="mt-1 block text-[0.8125rem] font-normal leading-snug text-muted">
+                  {aviso}
+                </span>
+              )}
+            </dd>
+            <button
+              type="button"
+              onClick={() => onEdit(5)}
+              className="flex-none cursor-pointer rounded-xs px-2 py-0.5 text-[0.8125rem] text-muted transition-colors hover:text-brand"
+            >
+              Editar
+            </button>
+          </div>
+        )}
+
         <div className="flex items-baseline justify-between gap-3 bg-brand-soft/50 px-5 py-4">
           <dt className="text-sm font-medium text-muted">Estimativa</dt>
           <dd className="tnum text-xl font-bold tracking-[-0.03em]">
@@ -70,6 +113,13 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
           <dd className="text-[0.9375rem] font-semibold tracking-[-0.015em]">{result.deadline}</dd>
         </div>
       </dl>
+
+      {formId === FORM_EMAIL && (
+        <div className="mt-3 rounded-md border border-line bg-surface px-5 py-4">
+          <p className="text-sm font-medium text-muted">Possíveis custos externos</p>
+          <p className="mt-1 text-[0.9375rem] leading-snug">{externalCost}</p>
+        </div>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Field
@@ -104,6 +154,10 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
 
       <p className="mt-3 text-center text-[0.8125rem] text-muted">
         Sem compromisso. Você só paga depois de aprovar o orçamento.
+      </p>
+
+      <p className="mt-4 border-t border-line pt-4 text-[0.75rem] leading-relaxed text-faint">
+        {externalServicesNote}
       </p>
     </div>
   );

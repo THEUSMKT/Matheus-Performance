@@ -110,6 +110,8 @@ export type Feature = {
   name: string;
   pitch: string;
   icon: string;
+  /** Linha extra, menor que o pitch. Hoje só as opções de formulário usam. */
+  hint?: string;
 };
 
 /** Tudo que o usuário escolheu. */
@@ -122,6 +124,8 @@ export type Selection = {
   customColor: { accent: string; bg: string } | null;
   font: string | null;
   features: string[];
+  /** Volume estimado de contatos, respondido dentro da própria opção. */
+  emailVolume: string | null;
   name: string;
   company: string;
 };
@@ -134,6 +138,7 @@ export const emptySelection: Selection = {
   customColor: null,
   font: null,
   features: [],
+  emailVolume: null,
   name: '',
   company: '',
 };
