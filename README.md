@@ -163,14 +163,14 @@ Trocar as fontes = ajustar `--serif` e `--sans` e o link do Google Fonts no `<he
 
 ## Este repositório tem dois sites
 
-| Pasta | Site | Stack | Deploy |
+| Pasta | Site | Stack | Situação |
 |---|---|---|---|
-| raiz (`index.html`) | Tráfego pago e posicionamento | HTML/CSS/JS, sem build | `netlify.toml` da raiz |
-| `apps/configurador/` | Criação de sites: configurador + orçamento pelo WhatsApp | Next.js · TypeScript · Tailwind | `apps/configurador/netlify.toml` |
+| raiz (`index.html`) | Tráfego pago e posicionamento | HTML/CSS/JS, sem build | publicado |
+| `apps/configurador/` | Criação de sites: configurador + orçamento pelo WhatsApp | Next.js · TypeScript · Tailwind | em revisão, ainda sem hospedagem |
 
-São independentes: mexer em um não afeta o outro. Para publicar o
-configurador, crie um segundo site na Netlify apontando para este
-repositório com **Base directory: `apps/configurador`**.
+São independentes: mexer em um não afeta o outro. O configurador ainda não
+tem provedor de hospedagem definido — ele exporta HTML estático, então
+qualquer host servirá quando chegar a hora.
 
 Documentação do configurador — inclusive onde trocar preços, prazos e o
 número do WhatsApp — em [`apps/configurador/README.md`](apps/configurador/README.md).

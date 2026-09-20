@@ -95,13 +95,24 @@ Para incluir um layout novo: acrescente o nome em `PreviewLayout`
 
 ## Publicar
 
-O `netlify.toml` desta pasta já traz build, publish e cabeçalhos de cache.
-Na Netlify, crie um site apontando para este repositório e defina
-**Base directory: `apps/configurador`**. O site da raiz do repositório
-(tráfego pago) continua com o deploy dele, separado.
+Ainda não há hospedagem configurada — isso fica para quando o provedor for
+escolhido.
 
-Como a saída é estática, qualquer host serve: Vercel, Cloudflare Pages,
-GitHub Pages.
+O que já está pronto: `npm run build` gera a pasta `out/` com HTML, CSS e
+JS estáticos, sem servidor. É só apontar o host para ela. O que o provedor
+vai precisar saber:
+
+| | |
+|---|---|
+| Diretório base | `apps/configurador` |
+| Comando de build | `npm run build` |
+| Pasta publicada | `out` |
+| Node | 22 |
+
+Duas observações para a hora do deploy: a imagem de compartilhamento sai em
+`out/opengraph-image` sem extensão e precisa ser servida como `image/png`,
+e `out/_next/static/` pode receber cache longo porque os nomes dos arquivos
+já têm hash.
 
 ---
 
@@ -111,3 +122,4 @@ GitHub Pages.
 - [ ] `pricing.ts`: conferir se os valores batem com o que você cobra
 - [ ] `portfolio.ts`: trocar os nomes fictícios pelos projetos reais
 - [ ] `/privacidade` e `/termos`: revisar os textos
+- [ ] escolher o provedor de hospedagem e configurar o build acima
