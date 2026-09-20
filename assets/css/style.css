@@ -156,20 +156,27 @@ p{margin:0}
 /* Foto do palco: textura de atmosfera à direita, recuada do topo para o rosto
    não disputar espaço com o cabeçalho. Nunca é ampliada além dos 896px nativos.
    As quatro bordas somem via máscara dupla (horizontal ∩ vertical). */
-.hero__img{
+/* O contêiner carrega posição, máscara e opacidade final — nada aqui anima,
+   para as bordas dissolvidas ficarem paradas durante a entrada.
+   O teto de 680px segura o crescimento em telas largas: sem ele, 42% de
+   1920px devolveria a foto quase ao tamanho anterior. */
+.hero__photo{
   position:absolute;top:20%;right:0;
-  /* o teto de 680px segura o crescimento em telas largas: sem ele, 42% de
-     1920px devolveria a foto quase ao tamanho anterior. */
   width:min(42%,680px);height:74%;
-  object-fit:cover;object-position:center 12%;
-  opacity:.75;
-  filter:brightness(.85) saturate(.95);
-  transform:scale(1.02);will-change:transform;
+  overflow:hidden;opacity:.75;
   -webkit-mask-image:linear-gradient(to right,transparent 0%,#000 35%,#000 78%,transparent 100%),linear-gradient(to bottom,transparent 0%,#000 28%,#000 68%,transparent 100%);
   mask-image:linear-gradient(to right,transparent 0%,#000 35%,#000 78%,transparent 100%),linear-gradient(to bottom,transparent 0%,#000 28%,#000 68%,transparent 100%);
   -webkit-mask-composite:source-in;
   mask-composite:intersect;
   -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+/* Só a imagem anima: entra em scale .88 e assenta em 1 — nunca passa de 1. */
+.hero__img{
+  width:100%;height:100%;
+  object-fit:cover;object-position:center 12%;
+  filter:brightness(.85) saturate(.95);
+  transform:scale(1);transform-origin:70% 40%;
+  will-change:transform;
 }
 /* (ii) degradê na cor de fundo, opaco à esquerda → transparente em ~55% */
 .hero__veil{position:absolute;inset:0;background:linear-gradient(to right,var(--black) 0%,var(--black) 20%,rgba(10,10,10,.82) 36%,rgba(10,10,10,.42) 47%,rgba(10,10,10,0) 55%)}
@@ -224,13 +231,13 @@ p{margin:0}
   transform:translateY(26px);transition:opacity .9s var(--ease),transform .9s var(--ease)
 }
 .no-gsap .hero__actions{transform:translateY(0) scale(.95)}
-.no-gsap .hero__img{filter:brightness(.85) saturate(.95) blur(18px);transform:scale(1.12);
-  transition:opacity 1.5s var(--ease),filter 1.5s var(--ease),transform 1.6s var(--ease)}
+.no-gsap .hero__img{transform:scale(.88);
+  transition:opacity 1.8s var(--ease),transform 1.8s var(--ease)}
 .no-gsap .hero__rule{transition:transform 1.1s var(--ease) .1s}
 .no-gsap .word__i{transform:translateY(112%);opacity:0;transition:transform .9s var(--ease),opacity .7s var(--ease)}
 .no-gsap .is-in,.no-gsap .is-in>*{opacity:1;transform:none}
 .no-gsap .is-in .word__i{transform:none;opacity:1}
-.no-gsap .hero__img.is-in{opacity:.75;filter:brightness(.85) saturate(.95) blur(0);transform:scale(1.02)}
+.no-gsap .hero__img.is-in{opacity:1;transform:scale(1)}
 .no-gsap .hero__rule.is-in{transform:scaleX(1)}
 
 /* ── 8. CARDS ────────────────────────────────────────────────────────────── */
@@ -545,10 +552,8 @@ p{margin:0}
    para vencer na cascata. */
 @media (max-width:768px){
   .hero{padding-top:calc(40svh + 86px)}
-  .hero__img{
-    top:86px;right:0;left:auto;width:76%;height:40svh;
-    object-position:center 15%;
-  }
+  .hero__photo{top:86px;right:0;left:auto;width:76%;height:40svh}
+  .hero__img{object-position:center 15%}
   .hero__veil{background:linear-gradient(to bottom,rgba(10,10,10,.5) 0%,rgba(10,10,10,.18) 24%,rgba(10,10,10,.58) 44%,rgba(10,10,10,.94) 58%,var(--black) 68%)}
   .hero__vignette{
     background:
@@ -566,6 +571,6 @@ p{margin:0}
   .js-anim .hero__actions,.js-anim .hero__proof,.js-anim .hero__scroll{opacity:1!important}
   .js-anim .hero__rule{transform:none!important}
   .no-gsap .word__i,.no-gsap .hero__rule{transform:none!important;opacity:1!important;filter:none!important}
-  .no-gsap .hero__img{transform:none!important;opacity:.75!important;filter:brightness(.85) saturate(.95)!important}
+  .no-gsap .hero__img{transform:scale(1)!important;opacity:1!important;filter:brightness(.85) saturate(.95)!important}
   .marquee__row{animation:none}
 }
