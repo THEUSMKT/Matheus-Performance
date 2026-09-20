@@ -18,8 +18,15 @@ export const contact = {
   instagram: 'https://instagram.com/seuinstagram',
   instagramHandle: '@seuinstagram',
 
-  /** Domínio público, usado em canonical e Open Graph. */
-  siteUrl: 'https://www.seudominio.com.br',
+  /**
+   * Deixe `false` enquanto a página estiver em revisão: o link continua
+   * aberto para quem tiver o endereço, mas os buscadores não indexam.
+   * Troque para `true` quando o conteúdo estiver aprovado.
+   */
+  indexarNoGoogle: false,
+
+  /** Endereço público, usado em canonical, Open Graph e sitemap. */
+  siteUrl: 'https://theusmkt.github.io/Matheus-Performance/configurador',
 
   /** Abertura da mensagem enviada ao WhatsApp com o briefing montado. */
   whatsappIntro:

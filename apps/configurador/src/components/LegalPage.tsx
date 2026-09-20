@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Footer } from './Footer';
 import { Navbar } from './Navbar';
@@ -16,13 +17,13 @@ export function LegalPage({
     <>
       <Navbar />
       <main className="wrap max-w-2xl py-16 sm:py-24">
-        <a
+        <Link
           href="/"
           className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-ink"
         >
           <Icon name="ArrowLeft" className="size-4" />
           Voltar para o início
-        </a>
+        </Link>
 
         <h1 className="mt-6 text-section font-bold">{title}</h1>
         <p className="mt-2 text-sm text-muted">Atualizado em {updated}.</p>

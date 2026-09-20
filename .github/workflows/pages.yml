@@ -14,6 +14,12 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# O Pages serve dois sites no mesmo endereço:
+#   /Matheus-Performance/               → site de tráfego pago (raiz do repo)
+#   /Matheus-Performance/configurador/  → configurador de sites (Next.js)
+env:
+  BASE_PATH: /Matheus-Performance/configurador
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,10 +33,61 @@ jobs:
       - name: Configurar o GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Empacotar o site (raiz do repositório, sem build)
+      - name: Instalar o Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/configurador/package-lock.json
+
+      - name: Instalar dependências do configurador
+        working-directory: apps/configurador
+        run: npm ci
+
+      - name: Gerar o configurador
+        working-directory: apps/configurador
+        env:
+          NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
+        run: npm run build
+
+      - name: Montar o site
+        run: |
+          set -euo pipefail
+          # Raiz: o site de tráfego pago, exatamente como está no repositório,
+          # menos o que é código-fonte ou configuração de desenvolvimento.
+          mkdir -p _site
+          tar -c \
+            --exclude='./.git' \
+            --exclude='./.github' \
+            --exclude='./apps' \
+            --exclude='./.agents' \
+            --exclude='./.claude' \
+            --exclude='./_site' \
+            --exclude='./node_modules' \
+            --exclude='./README.md' \
+            --exclude='./netlify.toml' \
+            --exclude='./skills-lock.json' \
+            . | tar -x -C _site
+          # Subpasta: o configurador já compilado.
+          mkdir -p _site/configurador
+          cp -r apps/configurador/out/. _site/configurador/
+          echo "── o que vai ao ar ──"
+          find _site -maxdepth 2 -not -path '*/configurador/_next*' | sort | head -30
+
+      - name: Conferir o que foi montado
+        run: |
+          set -euo pipefail
+          test -f _site/index.html            || { echo "faltou o site da raiz"; exit 1; }
+          test -f _site/configurador/index.html || { echo "faltou o configurador"; exit 1; }
+          # O basePath precisa estar nos assets, senão a página sobe sem estilo.
+          grep -q "${BASE_PATH}/_next/" _site/configurador/index.html \
+            || { echo "os assets do configurador não receberam o basePath"; exit 1; }
+          echo "ok: os dois sites estão no pacote e o basePath foi aplicado"
+
+      - name: Empacotar
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Publicar
         id: deployment

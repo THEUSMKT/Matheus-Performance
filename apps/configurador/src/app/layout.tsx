@@ -40,7 +40,9 @@ export const metadata: Metadata = {
     'orçamento de site',
   ],
   alternates: { canonical: '/' },
-  robots: { index: true, follow: true },
+  robots: contact.indexarNoGoogle
+    ? { index: true, follow: true }
+    : { index: false, follow: false },
   openGraph: {
     type: 'website',
     locale: 'pt_BR',

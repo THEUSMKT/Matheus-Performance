@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { contact } from '@/config/contact';
 import { shortWhatsappLink } from '@/lib/whatsapp';
 
@@ -36,14 +37,14 @@ export function Footer() {
             </a>
           </li>
           <li>
-            <a href="/privacidade/" className="transition-colors hover:text-ink">
+            <Link href="/privacidade/" className="transition-colors hover:text-ink">
               Privacidade
-            </a>
+            </Link>
           </li>
           <li>
-            <a href="/termos/" className="transition-colors hover:text-ink">
+            <Link href="/termos/" className="transition-colors hover:text-ink">
               Termos
-            </a>
+            </Link>
           </li>
         </ul>
       </div>
