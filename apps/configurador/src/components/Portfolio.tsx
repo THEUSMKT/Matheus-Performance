@@ -40,12 +40,13 @@ export function Portfolio() {
   };
 
   return (
-    <section id="modelos" className="scroll-mt-20 border-t border-line bg-surface py-16 sm:py-24">
+    <section id="modelos" className="border-t border-line bg-surface py-16 sm:py-24">
       <div className="wrap">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h2 className="max-w-md text-section font-bold">Veja o que dá para criar.</h2>
           <p className="max-w-xs text-[0.9375rem] leading-snug text-muted">
-            Clique em uma direção e ela entra no configurador já escolhida.
+            Conceitos de layout, não projetos entregues. Clique em um deles e ele entra no
+            configurador já escolhido.
           </p>
         </div>
 
@@ -57,13 +58,14 @@ export function Portfolio() {
                 onClick={() => start(item)}
                 className="group w-full cursor-pointer text-left"
               >
-                <span className="relative block overflow-hidden rounded-md border border-line bg-sunken p-3 pb-0 transition-[border-color,box-shadow] duration-200 group-hover:border-line-strong group-hover:shadow-soft">
-                  <span className="block origin-top transition-transform duration-300 ease-[var(--ease-out)] group-hover:scale-[1.04]">
-                    <SitePreview
-                      spec={specFor(item)}
-                      bare
-                      className="h-[210px] [&_.pv-page]:max-h-[210px]"
-                    />
+                <span className="relative block aspect-[4/3] overflow-hidden rounded-md border border-line bg-sunken p-3 pb-0 transition-[border-color,box-shadow] duration-200 group-hover:border-line-strong group-hover:shadow-soft">
+                  <span className="block h-full origin-top transition-transform duration-300 ease-[var(--ease-out)] group-hover:scale-[1.04]">
+                    <SitePreview spec={specFor(item)} bare className="pv-fill" />
+                  </span>
+
+                  {/* Deixa explícito que é demonstração, não cliente atendido. */}
+                  <span className="absolute left-5 top-5 rounded-full bg-surface/90 px-2.5 py-1 text-[0.6875rem] font-medium text-muted backdrop-blur-sm">
+                    Conceito de layout
                   </span>
                   <span className="absolute inset-0 flex items-end justify-center bg-ink/55 pb-8 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
                     <span className="inline-flex items-center gap-2 rounded-sm bg-surface px-4 py-2.5 text-sm font-semibold tracking-[-0.01em]">

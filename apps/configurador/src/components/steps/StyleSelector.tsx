@@ -24,8 +24,12 @@ export function StyleSelector({ selection, update }: StepProps) {
             }}
           />
           <span className="block px-4 pb-4 pt-3">
-            <span className="block text-[0.9375rem] font-semibold tracking-[-0.015em]">{style.name}</span>
-            <span className="mt-0.5 block text-[0.8125rem] leading-snug text-muted">{style.pitch}</span>
+            <span className="block hyphens-auto break-words text-[0.9375rem] font-semibold tracking-[-0.015em]">
+              {style.name}
+            </span>
+            <span className="mt-0.5 block hyphens-auto break-words text-[0.8125rem] leading-snug text-muted">
+              {style.pitch}
+            </span>
           </span>
         </SelectCard>
       ))}

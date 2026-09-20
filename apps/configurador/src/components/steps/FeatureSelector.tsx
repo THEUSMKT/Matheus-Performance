@@ -94,7 +94,7 @@ function EmailFormNotice({ selection, update }: StepProps) {
                 role="radio"
                 aria-checked={marcada}
                 onClick={() => update({ emailVolume: marcada ? null : opcao.id })}
-                className={`h-10 cursor-pointer rounded-sm border px-4 text-[0.8125rem] font-medium transition-[background-color,border-color,color] duration-200 ${
+                className={`h-11 cursor-pointer rounded-sm border px-4 text-[0.8125rem] font-medium transition-[background-color,border-color,color] duration-200 ${
                   marcada
                     ? 'border-brand bg-brand text-white'
                     : 'border-line-strong bg-surface text-ink hover:border-ink/25'

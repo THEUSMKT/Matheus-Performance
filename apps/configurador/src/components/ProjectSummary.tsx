@@ -8,7 +8,6 @@ import { fontPairings } from '@/config/fonts';
 import { siteTypes } from '@/config/siteTypes';
 import { templates } from '@/config/templates';
 import { visualStyles } from '@/config/styles';
-import { brl } from '@/config/pricing';
 import {
   FORM_EMAIL,
   FORM_WHATSAPP,
@@ -21,6 +20,7 @@ import { buildMessage, featureNames, joinPt, whatsappLink } from '@/lib/whatsapp
 import type { Estimate } from '@/lib/estimate';
 import type { Selection } from '@/lib/types';
 import { ButtonLink } from './ui/Button';
+import { EstimateCard } from './EstimateCard';
 import { Icon } from './ui/Icon';
 
 type Props = {
@@ -69,7 +69,7 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
             <button
               type="button"
               onClick={() => onEdit(row.step)}
-              className="col-start-2 row-start-1 h-6 cursor-pointer justify-self-end rounded-xs px-2 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
+              className="-my-3 col-start-2 row-start-1 inline-flex cursor-pointer items-center justify-self-end rounded-xs px-2 py-3 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
             >
               Editar
             </button>
@@ -86,7 +86,7 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
             <button
               type="button"
               onClick={() => onEdit(5)}
-              className="col-start-2 row-start-1 h-6 cursor-pointer justify-self-end rounded-xs px-2 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
+              className="-my-3 col-start-2 row-start-1 inline-flex cursor-pointer items-center justify-self-end rounded-xs px-2 py-3 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
             >
               Editar
             </button>
@@ -104,24 +104,11 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
           </div>
         )}
 
-        <div className="flex items-baseline justify-between gap-3 bg-brand-soft/50 px-5 py-4">
-          <dt className="text-sm font-medium text-muted">Estimativa</dt>
-          <dd className="tnum text-xl font-bold tracking-[-0.03em]">
-            {brl(result.min)} <span className="text-faint">–</span> {brl(result.max).replace('R$ ', '')}
-          </dd>
-        </div>
-        <div className="flex items-baseline justify-between gap-3 bg-brand-soft/50 px-5 py-4">
-          <dt className="text-sm font-medium text-muted">Prazo</dt>
-          <dd className="text-[0.9375rem] font-semibold tracking-[-0.015em]">{result.deadline}</dd>
-        </div>
       </dl>
 
-      {formId === FORM_EMAIL && (
-        <div className="mt-3 rounded-md border border-line bg-surface px-5 py-4">
-          <p className="text-sm font-medium text-muted">Possíveis custos externos</p>
-          <p className="mt-1 text-[0.9375rem] leading-snug">{externalCost}</p>
-        </div>
-      )}
+      <div className="mt-3">
+        <EstimateCard result={result} externalCost={formId === FORM_EMAIL ? externalCost : undefined} />
+      </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <Field

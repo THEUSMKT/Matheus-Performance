@@ -11,7 +11,7 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/85 backdrop-blur-md">
       <nav className="wrap flex h-16 items-center gap-3 md:gap-8" aria-label="Principal">
-        <a href="#topo" className="flex flex-none items-center gap-2.5 whitespace-nowrap font-bold tracking-[-0.03em]">
+        <a href="#topo" className="flex min-h-11 flex-none items-center gap-2.5 whitespace-nowrap font-bold tracking-[-0.03em]">
           <span className="brand-gradient grid size-7 place-items-center rounded-[9px] text-[13px] font-bold text-white">
             M
           </span>
@@ -21,7 +21,7 @@ export function Navbar() {
         <ul className="ml-auto hidden items-center gap-7 text-[0.9375rem] text-muted md:flex">
           {links.map((link) => (
             <li key={link.href}>
-              <a href={link.href} className="transition-colors hover:text-ink">
+              <a href={link.href} className="inline-flex min-h-11 items-center transition-colors hover:text-ink">
                 {link.label}
               </a>
             </li>

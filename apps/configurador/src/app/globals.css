@@ -52,7 +52,7 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
-    scroll-padding-top: 5rem;
+    scroll-padding-top: 5.5rem; /* navbar (4rem) + respiro */
   }
 
   body {
@@ -171,6 +171,14 @@
 .pv-frame--bare {
   box-shadow: none;
   border-radius: 10px;
+}
+
+/* Miniatura em caixa de proporção fixa: o fundo do site preenche a altura
+   toda, então conteúdos curtos não deixam sobra. */
+.pv-fill,
+.pv-fill .pv-page {
+  height: 100%;
+  max-height: none;
 }
 
 .pv-chrome {
@@ -294,6 +302,9 @@
   background: var(--pv-accent);
   color: var(--pv-on-accent);
   white-space: nowrap;
+  /* Sem isto o botão estica nos layouts em que ele é filho direto da
+     coluna (editorial e showcase), virando uma faixa larga. */
+  width: fit-content;
 }
 .pv-cta--full { width: 100%; }
 

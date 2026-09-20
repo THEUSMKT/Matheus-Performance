@@ -15,13 +15,13 @@ export function Footer() {
           </p>
         </div>
 
-        <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.9375rem] text-muted">
+        <ul className="flex flex-wrap items-center gap-x-6 text-[0.9375rem] text-muted">
           <li>
             <a
               href={contact.instagram}
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors hover:text-ink"
+              className="inline-flex min-h-11 items-center transition-colors hover:text-ink"
             >
               Instagram
             </a>
@@ -31,18 +31,18 @@ export function Footer() {
               href={shortWhatsappLink()}
               target="_blank"
               rel="noopener noreferrer"
-              className="transition-colors hover:text-ink"
+              className="inline-flex min-h-11 items-center transition-colors hover:text-ink"
             >
               WhatsApp
             </a>
           </li>
           <li>
-            <Link href="/privacidade/" className="transition-colors hover:text-ink">
+            <Link href="/privacidade/" className="inline-flex min-h-11 items-center transition-colors hover:text-ink">
               Privacidade
             </Link>
           </li>
           <li>
-            <Link href="/termos/" className="transition-colors hover:text-ink">
+            <Link href="/termos/" className="inline-flex min-h-11 items-center transition-colors hover:text-ink">
               Termos
             </Link>
           </li>

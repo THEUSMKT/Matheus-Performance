@@ -46,12 +46,12 @@ export function ModelSelector({ selection, update }: StepProps) {
               }`}
             >
               {/* A miniatura é o site de verdade, desenhado em CSS. */}
-              <div className="relative overflow-hidden bg-sunken p-3 pb-0">
-                <div className="origin-top transition-transform duration-300 ease-[var(--ease-out)] group-hover:scale-[1.035]">
+              <div className="relative aspect-[4/3] overflow-hidden bg-sunken p-3 pb-0">
+                <div className="h-full origin-top transition-transform duration-300 ease-[var(--ease-out)] group-hover:scale-[1.035]">
                   <SitePreview
                     spec={specFor(template, selection.type, selection.font)}
                     bare
-                    className="h-[220px] [&_.pv-page]:max-h-[220px]"
+                    className="pv-fill"
                   />
                 </div>
                 {selected && (

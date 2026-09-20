@@ -62,7 +62,7 @@ export function HeroPreview() {
             type="button"
             onClick={() => setIndex(i)}
             aria-pressed={i === index}
-            className={`cursor-pointer rounded-full px-3 py-1.5 text-[0.8125rem] font-medium transition-colors duration-200 ${
+            className={`inline-flex min-h-11 cursor-pointer items-center rounded-full px-3.5 text-[0.8125rem] font-medium transition-colors duration-200 ${
               i === index ? 'bg-ink text-canvas' : 'text-muted hover:text-ink'
             }`}
           >

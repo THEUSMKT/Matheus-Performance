@@ -8,7 +8,16 @@ import { useEffect, useRef, useState } from 'react';
 import { brl } from '@/config/pricing';
 import type { Estimate } from '@/lib/estimate';
 
-export function EstimateCard({ result, compact = false }: { result: Estimate; compact?: boolean }) {
+export function EstimateCard({
+  result,
+  compact = false,
+  externalCost,
+}: {
+  result: Estimate;
+  compact?: boolean;
+  /** Custo de terceiros, mostrado à parte do valor do desenvolvimento. */
+  externalCost?: string;
+}) {
   const min = useAnimatedNumber(result.min);
   const max = useAnimatedNumber(result.max);
 
@@ -37,6 +46,13 @@ export function EstimateCard({ result, compact = false }: { result: Estimate; co
       <p className="mt-3 text-[0.8125rem] leading-snug text-faint">
         Valor aproximado, confirmado depois da análise. O prazo conta a partir do envio dos materiais.
       </p>
+
+      {externalCost && (
+        <div className="mt-4 border-t border-line pt-4">
+          <p className="text-sm text-muted">Possíveis custos externos</p>
+          <p className="mt-1 text-[0.9375rem] leading-snug">{externalCost}</p>
+        </div>
+      )}
     </div>
   );
 }

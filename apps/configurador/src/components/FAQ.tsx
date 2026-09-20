@@ -3,7 +3,7 @@ import { Icon } from './ui/Icon';
 
 export function FAQ() {
   return (
-    <section id="perguntas" className="scroll-mt-20 py-16 sm:py-24">
+    <section id="perguntas" className="py-16 sm:py-24">
       <div className="wrap grid gap-10 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] lg:gap-16">
         <div>
           <h2 className="text-section font-bold">Antes de você perguntar.</h2>

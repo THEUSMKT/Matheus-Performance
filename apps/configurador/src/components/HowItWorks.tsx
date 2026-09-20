@@ -6,7 +6,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="como-funciona" className="scroll-mt-20 py-16 sm:py-24">
+    <section id="como-funciona" className="py-16 sm:py-24">
       <div className="wrap">
         <h2 className="max-w-lg text-section font-bold">Seu site em três passos.</h2>
 

@@ -7,10 +7,12 @@ export function Hero() {
     <section id="topo" className="pb-4 pt-12 sm:pt-16 lg:pb-10 lg:pt-20">
       <div className="wrap grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-14">
         <div>
-          <h1 className="text-display font-extrabold">
-            Monte seu site.
+          {/* O tracking apertado do display deixa o ponto solto: o span puxa
+              a pontuação de volta para junto da palavra. */}
+          <h1 className="text-display font-extrabold [&_i]:not-italic [&_i]:-ml-[0.055em]">
+            Monte seu site<i>.</i>
             <br />
-            Veja quanto custa.
+            Veja quanto custa<i>.</i>
           </h1>
 
           <p className="mt-6 max-w-md text-lg leading-relaxed text-muted">

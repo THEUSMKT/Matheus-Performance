@@ -25,7 +25,7 @@ export function ProgressBar({ step, total, answered, onJump, onReset, label }: P
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex cursor-pointer items-center gap-1.5 text-[0.8125rem] text-muted transition-colors hover:text-ink"
+          className="-my-3 inline-flex cursor-pointer items-center gap-1.5 py-3 text-[0.8125rem] text-muted transition-colors hover:text-ink"
         >
           <Icon name="RotateCcw" className="size-3.5" />
           Começar de novo
@@ -49,7 +49,7 @@ export function ProgressBar({ step, total, answered, onJump, onReset, label }: P
               disabled={!reachable}
               onClick={() => onJump(i)}
               aria-label={`Ir para a etapa ${i + 1}`}
-              className={`h-1.5 flex-1 rounded-full transition-[background-color,opacity] duration-300 ${
+              className={`relative h-1.5 flex-1 rounded-full transition-[background-color,opacity] duration-300 before:absolute before:inset-x-0 before:-inset-y-5 before:content-[''] ${
                 reachable ? 'cursor-pointer' : 'cursor-default'
               } ${i < step ? 'bg-brand/45' : i === step ? 'bg-brand' : 'bg-line'}`}
             />

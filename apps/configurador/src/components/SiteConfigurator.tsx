@@ -139,11 +139,12 @@ export function SiteConfigurator() {
   }, []);
 
   const isSummary = step >= SUMMARY;
+  const barraVisivel = inView && done > 0 && !isSummary;
   const current = STEPS[Math.min(step, SUMMARY - 1)];
   const canAdvance = isSummary || answered[step];
 
   return (
-    <section id="configurador" className="scroll-mt-20 pb-16 pt-8 sm:pb-24 sm:pt-12">
+    <section id="configurador" className="pb-16 pt-8 sm:pb-24 sm:pt-12">
       <div className="wrap">
         <header className="mb-8 max-w-2xl">
           <p className="text-sm font-semibold tracking-[-0.01em] text-brand">Monte seu site</p>
@@ -157,10 +158,10 @@ export function SiteConfigurator() {
 
         <div
           ref={panelRef}
-          className="grid scroll-mt-24 overflow-hidden rounded-lg border border-line bg-canvas shadow-soft lg:grid-cols-[minmax(0,1fr)_400px]"
+          className="grid overflow-hidden rounded-lg border border-line bg-canvas shadow-soft lg:grid-cols-[minmax(0,1fr)_400px]"
         >
           {/* ── coluna das escolhas ─────────────────────────────────── */}
-          <div ref={stepsRef} className="order-2 flex min-w-0 scroll-mt-20 flex-col lg:order-1">
+          <div ref={stepsRef} className="flex min-w-0 flex-col bg-surface">
             <ProgressBar
               step={Math.min(step, SUMMARY - 1)}
               total={SUMMARY}
@@ -178,7 +179,7 @@ export function SiteConfigurator() {
                   type="button"
                   onClick={dismissRestored}
                   aria-label="Dispensar aviso"
-                  className="cursor-pointer text-muted transition-colors hover:text-ink"
+                  className="-m-3.5 cursor-pointer p-3.5 text-muted transition-colors hover:text-ink"
                 >
                   <Icon name="X" className="size-4" />
                 </button>
@@ -226,7 +227,7 @@ export function SiteConfigurator() {
           </div>
 
           {/* ── coluna do preview ───────────────────────────────────── */}
-          <aside className="order-1 border-b border-line bg-sunken p-5 lg:order-2 lg:border-b-0 lg:border-l lg:p-6">
+          <aside className="border-t border-line bg-sunken p-5 lg:border-t-0 lg:border-l lg:p-7">
             <div className="lg:sticky lg:top-24">
               <div className="mb-3 flex items-baseline justify-between gap-3">
                 <p className="text-sm font-semibold tracking-[-0.01em]">Prévia do seu site</p>
@@ -235,17 +236,31 @@ export function SiteConfigurator() {
                 </p>
               </div>
 
-              <SitePreview spec={spec} className="max-lg:mx-auto max-lg:max-w-md" />
+              <SitePreview spec={spec} className="max-lg:mx-auto max-lg:max-w-sm" />
 
-              <div className="mt-4 max-lg:hidden">
-                <EstimateCard result={result} />
-              </div>
+              {!isSummary && (
+                <>
+                  <div className="mt-4 max-lg:hidden">
+                    <EstimateCard result={result} />
+                  </div>
 
-              {/* No celular a estimativa vive na barra fixa; aqui fica só o prazo. */}
-              <p className="mt-3 text-[0.8125rem] leading-snug text-muted lg:hidden">
-                Prazo estimado: <strong className="font-semibold text-ink">{result.deadline}</strong>
-              </p>
+                  {/* No celular a estimativa vive na barra fixa; aqui fica só o prazo. */}
+                  <p className="mt-3 text-[0.8125rem] leading-snug text-muted lg:hidden">
+                    Prazo estimado: <strong className="font-semibold text-ink">{result.deadline}</strong>
+                  </p>
+                </>
+              )}
             </div>
+
+            {/* Enquanto a barra fixa está visível, ela precisa de chão — a
+                altura dela mais a área segura do aparelho. */}
+            {barraVisivel && (
+              <div
+                className="h-[5.5rem] lg:hidden"
+                style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
+                aria-hidden
+              />
+            )}
           </aside>
         </div>
       </div>
@@ -253,10 +268,10 @@ export function SiteConfigurator() {
       {/* ── barra fixa do celular ─────────────────────────────────────── */}
       <div
         className={`fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 backdrop-blur-md transition-transform duration-300 ease-[var(--ease-out)] lg:hidden ${
-          inView && done > 0 && !isSummary ? 'translate-y-0' : 'translate-y-full'
+          barraVisivel ? 'translate-y-0' : 'translate-y-full'
         }`}
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        aria-hidden={!(inView && done > 0 && !isSummary)}
+        aria-hidden={!barraVisivel}
       >
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
@@ -266,7 +281,7 @@ export function SiteConfigurator() {
             </div>
           </div>
           {!isSummary && (
-            <Button size="sm" onClick={() => goTo(step + 1)} disabled={!canAdvance} tabIndex={inView && !isSummary ? 0 : -1}>
+            <Button size="sm" onClick={() => goTo(step + 1)} disabled={!canAdvance} tabIndex={barraVisivel ? 0 : -1}>
               {step === SUMMARY - 1 ? 'Ver resumo' : 'Continuar'}
               <Icon name="ArrowRight" className="size-4" />
             </Button>
