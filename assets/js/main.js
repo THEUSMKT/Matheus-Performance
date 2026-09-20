@@ -197,8 +197,8 @@ const CONFIG = {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
     tl.fromTo('#heroImg',
-        { autoAlpha: 0, filter: 'brightness(.6) contrast(1.05) saturate(.92) blur(20px)', scale: 1.14 },
-        { autoAlpha: 1, filter: 'brightness(.6) contrast(1.05) saturate(.92) blur(0px)', scale: 1.02,
+        { autoAlpha: 0, filter: 'brightness(.78) contrast(1.04) saturate(.95) blur(20px)', scale: 1.14 },
+        { autoAlpha: 1, filter: 'brightness(.78) contrast(1.04) saturate(.95) blur(0px)', scale: 1.02,
           duration: 1.6, ease: 'power2.out' })
       .fromTo('#heroEyebrow',
         { autoAlpha: 0, letterSpacing: '.1em', y: 10 },
