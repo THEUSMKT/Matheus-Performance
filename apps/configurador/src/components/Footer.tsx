@@ -1,4 +1,5 @@
 import { contact } from '@/config/contact';
+import { shortWhatsappLink } from '@/lib/whatsapp';
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -26,7 +27,7 @@ export function Footer() {
           </li>
           <li>
             <a
-              href={`https://wa.me/${contact.whatsapp}`}
+              href={shortWhatsappLink()}
               target="_blank"
               rel="noopener noreferrer"
               className="transition-colors hover:text-ink"

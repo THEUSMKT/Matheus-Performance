@@ -29,7 +29,10 @@ export function featureNames(selection: Selection): string[] {
 }
 
 export function colorName(selection: Selection): string | null {
-  if (selection.customColor) return `cores próprias (${selection.customColor.accent})`;
+  if (selection.customColor) {
+    const { accent, bg } = selection.customColor;
+    return `cores próprias — destaque ${accent.toUpperCase()}, fundo ${bg.toUpperCase()}`;
+  }
   return nameOf(colorSchemes, selection.color);
 }
 
@@ -54,15 +57,22 @@ export function buildMessage(selection: Selection, result: Estimate): string {
     ['Estilo', nameOf(visualStyles, selection.style)],
     ['Cores', colorName(selection)],
     ['Tipografia', fontLabel(selection)],
-    ['Funcionalidades', joinPt(featureNames(selection)) || null],
   ];
 
   for (const [label, value] of rows) {
     if (value) lines.push(`${label}: ${value}`);
   }
 
+  // Funcionalidades em lista: no WhatsApp fica muito mais legível que em linha.
+  const funcionalidades = featureNames(selection);
+  if (funcionalidades.length) {
+    lines.push('');
+    lines.push('Funcionalidades:');
+    for (const nome of funcionalidades) lines.push(`• ${nome}`);
+  }
+
   lines.push('');
-  lines.push(`Estimativa apresentada: ${brl(result.min)}–${brl(result.max).replace('R$ ', '')}`);
+  lines.push(`Estimativa apresentada: ${brl(result.min)} – ${brl(result.max).replace('R$ ', '')}`);
   lines.push(`Prazo estimado: ${result.deadline}`);
   lines.push('');
   lines.push(contact.whatsappOutro);
@@ -72,4 +82,9 @@ export function buildMessage(selection: Selection, result: Estimate): string {
 
 export function whatsappLink(message: string): string {
   return `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(message)}`;
+}
+
+/** CTAs genéricos ("Falar no WhatsApp"): abre a conversa sem o briefing. */
+export function shortWhatsappLink(): string {
+  return whatsappLink(contact.whatsappCurta);
 }

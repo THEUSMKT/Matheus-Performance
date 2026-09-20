@@ -48,12 +48,19 @@ componente nenhum.
 `src/config/contact.ts`:
 
 ```ts
-whatsapp: '5551999999999',   // ← DDI + DDD + número, só dígitos
+whatsapp: '5551981947979',   // ← DDI + DDD + número, só dígitos
 ```
 
-Todos os botões da página montam o link a partir daí. A mensagem enviada é
-construída em `src/lib/whatsapp.ts` e já vai codificada com
+Esse é o único lugar do projeto com o número. Todos os links de WhatsApp
+saem de `whatsappLink()` (`src/lib/whatsapp.ts`), já codificados com
 `encodeURIComponent`.
+
+São duas mensagens, e elas não se misturam:
+
+| Onde | Mensagem |
+|---|---|
+| botão final do configurador | o briefing completo, montado por `buildMessage()` com as escolhas reais |
+| CTAs genéricos (rodapé) | `contact.whatsappCurta`, uma linha só |
 
 ### 2. Preços
 
@@ -118,7 +125,8 @@ já têm hash.
 
 ## Antes de ir ao ar
 
-- [ ] `contact.ts`: WhatsApp, e-mail, Instagram e `siteUrl`
+- [x] `contact.ts`: WhatsApp
+- [ ] `contact.ts`: e-mail, Instagram e `siteUrl`
 - [ ] `pricing.ts`: conferir se os valores batem com o que você cobra
 - [ ] `portfolio.ts`: trocar os nomes fictícios pelos projetos reais
 - [ ] `/privacidade` e `/termos`: revisar os textos
