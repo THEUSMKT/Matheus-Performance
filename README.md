@@ -17,6 +17,20 @@ Publicar: suba a pasta inteira em qualquer hospedagem estática
 (Netlify, Vercel, Cloudflare Pages, Hostinger, GitHub Pages).
 O `netlify.toml` já traz os cabeçalhos de cache prontos.
 
+### Publicação automática no GitHub Pages
+
+O workflow `.github/workflows/pages.yml` publica o site (sem build, é
+HTML/CSS/JS puro) a cada push na branch `main`.
+
+**Passo único e manual**, feito pelo dono do repositório — nenhuma ferramenta
+de automação consegue fazer isso pela API, é uma configuração de Settings:
+
+1. `Settings` → `Pages` (barra lateral esquerda)
+2. Em **Build and deployment → Source**, escolha **GitHub Actions**
+3. Pronto — o próximo push em `main` já publica
+
+O site fica em: **https://theusmkt.github.io/Matheus-Performance/**
+
 ---
 
 ## Estrutura
