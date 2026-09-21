@@ -9,6 +9,7 @@ import { fontPairings } from '@/config/fonts';
 import { portfolio } from '@/config/portfolio';
 import { templates } from '@/config/templates';
 import { toDark } from '@/lib/preview';
+import { trackConfiguratorStarted } from '@/lib/metaPixel';
 import { applyPreset } from '@/lib/storage';
 import type { PreviewSpec } from '@/lib/preview';
 import { SitePreview } from './SitePreview';
@@ -35,6 +36,7 @@ function specFor(item: Item): PreviewSpec {
 
 export function Portfolio() {
   const start = (item: Item) => {
+    trackConfiguratorStarted();
     applyPreset({ template: item.template, color: item.color, font: item.font });
     document.getElementById('configurador')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
