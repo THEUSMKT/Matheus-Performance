@@ -5,14 +5,12 @@ import { Footer } from '@/components/Footer';
 import { Hero } from '@/components/Hero';
 import { HowItWorks } from '@/components/HowItWorks';
 import { Navbar } from '@/components/Navbar';
-import { MetaPixel } from '@/components/MetaPixel';
 import { Portfolio } from '@/components/Portfolio';
 import { SiteConfigurator } from '@/components/SiteConfigurator';
 
 export default function Home() {
   return (
     <>
-      <MetaPixel />
       <Navbar />
       <main>
         <Hero />

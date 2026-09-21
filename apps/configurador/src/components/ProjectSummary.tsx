@@ -18,7 +18,6 @@ import {
 } from '@/config/forms';
 import { buildMessage, featureNames, joinPt, whatsappLink } from '@/lib/whatsapp';
 import type { Estimate } from '@/lib/estimate';
-import { trackLead } from '@/lib/metaPixel';
 import type { Selection } from '@/lib/types';
 import { ButtonLink } from './ui/Button';
 import { EstimateCard } from './EstimateCard';
@@ -135,16 +134,6 @@ export function ProjectSummary({ selection, update, result, onEdit }: Props) {
         href={whatsappLink(message)}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() =>
-          trackLead({
-            content_name: 'Solicitação de orçamento de site',
-            site_type: selection.type ?? 'nao-selecionado',
-            template: selection.template ?? 'nao-selecionado',
-            style: selection.style ?? 'nao-selecionado',
-            value: result.total,
-            currency: 'BRL',
-          })
-        }
         size="lg"
         className="mt-5 w-full"
       >

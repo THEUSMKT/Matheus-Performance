@@ -6,7 +6,6 @@
    ========================================================================== */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { estimate } from '@/lib/estimate';
-import { trackConfiguratorStarted, trackQuoteViewed } from '@/lib/metaPixel';
 import { resolvePreview } from '@/lib/preview';
 import { usePersistedConfig, usePresetListener } from '@/lib/storage';
 import type { Selection } from '@/lib/types';
@@ -96,16 +95,12 @@ export function SiteConfigurator() {
   const done = answered.filter(Boolean).length;
 
   const update = useCallback(
-    (patch: Partial<Selection>) => {
-      trackConfiguratorStarted();
-      setSelection((prev) => ({ ...prev, ...patch }));
-    },
+    (patch: Partial<Selection>) => setSelection((prev) => ({ ...prev, ...patch })),
     [setSelection],
   );
 
   const goTo = useCallback(
     (next: number) => {
-      trackConfiguratorStarted();
       setStep(next);
       // Traz o topo do painel de volta, mas só quando ele já saiu da tela.
       requestAnimationFrame(() => {
@@ -124,7 +119,6 @@ export function SiteConfigurator() {
 
   // A vitrine de modelos pode empurrar uma combinação pronta para cá.
   usePresetListener((patch) => {
-    trackConfiguratorStarted();
     setSelection((prev) => {
       const merged = { ...prev, ...patch };
       const next = STEPS.findIndex((s) => !s.answered(merged));
@@ -148,20 +142,6 @@ export function SiteConfigurator() {
   const barraVisivel = inView && done > 0 && !isSummary;
   const current = STEPS[Math.min(step, SUMMARY - 1)];
   const canAdvance = isSummary || answered[step];
-
-  useEffect(() => {
-    if (!isSummary) return;
-
-    // Se o resumo veio restaurado do localStorage, preserva a ordem do funil:
-    // primeiro início do configurador, depois visualização do orçamento.
-    trackConfiguratorStarted();
-    trackQuoteViewed({
-      site_type: selection.type ?? 'nao-selecionado',
-      template: selection.template ?? 'nao-selecionado',
-      style: selection.style ?? 'nao-selecionado',
-      estimated_value: result.total,
-    });
-  }, [isSummary, result.total, selection.style, selection.template, selection.type]);
 
   return (
     <section id="configurador" className="pb-16 pt-8 sm:pb-24 sm:pt-12">
