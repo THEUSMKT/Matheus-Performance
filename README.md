@@ -172,3 +172,19 @@ Tudo está em `assets/css/style.css`, no bloco `:root` (primeiras linhas):
 
 Trocar a cor de destaque = mudar `--gold` e `--gold-ink`.
 Trocar as fontes = ajustar `--serif` e `--sans` e o link do Google Fonts no `<head>`.
+
+---
+
+## Este repositório tem dois sites
+
+| Pasta | Site | Stack | Situação |
+|---|---|---|---|
+| raiz (`index.html`) | Tráfego pago e posicionamento | HTML/CSS/JS, sem build | publicado |
+| `apps/configurador/` | Criação de sites: configurador + orçamento pelo WhatsApp | Next.js · TypeScript · Tailwind | em revisão, ainda sem hospedagem |
+
+São independentes: mexer em um não afeta o outro. O configurador ainda não
+tem provedor de hospedagem definido — ele exporta HTML estático, então
+qualquer host servirá quando chegar a hora.
+
+Documentação do configurador — inclusive onde trocar preços, prazos e o
+número do WhatsApp — em [`apps/configurador/README.md`](apps/configurador/README.md).

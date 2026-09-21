@@ -1,0 +1,552 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   1. TOKENS — o design system inteiro cabe aqui.
+   ========================================================================== */
+@theme {
+  --color-canvas: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-sunken: #f6f8fb;
+  --color-ink: #111318;
+  --color-muted: #667085;
+  --color-faint: #687180;
+  --color-line: #e7e9ef;
+  --color-line-strong: #d5d9e3;
+
+  --color-brand: #4f46e5;
+  --color-brand-hover: #4338ca;
+  --color-brand-soft: #f2f3fe;
+  --color-brand-line: #c7cbfb;
+  --color-violet: #8b5cf6;
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --shadow-soft: 0 1px 2px rgb(17 19 24 / 0.04), 0 8px 24px -16px rgb(17 19 24 / 0.16);
+  --shadow-lift: 0 2px 4px rgb(17 19 24 / 0.04), 0 24px 48px -28px rgb(17 19 24 / 0.28);
+  --shadow-brand: 0 1px 2px rgb(79 70 229 / 0.24), 0 12px 28px -14px rgb(79 70 229 / 0.5);
+
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --text-display: clamp(2.375rem, 1.5rem + 3.9vw, 3.875rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.035em;
+  --text-section: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem);
+  --text-section--line-height: 1.08;
+  --text-section--letter-spacing: -0.03em;
+}
+
+/* ==========================================================================
+   2. BASE
+   ========================================================================== */
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5.5rem; /* navbar (4rem) + respiro */
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  p { text-wrap: pretty; }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: var(--color-brand);
+    color: #fff;
+  }
+
+  /* Tira o spin dos inputs de cor no Safari/Chrome. */
+  input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type="color"]::-webkit-color-swatch { border: none; border-radius: 10px; }
+}
+
+/* ==========================================================================
+   3. UTILITÁRIOS DA PÁGINA
+   ========================================================================== */
+@utility wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 2.5rem);
+}
+
+/* Gradiente da marca, usado com muita parcimônia. */
+@utility brand-gradient {
+  background-image: linear-gradient(112deg, var(--color-brand) 0%, var(--color-violet) 100%);
+}
+
+/* Versão mais escura, para quando houver texto branco por cima. */
+@utility brand-gradient-deep {
+  background-image: linear-gradient(112deg, var(--color-brand) 0%, #6d28d9 100%);
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   4. MOVIMENTO — só o necessário, e sempre curto.
+   ========================================================================== */
+@keyframes pv-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes price-tick {
+  0%   { transform: translateY(0.35em); opacity: 0; }
+  100% { transform: none; opacity: 1; }
+}
+
+.anim-step { animation: step-in 0.28s var(--ease-out) both; }
+.anim-pop { animation: pop 0.24s var(--ease-out) both; }
+.anim-price { animation: price-tick 0.3s var(--ease-out) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   5. PREVIEW AO VIVO
+   A miniatura é 100% CSS. A escala vem de `cqw`, então a peça inteira
+   acompanha a largura do container sem media query nenhuma.
+   ========================================================================== */
+.pv-frame {
+  container-type: inline-size;
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  box-shadow: var(--shadow-lift);
+}
+.pv-frame--bare {
+  box-shadow: none;
+  border-radius: 10px;
+}
+
+/* Miniatura em caixa de proporção fixa: o fundo do site preenche a altura
+   toda, então conteúdos curtos não deixam sobra. */
+.pv-fill,
+.pv-fill .pv-page {
+  height: 100%;
+  max-height: none;
+}
+
+.pv-chrome {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 12px;
+  background: var(--color-sunken);
+  border-bottom: 1px solid var(--color-line);
+}
+.pv-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-line-strong);
+}
+.pv-url {
+  margin-left: 10px;
+  flex: 1;
+  font-size: 10px;
+  color: #98a2b3;
+  background: var(--color-surface);
+  border-radius: 999px;
+  padding: 2px 10px;
+  border: 1px solid var(--color-line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pv-page {
+  position: relative;
+  font-size: clamp(6px, 2.55cqw, 13px);
+  background: var(--pv-bg);
+  color: var(--pv-ink);
+  max-height: 44em;
+  overflow: hidden;
+  transition: background 0.3s var(--ease-out), color 0.3s var(--ease-out);
+  -webkit-mask-image: linear-gradient(to bottom, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 88%, transparent 100%);
+}
+
+.pv-nav {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  padding: 1em 1.4em;
+  border-bottom: var(--pv-border);
+}
+.pv-logo {
+  font-size: 0.95em;
+  letter-spacing: -0.03em;
+}
+.pv-links {
+  display: flex;
+  gap: 0.6em;
+  margin-left: auto;
+}
+.pv-links i {
+  display: block;
+  width: 2.1em;
+  height: 0.42em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pv-muted) 42%, transparent);
+}
+.pv-navcta {
+  width: 3.2em;
+  height: 1.4em;
+  border-radius: calc(var(--pv-r) * 0.6);
+  background: var(--pv-accent);
+}
+
+.pv-body,
+.pv-extras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pv-gap);
+  padding: 1.6em 1.4em;
+}
+.pv-extras { padding-top: 0; }
+
+.pv-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+  align-items: flex-start;
+}
+.pv-center { align-items: center; text-align: center; }
+
+.pv-title {
+  margin: 0;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  max-width: 14ch;
+}
+.pv-center .pv-title { max-width: 18ch; }
+
+.pv-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+  width: 100%;
+}
+.pv-lines i {
+  display: block;
+  height: 0.38em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pv-muted) 34%, transparent);
+}
+.pv-center .pv-lines { align-items: center; }
+
+.pv-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55em 1.2em;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border-radius: calc(var(--pv-r) * 0.75);
+  background: var(--pv-accent);
+  color: var(--pv-on-accent);
+  white-space: nowrap;
+  /* Sem isto o botão estica nos layouts em que ele é filho direto da
+     coluna (editorial e showcase), virando uma faixa larga. */
+  width: fit-content;
+}
+.pv-cta--full { width: 100%; }
+
+.pv-media {
+  display: block;
+  width: 100%;
+  border-radius: var(--pv-r);
+  border: var(--pv-border);
+  background:
+    linear-gradient(140deg,
+      color-mix(in srgb, var(--pv-accent) 16%, transparent),
+      color-mix(in srgb, var(--pv-accent) 4%, transparent));
+}
+.pv-media--tint {
+  background:
+    linear-gradient(140deg,
+      color-mix(in srgb, var(--pv-accent) 42%, transparent),
+      color-mix(in srgb, var(--pv-accent) 10%, transparent));
+}
+
+.pv-split {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 1.2em;
+  align-items: center;
+}
+
+.pv-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.4em;
+}
+
+.pv-rule {
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--pv-line);
+}
+
+.pv-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.7em;
+}
+.pv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 0.8em;
+  border-radius: var(--pv-r);
+  background: var(--pv-surface);
+  border: var(--pv-border);
+}
+.pv-chip {
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: calc(var(--pv-r) * 0.5);
+  background: color-mix(in srgb, var(--pv-accent) 26%, transparent);
+}
+
+.pv-band {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.9em;
+  margin: -1.6em -1.4em 0;
+  padding: 2em 1.4em;
+  background: color-mix(in srgb, var(--pv-accent) 14%, var(--pv-bg));
+}
+.pv-band .pv-title { max-width: 12ch; }
+
+.pv-listrows { display: flex; flex-direction: column; gap: 0.5em; }
+.pv-listrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.65em 0.8em;
+  border-radius: var(--pv-r);
+  background: var(--pv-surface);
+  border: var(--pv-border);
+}
+.pv-listrow .pv-lines { flex: 1; }
+.pv-tag, .pv-price {
+  width: 2.4em;
+  height: 0.8em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pv-accent) 30%, transparent);
+  flex: none;
+}
+.pv-thumb {
+  width: 1.8em;
+  height: 1.8em;
+  flex: none;
+  border-radius: calc(var(--pv-r) * 0.5);
+  background: color-mix(in srgb, var(--pv-accent) 22%, transparent);
+}
+
+.pv-sidebar {
+  display: grid;
+  grid-template-columns: 3.4em 1fr;
+  gap: 1.2em;
+}
+.pv-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+  padding: 0.8em 0.6em;
+  border-radius: var(--pv-r);
+  background: var(--pv-surface);
+  border: var(--pv-border);
+  height: fit-content;
+}
+.pv-rail i {
+  display: block;
+  height: 0.42em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pv-muted) 40%, transparent);
+}
+.pv-rail i:first-child { background: var(--pv-accent); }
+
+.pv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6em;
+}
+.pv-grid--four { grid-template-columns: repeat(4, 1fr); }
+
+.pv-quote {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.9em 1em;
+  border-radius: var(--pv-r);
+  background: var(--pv-surface);
+  border: var(--pv-border);
+}
+.pv-avatar {
+  width: 1.9em;
+  height: 1.9em;
+  flex: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pv-accent) 32%, transparent);
+}
+
+.pv-faq { display: flex; flex-direction: column; }
+.pv-faqrow {
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+  padding: 0.7em 0;
+  border-bottom: 1px solid var(--pv-line);
+}
+.pv-faqrow .pv-lines { flex: 1; }
+.pv-plus {
+  width: 0.7em;
+  height: 0.7em;
+  flex: none;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--pv-accent) 60%, transparent);
+}
+
+.pv-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 0.9em;
+  border-radius: var(--pv-r);
+  background: var(--pv-surface);
+  border: var(--pv-border);
+}
+.pv-form > i {
+  display: block;
+  height: 1.5em;
+  border-radius: calc(var(--pv-r) * 0.5);
+  background: color-mix(in srgb, var(--pv-muted) 16%, transparent);
+  border: 1px solid var(--pv-line);
+}
+
+.pv-map {
+  display: block;
+  height: 4em;
+  border-radius: var(--pv-r);
+  border: var(--pv-border);
+  background:
+    repeating-linear-gradient(56deg, transparent 0 1.6em,
+      color-mix(in srgb, var(--pv-muted) 16%, transparent) 1.6em 1.75em),
+    repeating-linear-gradient(-34deg, transparent 0 2.2em,
+      color-mix(in srgb, var(--pv-muted) 12%, transparent) 2.2em 2.32em),
+    color-mix(in srgb, var(--pv-accent) 8%, var(--pv-surface));
+  position: relative;
+}
+.pv-map::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 42%;
+  top: 34%;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--pv-accent);
+}
+
+.pv-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.4em;
+}
+.pv-strip i {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: calc(var(--pv-r) * 0.4);
+  background: color-mix(in srgb, var(--pv-accent) 20%, transparent);
+}
+
+.pv-social { display: flex; gap: 0.5em; }
+.pv-social i {
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--pv-muted) 40%, transparent);
+}
+
+.pv-bubble {
+  position: absolute;
+  right: 1em;
+  bottom: 1em;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 50%;
+  background: #25d366;
+  box-shadow: 0 0.3em 0.9em rgb(0 0 0 / 0.22);
+}
+.pv-bubble::after {
+  content: "";
+  position: absolute;
+  inset: 28%;
+  border-radius: 50% 50% 50% 10%;
+  background: #fff;
+}
+
+/* Cada bloco novo entra suavemente: é a resposta visual à escolha. */
+.pv-extras > * { animation: pv-in 0.26s var(--ease-out) both; }

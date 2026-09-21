@@ -1,0 +1,198 @@
+'use client';
+
+/* ==========================================================================
+   Revisão final — a tela de "checkout" antes do WhatsApp.
+   ========================================================================== */
+import { colorSchemes } from '@/config/colors';
+import { fontPairings } from '@/config/fonts';
+import { siteTypes } from '@/config/siteTypes';
+import { templates } from '@/config/templates';
+import { visualStyles } from '@/config/styles';
+import {
+  FORM_EMAIL,
+  FORM_WHATSAPP,
+  externalCost,
+  externalServicesNote,
+  formSummary,
+  volumeOptions,
+} from '@/config/forms';
+import { buildMessage, featureNames, joinPt, whatsappLink } from '@/lib/whatsapp';
+import type { Estimate } from '@/lib/estimate';
+import { trackLead } from '@/lib/metaPixel';
+import type { Selection } from '@/lib/types';
+import { ButtonLink } from './ui/Button';
+import { EstimateCard } from './EstimateCard';
+import { Icon } from './ui/Icon';
+
+type Props = {
+  selection: Selection;
+  update: (patch: Partial<Selection>) => void;
+  result: Estimate;
+  onEdit: (step: number) => void;
+};
+
+export function ProjectSummary({ selection, update, result, onEdit }: Props) {
+  const rows = [
+    { step: 0, label: 'Tipo', value: siteTypes.find((t) => t.id === selection.type)?.name },
+    { step: 1, label: 'Modelo', value: templates.find((t) => t.id === selection.template)?.name },
+    { step: 2, label: 'Estilo', value: visualStyles.find((s) => s.id === selection.style)?.name },
+    {
+      step: 3,
+      label: 'Paleta',
+      value: selection.customColor
+        ? `Cores próprias (${selection.customColor.accent.toUpperCase()})`
+        : colorSchemes.find((c) => c.id === selection.color)?.name,
+    },
+    { step: 4, label: 'Tipografia', value: fontPairings.find((f) => f.id === selection.font)?.headingName },
+    { step: 5, label: 'Funcionalidades', value: joinPt(featureNames(selection)) },
+  ];
+
+  // O formulário ganha linha própria: é onde cabe a ressalva que a lista de
+  // funcionalidades não comporta.
+  const formId = selection.features.includes(FORM_EMAIL)
+    ? FORM_EMAIL
+    : selection.features.includes(FORM_WHATSAPP)
+      ? FORM_WHATSAPP
+      : null;
+  const form = formId ? formSummary[formId] : null;
+  const volume = volumeOptions.find((v) => v.id === selection.emailVolume);
+  const aviso = formId === FORM_EMAIL ? volume?.summaryWarning : undefined;
+
+  const message = buildMessage(selection, result);
+
+  return (
+    <div className="anim-step">
+      <dl className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface">
+        {rows.map((row) => (
+          <div key={row.label} className="  grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-5 py-3.5
+                  sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-start">
+            <dt className="col-start-1 row-start-1 text-sm text-muted sm:pt-0.5">{row.label}</dt>
+            <button
+              type="button"
+              onClick={() => onEdit(row.step)}
+              className="-my-3 col-start-2 row-start-1 inline-flex cursor-pointer items-center justify-self-end rounded-xs px-2 py-3 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
+            >
+              Editar
+            </button>
+            <dd className="col-span-2 col-start-1 row-start-2 mt-1 text-[0.9375rem] font-medium leading-snug tracking-[-0.01em] sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:mt-0">
+              {row.value || <span className="text-faint">Não escolhido</span>}
+            </dd>
+          </div>
+        ))}
+
+        {form && (
+          <div className="  grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 px-5 py-3.5
+                  sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-start">
+            <dt className="col-start-1 row-start-1 text-sm text-muted sm:pt-0.5">Formulário</dt>
+            <button
+              type="button"
+              onClick={() => onEdit(5)}
+              className="-my-3 col-start-2 row-start-1 inline-flex cursor-pointer items-center justify-self-end rounded-xs px-2 py-3 text-[0.8125rem] text-muted transition-colors hover:text-brand sm:col-start-3"
+            >
+              Editar
+            </button>
+            <dd className="col-span-2 col-start-1 row-start-2 mt-1 text-[0.9375rem] font-medium leading-snug tracking-[-0.01em] sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:mt-0">
+              {form.value}
+              <span className="mt-1 block text-[0.8125rem] font-normal leading-snug text-muted">
+                {form.note}
+              </span>
+              {aviso && (
+                <span className="mt-1 block text-[0.8125rem] font-normal leading-snug text-muted">
+                  {aviso}
+                </span>
+              )}
+            </dd>
+          </div>
+        )}
+
+      </dl>
+
+      <div className="mt-3">
+        <EstimateCard result={result} externalCost={formId === FORM_EMAIL ? externalCost : undefined} />
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <Field
+          id="lead-nome"
+          label="Seu nome"
+          placeholder="Como devo te chamar?"
+          value={selection.name}
+          onChange={(name) => update({ name })}
+          autoComplete="given-name"
+        />
+        <Field
+          id="lead-negocio"
+          label="Seu negócio"
+          hint="opcional"
+          placeholder="Nome da empresa"
+          value={selection.company}
+          onChange={(company) => update({ company })}
+          autoComplete="organization"
+        />
+      </div>
+
+      <ButtonLink
+        href={whatsappLink(message)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() =>
+          trackLead({
+            content_name: 'Solicitação de orçamento de site',
+            site_type: selection.type ?? 'nao-selecionado',
+            template: selection.template ?? 'nao-selecionado',
+            style: selection.style ?? 'nao-selecionado',
+            value: result.total,
+            currency: 'BRL',
+          })
+        }
+        size="lg"
+        className="mt-5 w-full"
+      >
+        Solicitar orçamento no WhatsApp
+        <Icon name="ArrowUpRight" className="size-5" strokeWidth={2.25} />
+      </ButtonLink>
+
+      <p className="mt-3 text-center text-[0.8125rem] text-muted">
+        Sem compromisso. Você só paga depois de aprovar o orçamento.
+      </p>
+
+      <p className="mt-4 border-t border-line pt-4 text-[0.75rem] leading-relaxed text-faint">
+        {externalServicesNote}
+      </p>
+    </div>
+  );
+}
+
+function Field({
+  id,
+  label,
+  hint,
+  value,
+  onChange,
+  ...rest
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoComplete?: string;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 flex items-baseline gap-2 text-sm font-medium">
+        {label}
+        {hint && <span className="text-[0.8125rem] font-normal text-faint">{hint}</span>}
+      </label>
+      <input
+        id={id}
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-12 w-full rounded-sm border border-line bg-surface px-4 text-[0.9375rem] outline-none transition-colors placeholder:text-faint focus:border-brand"
+        {...rest}
+      />
+    </div>
+  );
+}
