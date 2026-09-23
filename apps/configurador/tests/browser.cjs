@@ -13,6 +13,7 @@ fs.mkdirSync(artifacts,{recursive:true});
  await page.goto(base);await page.getByRole('button',{name:'Continuar →',exact:true}).waitFor();
  await page.screenshot({path:path.join(artifacts,'desktop-top.png')});
  await page.screenshot({path:path.join(artifacts,'desktop.png'),fullPage:true});
+ assert.deepEqual(await page.locator('#exemplos article [class*="inspirationNav"] strong').allTextContents(),['SERVIÇOS LOCAIS','BELEZA E BEM-ESTAR','CONSULTORIA','PORTFÓLIO CRIATIVO','ALIMENTAÇÃO']);
  assert.equal(await page.locator('[data-testid=estimate]').innerText(),'R$ 500 – R$ 550');
  await page.getByLabel('Nome do negócio').fill('Aurora Teste');
  await page.getByRole('button',{name:'Beleza e bem-estar',exact:true}).click();

@@ -4,7 +4,7 @@
 
 A página foi implementada no projeto Next.js original, sem migrar de tecnologia e sem backend. O fluxo agora tem seis etapas: negócio, objetivo, estrutura, identidade, recursos/investimento e resumo. A prévia usa conteúdo por segmento, seções selecionadas, cores com contraste automático, três direções visuais e modos de computador/celular.
 
-A revisão visual prioriza celular: textos curtos na página e no configurador, detalhes comerciais nas perguntas frequentes, superfícies em azul e valores com contraste reforçado. O carrossel de exemplos e as prévias visuais da versão publicada foram preservados.
+A revisão visual prioriza celular: textos curtos na página e no configurador, detalhes comerciais nas perguntas frequentes, superfícies em azul e valores com contraste reforçado. O carrossel de exemplos foi preservado, com cada prévia alinhada ao segmento indicado no cartão.
 
 O preço continua sendo uma **estimativa**, com base de R$ 500 e a faixa de ±10% existente. Todas as tabelas de preços e complexidade de `src/config/pricing.ts` e o cálculo original `src/lib/estimate.ts` foram preservados. As direções combinam os modelos/estilos existentes: Essencial = minimal/minimalista, Elegante = elegance/elegante, Marcante = bold/criativo. Seus respectivos adicionais são calculados a partir dessa tabela, sem valores duplicados na interface. Seções pagas são mapeadas a recursos uma única vez. O tipo comercial permanece disponível nos ajustes avançados.
 
