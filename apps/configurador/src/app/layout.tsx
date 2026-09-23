@@ -1,26 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import {
-  Inter,
-  Instrument_Serif,
-  Playfair_Display,
-  Plus_Jakarta_Sans,
-  Space_Grotesk,
-} from 'next/font/google';
+
 import { contact } from '@/config/contact';
 import './globals.css';
-
-/* A interface inteira usa Plus Jakarta Sans. As outras famílias existem
-   só para as amostras da etapa de tipografia e para o preview ao vivo. */
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-  display: 'swap',
-});
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-inter', display: 'swap', preload: false });
-const playfair = Playfair_Display({ subsets: ['latin'], weight: ['500', '600'], variable: '--font-playfair', display: 'swap', preload: false });
-const grotesk = Space_Grotesk({ subsets: ['latin'], weight: ['500', '700'], variable: '--font-grotesk', display: 'swap', preload: false });
-const instrument = Instrument_Serif({ subsets: ['latin'], weight: ['400'], variable: '--font-instrument', display: 'swap', preload: false });
 
 const title = 'Criação de Sites Profissionais | Monte seu Projeto';
 const description =
@@ -71,7 +52,6 @@ const jsonLd = {
       description,
       url: contact.siteUrl,
       areaServed: 'BR',
-      priceRange: 'R$ 500 – R$ 1.200',
       serviceType: 'Criação de sites',
     },
     {
@@ -85,7 +65,7 @@ const jsonLd = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const fontVars = [jakarta.variable, inter.variable, playfair.variable, grotesk.variable, instrument.variable].join(' ');
+  const fontVars = '';
 
   return (
     <html lang="pt-BR" className={fontVars}>
@@ -105,3 +85,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

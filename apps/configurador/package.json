@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "start": "node scripts/preview.cjs",
+    "preview": "node scripts/preview.cjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/project.test.cjs"
   },
   "dependencies": {
     "lucide-react": "^1.47.0",

@@ -16,16 +16,7 @@ export function Footer() {
         </div>
 
         <ul className="flex flex-wrap items-center gap-x-6 text-[0.9375rem] text-muted">
-          <li>
-            <a
-              href={contact.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center transition-colors hover:text-ink"
-            >
-              Instagram
-            </a>
-          </li>
+
           <li>
             <a
               href={shortWhatsappLink()}
@@ -51,3 +42,4 @@ export function Footer() {
     </footer>
   );
 }
+

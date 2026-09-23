@@ -550,3 +550,4 @@
 
 /* Cada bloco novo entra suavemente: é a resposta visual à escolha. */
 .pv-extras > * { animation: pv-in 0.26s var(--ease-out) both; }
+:root { --font-jakarta: Arial, sans-serif; --font-inter: Arial, sans-serif; --font-playfair: Georgia, serif; --font-grotesk: Arial, sans-serif; --font-instrument: Georgia, serif; }
