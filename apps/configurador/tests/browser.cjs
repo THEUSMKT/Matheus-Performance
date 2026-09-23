@@ -21,6 +21,17 @@ fs.mkdirSync(artifacts,{recursive:true});
  await page.getByRole('button',{name:/Facilitar solicitações de agendamento/}).click();
  await page.getByRole('button',{name:'Continuar →',exact:true}).click();
  await page.getByRole('checkbox',{name:/Galeria/}).check();
+ await page.locator('#configurador').screenshot({path:path.join(artifacts,'estrutura-desktop.png')});
+ const contrast=async locator=>locator.evaluate(el=>{
+  const channels=value=>value.match(/[\d.]+/g).slice(0,3).map(Number).map(n=>n/255).map(n=>n<=.04045?n/12.92:((n+.055)/1.055)**2.4);
+  const luminance=value=>{const [r,g,b]=channels(value);return .2126*r+.7152*g+.0722*b};
+  const fg=luminance(getComputedStyle(el).color);
+  let node=el,bg;
+  while(node&&!bg){const color=getComputedStyle(node).backgroundColor;if(color.startsWith('rgb(')||color.startsWith('rgba(')&&Number(color.match(/[\d.]+/g)[3])>0)bg=luminance(color);node=node.parentElement;}
+  return (Math.max(fg,bg??1)+.05)/(Math.min(fg,bg??1)+.05);
+ });
+ assert(await contrast(page.getByRole('checkbox',{name:/Galeria/}).locator('..').locator('b'))>=4.5,'Section price contrast');
+ assert(await contrast(page.locator('[data-testid=estimate]'))>=4.5,'Estimate contrast');
  await page.getByRole('button',{name:'Continuar →',exact:true}).click();
  await page.getByRole('button',{name:/^Elegante/}).click();
  await page.getByRole('button',{name:/^Argila/}).click();
@@ -33,10 +44,10 @@ fs.mkdirSync(artifacts,{recursive:true});
  const wa=await page.getByRole('link',{name:'Conversar sobre este projeto ↗'}).getAttribute('href');
  const message=new URL(wa).searchParams.get('text');
  assert(message.includes('Aurora Teste'));assert(message.includes(current));assert(message.includes('mais50'));assert(wa.startsWith('https://wa.me/5551981947979'));
- await page.getByRole('button',{name:'Copiar link do projeto'}).click();
+ await page.getByRole('button',{name:'Copiar link',exact:true}).click();
  const link=await page.getByLabel('Link para compartilhar').inputValue();
  assert(!decodeURIComponent(link).includes('Aurora Teste'));assert(!decodeURIComponent(link).includes('Cuidados com a sua rotina.'));
- await page.getByRole('button',{name:'Editar Negócio',exact:true}).click();
+ await page.getByRole('button',{name:'Editar ↗',exact:true}).first().click();
  assert.equal(await page.getByLabel('Nome do negócio').inputValue(),'Aurora Teste');
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('mb.configurador.v2')).name==='Aurora Teste');
  await page.reload();await page.waitForFunction(()=>document.querySelector('input[autocomplete=organization]')?.value==='Aurora Teste');assert.equal(await page.getByLabel('Nome do negócio').inputValue(),'Aurora Teste');
@@ -57,6 +68,7 @@ fs.mkdirSync(artifacts,{recursive:true});
  await page.setViewportSize({width:390,height:844});
  await page.goto(base);await page.screenshot({path:path.join(artifacts,'mobile-top.png')});await page.getByLabel('Nome do negócio').fill('Projeto Mobile');
  await page.locator('#configurador').screenshot({path:path.join(artifacts,'mobile-editor.png')});
+ assert(await contrast(page.locator('[class*="mobileEstimate"] strong'))>=4.5,'Mobile estimate contrast');
  await page.getByRole('button',{name:'Ver prévia',exact:true}).click();
  await page.getByRole('button',{name:'Prévia no celular'}).click();
  await page.locator('#configurador').screenshot({path:path.join(artifacts,'mobile-preview-detail.png')});
@@ -79,6 +91,7 @@ fs.mkdirSync(artifacts,{recursive:true});
  console.log('PASS desktop/mobile journeys, editing, persistence, reset, share, WhatsApp consistency, invalid input, keyboard focus, overflow (5 widths), print PDF; no runtime errors; no messages sent.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
+
 
 
 

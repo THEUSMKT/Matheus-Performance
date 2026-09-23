@@ -59,7 +59,7 @@ export type Project = {
     emailVolume: string | null;
     step: number;
 };
-export function initialProject(): Project { return { version: 2, name: '', description: '', segment: 'consultoria', objective: 'orcamento', sections: ['apresentacao', 'servicos', 'sobre', 'contato'], direction: 'essencial', palette: 'roxo', custom: null, font: 'auto', features: ['whatsapp', 'redes'], type: 'landing', emailVolume: null, step: 0 }; }
+export function initialProject(): Project { return { version: 2, name: '', description: '', segment: 'consultoria', objective: 'orcamento', sections: ['apresentacao', 'servicos', 'sobre', 'contato'], direction: 'essencial', palette: 'azul', custom: null, font: 'auto', features: ['whatsapp', 'redes'], type: 'landing', emailVolume: null, step: 0 }; }
 const record = (x: unknown): Record<string, unknown> => x !== null && typeof x === 'object' && !Array.isArray(x) ? x as Record<string, unknown> : {};
 const cleanText = (x: unknown, max: number) => typeof x === 'string' ? x.replace(/[\u0000-\u001f\u007f]/g, ' ').slice(0, max) : '';
 const pick = (x: unknown, ids: readonly string[], fallback: string) => typeof x === 'string' && ids.includes(x) ? x : fallback;
@@ -121,3 +121,4 @@ export function contrastInk(hex: string) {
 export function projectMessage(p: Project) {
     return [contact.whatsappIntro, p.name ? `Negócio: ${p.name}` : 'Negócio: a informar', `Segmento: ${segments.find(s => s.id === p.segment)!.name}`, p.description ? `Descrição: ${p.description}` : '', `Objetivo: ${objectives.find(o => o.id === p.objective)!.name}`, `Estrutura: ${p.features.includes('paginaExtra') ? 'página principal + 1 página adicional' : 'página principal'}; seções: ${sections.filter(s => p.sections.includes(s.id)).map(s => s.name).join(', ')}`, `Tipo comercial: ${p.type}`, `Identidade: ${directions.find(d => d.id === p.direction)!.name}; ${p.custom ?? p.palette}; fonte ${p.font}${p.legacyTemplate ? `; modelo anterior ${p.legacyTemplate}/${p.legacyStyle}` : ''}`, `Recursos: ${features.filter(f => p.features.includes(f.id)).map(f => f.name).join(', ')}`, p.features.includes('formularioEmail') ? `Volume de contatos: ${p.emailVolume ?? 'a definir'}` : '', `Desenvolvimento estimado: ${priceLabel(p)}. Valor final depende da confirmação do escopo.`, `Prazo estimado: ${projectEstimate(p).deadline}, após receber textos, imagens e logo. Duas rodadas de ajustes antes da publicação.`, `Custos externos à parte: domínio, hospedagem e plataformas. Integrações dependem de avaliação.`, `Configuração (sem nome e descrição): ${shareLink(p)}`, contact.whatsappOutro].filter(Boolean).join('\n\n');
 }
+

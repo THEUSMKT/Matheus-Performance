@@ -4,13 +4,15 @@
 
 A página foi implementada no projeto Next.js original, sem migrar de tecnologia e sem backend. O fluxo agora tem seis etapas: negócio, objetivo, estrutura, identidade, recursos/investimento e resumo. A prévia usa conteúdo por segmento, seções selecionadas, cores com contraste automático, três direções visuais e modos de computador/celular.
 
+A revisão visual prioriza celular: textos curtos na página e no configurador, detalhes comerciais nas perguntas frequentes, superfícies em azul e valores com contraste reforçado. O carrossel de exemplos e as prévias visuais da versão publicada foram preservados.
+
 O preço continua sendo uma **estimativa**, com base de R$ 500 e a faixa de ±10% existente. Todas as tabelas de preços e complexidade de `src/config/pricing.ts` e o cálculo original `src/lib/estimate.ts` foram preservados. As direções combinam os modelos/estilos existentes: Essencial = minimal/minimalista, Elegante = elegance/elegante, Marcante = bold/criativo. Seus respectivos adicionais são calculados a partir dessa tabela, sem valores duplicados na interface. Seções pagas são mapeadas a recursos uma única vez. O tipo comercial permanece disponível nos ajustes avançados.
 
 Há salvamento local versionado, recuperação de configurações antigas, validação dos dados de links/armazenamento, reinício com confirmação dentro da interface, comparação opcional com orçamento, resumo imprimível e mensagem de WhatsApp para revisão. Nenhuma mensagem é enviada automaticamente. Compartilhar inclui apenas opções predefinidas e cores validadas: nome e descrição não entram no link.
 
 ## Visualizar
 
-A prévia desta revisão usa `http://127.0.0.1:4173/Matheus-Performance/configurador/` enquanto o servidor local estiver ativo.
+O endereço público é `https://theusmkt.github.io/Matheus-Performance/configurador/`. Para revisão local, o servidor de prévia usa `http://127.0.0.1:4173/Matheus-Performance/configurador/` enquanto estiver ativo.
 
 O ZIP entregue inclui código-fonte e uma cópia estática compilada em `configurador/`. Depois de extraí-lo, com Node.js instalado:
 
@@ -37,7 +39,7 @@ npm run typecheck
 npm run preview
 ```
 
-O workflow `.github/workflows/pages.yml` original já aplica esse prefixo. Nenhum push, merge ou deploy foi executado nesta revisão. **O workflow original publica quando houver push em `main`; revisar antes de usar esse caminho.**
+O workflow `.github/workflows/pages.yml` original aplica esse prefixo e publica as atualizações em `main` no GitHub Pages.
 
 ## Diagnóstico verificado no ZIP
 
@@ -88,10 +90,11 @@ O fluxo emite eventos locais `CustomEvent('mb:configurator')` com `detail.event`
 - Forma de pagamento, duração/valores do suporte após entrega, manutenção, editor de conteúdo, titularidade do domínio e transferência das contas/acessos precisam ser detalhados na proposta.
 - Loja virtual, pagamentos online e produção de textos/imagens não foram incluídos silenciosamente.
 - As ilustrações da prévia são composições CSS locais, não fotos de clientes. Os exemplos são explicitamente demonstrativos; não há avaliações ou projetos entregues inventados.
-- O link copiado usa o endereço público definitivo. Enquanto esta versão não for publicada, para testar aqui use o mesmo fragmento `#projeto=...` no endereço local. Links não incluem nome/descrição; PDF e mensagem podem incluir esses textos.
+- O link copiado usa o endereço público definitivo. Links não incluem nome/descrição; PDF e mensagem podem incluir esses textos.
 - A inspeção foi feita em Chromium/Edge e em tamanhos simulados, não em aparelhos físicos nem em todos os navegadores. Auditoria assistiva com leitores de tela e teste com usuários ainda são recomendáveis.
 
 ## Preparação e preservação
 
-O ZIP original foi mantido. Todos os caminhos foram verificados antes de extrair para a pasta nova `Matheus-Performance`. O anexo não contém histórico Git; a pasta de trabalho tinha um repositório separado, no qual foi criada a branch `codex/upgrade-configurador`. Não houve descarte de alterações, publicação ou contratação de serviço.
+O ZIP original foi mantido. Todos os caminhos foram verificados antes de extrair para a pasta nova `Matheus-Performance`. O anexo não contém histórico Git; a pasta de trabalho tinha um repositório separado, no qual foi criada a branch `codex/upgrade-configurador`. Não houve descarte de alterações ou contratação de serviço.
+
 
