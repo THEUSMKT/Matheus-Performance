@@ -3,9 +3,9 @@ import type { Metadata, Viewport } from 'next';
 import { contact } from '@/config/contact';
 import './globals.css';
 
-const title = 'Criação de Sites Profissionais | Monte seu Projeto';
+const title = 'Beck Performance | Monte seu Site Profissional';
 const description =
-  'Escolha o estilo, as funcionalidades e o modelo do seu site e receba uma estimativa de valor e prazo em poucos minutos.';
+  'Estruture seu site profissional em até 3 minutos. Escolha estilo, funcionalidades e receba uma estimativa clara para o seu projeto.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(contact.siteUrl),
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#f8f9fb',
+  themeColor: '#081B5C',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -85,4 +85,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-
