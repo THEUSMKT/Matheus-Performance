@@ -1,100 +1,115 @@
-# Upgrade do configurador — revisão local
+# Upgrade — Beck Performance, configurador assistido (setembro de 2026)
 
-## Resultado
+Especificação aplicada: *Prompt Upgrades Beck Performance* (14 seções).
+Fluxo registrado nos projetos e eventos como `assistido-4m-v1`.
 
-A página foi implementada no projeto Next.js original, sem migrar de tecnologia e sem backend. O fluxo agora tem seis etapas: negócio, objetivo, estrutura, identidade, recursos/investimento e resumo. A prévia usa conteúdo por segmento, seções selecionadas, cores com contraste automático, três direções visuais e modos de computador/celular.
+## 1. Implementado e validado
 
-A revisão visual prioriza celular: textos curtos na página e no configurador, detalhes comerciais nas perguntas frequentes, superfícies em azul e valores com contraste reforçado. O carrossel de exemplos foi preservado, com cada prévia alinhada ao segmento indicado no cartão.
+**Mensagem e marca**
+- Hero com o título, a descrição, os dois CTAs e os apoios pedidos; preço
+  “a partir de R$ 500” lido de `pricing.ts`. Benefícios concretos, sem
+  promessa de vendas, Google, retorno ou tempo de configuração.
+- Símbolo oficial extraído do arquivo da marca (`public/brand/`), aplicado com
+  o nome “Beck Performance” no cabeçalho, rodapé, termos, privacidade,
+  favicon, ícone Apple, imagem de compartilhamento e PDF. O monograma provisório
+  (`BrandMark`) foi removido.
 
-O preço continua sendo uma **estimativa**, com base de R$ 500 e a faixa de ±10% existente. Todas as tabelas de preços e complexidade de `src/config/pricing.ts` e o cálculo original `src/lib/estimate.ts` foram preservados. As direções combinam os modelos/estilos existentes: Essencial = minimal/minimalista, Elegante = elegance/elegante, Marcante = bold/criativo. Seus respectivos adicionais são calculados a partir dessa tabela, sem valores duplicados na interface. Seções pagas são mapeadas a recursos uma única vez. O tipo comercial permanece disponível nos ajustes avançados.
+**Página**
+- Ordem: apresentação → exemplos demonstrativos → processo em cinco etapas →
+  configurador → opções de contratação → quem atende → perguntas → chamada
+  final e rodapé completo.
+- Exemplos para cinco segmentos + “Outro segmento”; cada um amplia em diálogo
+  acessível (miniatura e botão) e pode virar ponto de partida. O que foi
+  digitado é mantido; só há confirmação quando o exemplo substituiria escolhas
+  do visitante.
+- Sem carrossel automático, contador, pop-up ou número fictício. Movimento
+  reduzido respeitado. Barra de ação no celular só aparece com o
+  configurador na tela e some enquanto um campo está em edição.
 
-Há salvamento local versionado, recuperação de configurações antigas, validação dos dados de links/armazenamento, reinício com confirmação dentro da interface, comparação opcional com orçamento, resumo imprimível e mensagem de WhatsApp para revisão. Nenhuma mensagem é enviada automaticamente. Compartilhar inclui apenas opções predefinidas e cores validadas: nome e descrição não entram no link.
+**Configurador em quatro momentos**
+1. Negócio e objetivo (segmento, serviço, objetivo ou “preciso de
+   orientação”, nome opcional, necessidades que exigem diagnóstico).
+2. Recomendação por regra (“Recomendado para este objetivo”), com motivo,
+   estrutura, estimativa e prazo; dá para escolher outro caminho ou pular.
+3. Ajustes opcionais: identidade, cores, seções, formulário (WhatsApp ou
+   e-mail com aviso de plataforma), recursos, categoria avançada e
+   limite de orçamento com explicação da faixa e sugestão de remoção
+   confirmada.
+4. Resumo com edição por item, composição da estimativa, investimento
+   separado de custos externos e mensalidades, link das opções, PDF e
+   próximo passo.
+- Preço e prévia aparecem antes de qualquer dado pessoal; campos opcionais
+  nunca bloqueiam. Progresso navegável, foco no título a cada momento,
+  grupos de opções com setas do teclado, ajuda pelo WhatsApp em qualquer
+  momento, “Começar novamente” com confirmação.
 
-## Visualizar
+**Dados e cálculo**
+- Modelo v3 validado a cada leitura; migração automática da v1 e da v2
+  (dados antigos preservados até o visitante reiniciar); links v2 e v3.
+- Composição única (`breakdown`) usada por página, PDF, mensagem e receptor.
+- Orçamento agora faz parte do projeto: sobrevive a recarregar e vai para o
+  resumo, PDF, mensagem e pedido; “não informado”, zero e inválido são
+  tratados de forma diferente.
+- Link público só com opções — sem nome, contato, textos, orçamento ou id.
 
-O endereço público é `https://theusmkt.github.io/Matheus-Performance/configurador/`. Para revisão local, o servidor de prévia usa `http://127.0.0.1:4173/Matheus-Performance/configurador/` enquanto estiver ativo.
+**Pedidos, medição e conteúdo**
+- Modo WhatsApp (atual): “Preparar conversa no WhatsApp”, sem simular
+  recebimento e sem `generate_lead`.
+- Modo receptor pronto: contrato versionado, validação no navegador e no
+  servidor, idempotência, trava de clique duplo, estados de erro com nova
+  tentativa, receptor de referência que recalcula, salva antes de confirmar e
+  reenfileira falhas do CRM; etapas do CRM com perda por motivo.
+- Eventos centralizados, sem dado pessoal, sem duplicidade; UTMs
+  normalizadas; `?segmento=` adapta a página; testes A/B preparados e inativos.
+- Perguntas frequentes, privacidade e termos reescritos conforme o que a
+  página faz; aceite de novidades separado do pedido.
+- SEO: título e descrição sem promessas, dados estruturados sem endereço ou
+  e-mail inventados, `noindex` fora de produção.
 
-O ZIP entregue inclui código-fonte e uma cópia estática compilada em `configurador/`. Depois de extraí-lo, com Node.js instalado:
+**Site da raiz** (`/Matheus-Performance/`, link “Gestão de tráfego pago”)
+- Removidos: contadores (+120 empresas, R$ 12 mi, +380 mil leads, 7x ROI,
+  +8 anos), cases e depoimentos de exemplo, logos “[LOGO]”, selos de
+  certificação e palestra não comprovados, textos “[SUBSTITUA…]”, CNPJ,
+  telefone, e-mail, redes e endereço de exemplo (também nos dados
+  estruturados), “Mais escolhido” e mensagens de escassez.
+- WhatsApp real; o formulário diz que prepara a conversa e deixa de disparar
+  evento de lead; serviço de sites aponta para o configurador.
 
-```sh
-node apps/configurador/scripts/preview.cjs
-```
+**Validação**
+- `npm test`: 25 testes (preço e composição em 270 combinações, identidade no
+  pacote, caminhos, diagnóstico, orçamento, migração v1/v2, links e
+  privacidade, validação, idempotência, envio com falhas, clique duplo,
+  receptor, CRM, eventos, origem, mensagem).
+- `npm run typecheck` e build com o caminho do GitHub Pages.
+- `tests/e2e.browser.mjs`: 14 cenários em navegador (fluxo completo,
+  orçamento após recarregar, exemplos com e sem confirmação, diálogo e foco,
+  caminhos, diagnóstico, migração v2, link compartilhado e inválido, copiar
+  link com falha, PDF, reinício, teclado, campanha, celular, receptor com
+  erro/repetição/confirmação única).
+- Sem rolagem horizontal em 390 px e 1440 px; sem erros no console.
 
-Abra o endereço exibido no terminal. Não é necessário instalar dependências para visualizar os arquivos já compilados. O servidor escuta apenas no computador local. Abrir `index.html` diretamente por `file://` não reproduz corretamente os caminhos do GitHub Pages.
+## 2. Depende de configuração externa
 
-Para desenvolver e compilar novamente:
+| Item | O que fazer |
+|---|---|
+| Receptor de pedidos e CRM | Hospedar `integrations/lead-receiver`, criar adaptadores e a variável `LEAD_ENDPOINT` — passo a passo em `OPERACAO.md` |
+| Ferramenta de análise (GA4/Meta) | Instalar via gerenciador de tags e atualizar a privacidade antes |
+| Métricas LCP/INP/CLS | Medir no PageSpeed/Search Console após publicar |
+| Prazo de retorno ao visitante | Variável `RESPONSE_EXPECTATION`, só quando houver prazo real |
 
-```sh
-cd apps/configurador
-npm ci
-npm test
-```
+## 3. Depende de material ou decisão comercial
 
-No PowerShell:
-
-```powershell
-$env:NEXT_PUBLIC_BASE_PATH='/Matheus-Performance/configurador'
-npm run build
-npm run typecheck
-npm run preview
-```
-
-O workflow `.github/workflows/pages.yml` original aplica esse prefixo e publica as atualizações em `main` no GitHub Pages.
-
-## Diagnóstico verificado no ZIP
-
-- Next.js 16.3.5, React, TypeScript e Tailwind, exportação estática; site principal separado na raiz.
-- Etapas antigas: tipo, modelo, estilo, cores, fontes e recursos. Decisões visuais repetidas e ausência de contexto do negócio.
-- Estimativas existentes, não preços fechados: base, categoria, modelo/estilo, cores próprias e recursos.
-- Prazos de 3–5, 5–8 ou 7–12 dias úteis por complexidade, contados a partir dos materiais.
-- Duas rodadas de ajustes já previstas nos termos e FAQ. Não foi criada política nova de pagamento ou suporte.
-- Número real configurado preservado: 55 51 98194-7979.
-- Instagram e e-mail fictícios no configurador; links removidos/substituídos pelo WhatsApp existente, inclusive na privacidade.
-- Persistência anterior não validava adequadamente os tipos/IDs recebidos. O fluxo ativo agora normaliza dados e elimina duplicações de recursos.
-- Sem ferramenta de análise instalada no configurador; não foi adicionado rastreamento externo.
-
-## Arquivos principais
-
-- `src/app/page.tsx`: conecta a nova experiência.
-- `src/components/Upgrade.tsx`: página, etapas, continuidade, resumo e integração com WhatsApp.
-- `src/components/Upgrade.module.css`: estilos isolados, responsividade, impressão e foco.
-- `src/components/ProjectPreview.tsx`: prévia por segmento, objetivo, estrutura, direção e recursos.
-- `src/lib/project.ts`: modelo validado, migração, compartilhamento, mapeamento para o cálculo existente e mensagem.
-- `src/config/projectFaq.ts`: dúvidas de escopo, custos e contratação.
-- `src/app/layout.tsx` e `src/app/globals.css`: tipografia local, sem baixar cinco famílias externas, e remoção da faixa fixa de preço dos dados estruturados.
-- `src/components/Footer.tsx`, `src/components/Navbar.tsx` e `src/app/privacidade/page.tsx`: contatos e navegação das páginas legais, explicação do compartilhamento.
-- `package.json`, `scripts/preview.cjs` e `tests/`: comandos de revisão e validação.
-
-Os componentes antigos não usados pela página inicial foram mantidos para evitar excluir trabalho anterior. A nova página não depende do antigo fluxo de seis decisões visuais. As alterações ficaram dentro de `apps/configurador`; o site principal, assets e workflow foram preservados.
-
-## Testes
-
-- TypeScript sem erros e build estático completo, com privacidade e termos exportados.
-- Sete grupos de testes de regras: 90 combinações de segmento/objetivo/direção, cálculo original, salvar/recuperar, links sem dados pessoais, mensagem coerente, entradas inválidas, migração e remoção de adicionais sem duplicação.
-- Teste de milhares de cores personalizadas com contraste mínimo de 4,5:1 nos botões da prévia.
-- Automação de navegador com Edge/Chromium: jornada de seis etapas, edição, recarga, reinício, compartilhamento, mensagem, dados inválidos e fluxo móvel. Nenhuma mensagem real foi enviada.
-- Verificação de ausência de rolagem horizontal em 320, 390, 768, 1024 e 1440 pixels; foco por teclado e inspeção de telas desktop/mobile.
-- PDF de resumo gerado pelo navegador; screenshots e evidências ficam na pasta de revisão externa ao pacote do site.
-- `tests/browser.cjs` pode ser repetido com Playwright instalado à parte e Microsoft Edge disponível; aceita `PLAYWRIGHT_MODULE` e `PREVIEW_URL`. Playwright não foi adicionado às dependências de produção.
-
-## Mensuração sem rastreamento externo
-
-O fluxo emite eventos locais `CustomEvent('mb:configurator')` com `detail.event` e, quando aplicável, `detail.step`. Eventos: `configurator_start`, `step_complete`, `summary_view`, `share`, `whatsapp_click`. Não contêm nome ou descrição. Um futuro analytics deverá ser conectado apenas conforme a política de privacidade/consentimento escolhida. `whatsapp_click` é clique, não contratação nem venda.
-
-## Limites e definições comerciais pendentes
-
-- Os cerca de três minutos são uma hipótese de duração da configuração, ainda sem teste com usuários reais; não são prazo de entrega.
-- Preço final depende da validação de conteúdo, páginas e integrações. A assinatura de plataformas, domínio, hospedagem e e-mail não entra na faixa de desenvolvimento.
-- Quantidades máximas de itens do catálogo, imagens de galeria e extensão do conteúdo não estão definidas nos arquivos. Devem constar da proposta.
-- Fornecedor/assinatura para reservas, e-mail e feed do Instagram, limites vigentes e compatibilidade ainda precisam ser avaliados. O configurador não garante planos gratuitos nem integrações já ativas.
-- Forma de pagamento, duração/valores do suporte após entrega, manutenção, editor de conteúdo, titularidade do domínio e transferência das contas/acessos precisam ser detalhados na proposta.
-- Loja virtual, pagamentos online e produção de textos/imagens não foram incluídos silenciosamente.
-- As ilustrações da prévia são composições CSS locais, não fotos de clientes. Os exemplos são explicitamente demonstrativos; não há avaliações ou projetos entregues inventados.
-- O link copiado usa o endereço público definitivo. Links não incluem nome/descrição; PDF e mensagem podem incluir esses textos.
-- A inspeção foi feita em Chromium/Edge e em tamanhos simulados, não em aparelhos físicos nem em todos os navegadores. Auditoria assistiva com leitores de tela e teste com usuários ainda são recomendáveis.
-
-## Preparação e preservação
-
-O ZIP original foi mantido. Todos os caminhos foram verificados antes de extrair para a pasta nova `Matheus-Performance`. O anexo não contém histórico Git; a pasta de trabalho tinha um repositório separado, no qual foi criada a branch `codex/upgrade-configurador`. Não houve descarte de alterações ou contratação de serviço.
-
-
+- **Logo em vetor ou PNG transparente.** O símbolo foi extraído do arquivo
+  disponível; o letreiro “PERFORMANCE” não teve qualidade suficiente e foi
+  substituído pelo nome em texto. Com o arquivo original, trocar
+  `public/brand/simbolo*.png`.
+- **Indexação no Google:** mantida fora por decisão anterior. Liberar =
+  `indexarNoGoogle: true` em `contact.ts`.
+- **Identidade visual no pacote:** `pricing.identity.mode` segue `'vigente'`.
+- **E-mail e Instagram:** vazios em `contact.ts` até existirem endereços reais.
+- **Provas sociais:** cases, depoimentos e logos só com autorização.
+- **Site da raiz:** confirmar se os valores mensais dos pacotes, o
+  “diagnóstico gratuito de 30 minutos” e o período inicial de 3 meses do
+  contrato estão atuais; a raiz não tem política de privacidade própria.
+- **Foto do responsável:** reaproveitada do site da raiz; troque em
+  `public/brand/matheus-beck.webp` se preferir outra.

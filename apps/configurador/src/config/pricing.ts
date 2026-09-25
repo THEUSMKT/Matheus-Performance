@@ -50,6 +50,16 @@ export const pricing = {
   /** Paleta pronta não custa nada; cores próprias exigem ajuste fino. */
   customColors: 40,
 
+  /**
+   * Como a identidade visual entra no preço.
+   *  - 'vigente': modelo e estilo somam os valores das tabelas acima (atual).
+   *  - 'incluida': a aplicação básica da identidade (modelo + estilo) passa a
+   *    fazer parte do pacote; continuam cobrados só trabalhos identificáveis,
+   *    como adaptar cores próprias.
+   * Trocar para 'incluida' é decisão comercial — ver OPERACAO.md.
+   */
+  identity: { mode: 'vigente' as 'vigente' | 'incluida' },
+
   /** Funcionalidades (chaves = id em features.ts). */
   byFeature: {
     whatsapp: 0,

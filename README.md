@@ -180,11 +180,10 @@ Trocar as fontes = ajustar `--serif` e `--sans` e o link do Google Fonts no `<he
 | Pasta | Site | Stack | Situação |
 |---|---|---|---|
 | raiz (`index.html`) | Tráfego pago e posicionamento | HTML/CSS/JS, sem build | publicado |
-| `apps/configurador/` | Criação de sites: configurador + orçamento pelo WhatsApp | Next.js · TypeScript · Tailwind | em revisão, ainda sem hospedagem |
+| `apps/configurador/` | Criação de sites (Beck Performance): prévia, estimativa e conversa pelo WhatsApp | Next.js · TypeScript | publicado em `/configurador/` |
 
-São independentes: mexer em um não afeta o outro. O configurador ainda não
-tem provedor de hospedagem definido — ele exporta HTML estático, então
-qualquer host servirá quando chegar a hora.
+São independentes: mexer em um não afeta o outro. Os dois são publicados
+juntos no GitHub Pages pelo workflow `.github/workflows/pages.yml`.
 
 Documentação do configurador — inclusive onde trocar preços, prazos e o
 número do WhatsApp — em [`apps/configurador/README.md`](apps/configurador/README.md).
