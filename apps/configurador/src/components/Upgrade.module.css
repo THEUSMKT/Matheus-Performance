@@ -161,3 +161,10 @@
 @media print{.page,.editor,.previewPane{background:white!important;box-shadow:none!important}.estimate,.mobileEstimate{display:none!important}}
 @media(max-width:760px){.examplesRail{margin-right:0;width:100%}}
 
+/* The uploaded logo's monogram on a dark backing keeps its white strokes visible. */
+.brand .brandMark{background:#081b5c;box-shadow:none;overflow:hidden;flex:none}
+.brandMark svg{display:block;width:36px;height:36px}
+.authorMark{background:#081b5c;display:grid;place-items:center;overflow:hidden}
+.authorMark svg{display:block;width:100px;height:100px}
+@media(max-width:760px){.brandMark svg{width:30px;height:30px}.authorMark svg{width:64px;height:64px}}
+
