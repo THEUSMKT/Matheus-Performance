@@ -7,7 +7,7 @@
    ========================================================================== */
 import { useMemo, useRef, useState } from 'react';
 import { brl, pricing } from '@/config/pricing';
-import { plans, revisionRounds } from '@/config/offer';
+import { revisionRounds } from '@/config/offer';
 import { volumeOptions, FORM_EMAIL } from '@/config/forms';
 import { integrations, leadMode } from '@/config/integrations';
 import {
@@ -24,10 +24,10 @@ import {
   nextStepText,
   objectives,
   pagesLabel,
+  planText,
   palettes,
   projectEstimate,
   projectMessage,
-  recommendedPlan,
   segmentLabel,
   selectedExtras,
   selectedSections,
@@ -45,14 +45,13 @@ import s from './Landing.module.css';
 
 /** Linhas do resumo, iguais na página e no PDF. */
 export function summaryRows(p: Project): { label: string; value: string; note?: string; step: number }[] {
-  const plan = plans.find((x) => x.id === (p.plan ?? recommendedPlan(p)))!;
   const volume = volumeOptions.find((v) => v.id === p.emailVolume);
   const rows = [
     { label: 'Negócio', value: p.name.trim() || 'A informar', step: 0 },
     { label: 'Segmento', value: segmentLabel(p), step: 0 },
     { label: 'Serviço principal', value: p.service.trim() || 'A informar', step: 0 },
     { label: 'Objetivo', value: p.guidance ? 'Preciso de orientação para definir' : objectives.find((o) => o.id === p.objective)!.name, step: 0 },
-    { label: 'Caminho', value: `${plan.name}${p.plan ? '' : ' (recomendado)'}`, step: 1 },
+    { label: 'Caminho', value: planText(p).replace(/^./, (c) => c.toUpperCase()), step: 1 },
     { label: 'Estrutura', value: pagesLabel(p), step: 2 },
     { label: 'Seções', value: selectedSections(p).join(', '), step: 2 },
     { label: 'Recursos opcionais', value: selectedExtras(p).join(', ') || 'Nenhum além do incluído', note: 'WhatsApp e redes sociais já incluídos', step: 2 },
@@ -222,7 +221,7 @@ function Qualification({ p, setLead }: { p: Project; setLead: (l: Partial<Lead>)
         </select>
       </label>
       <label className={s.field}>
-        Quem decide a contratação? <small>Opcional</small>
+        Quem decide? <small>Opcional</small>
         <select value={p.lead.decision} onChange={(ev) => setLead({ decision: ev.target.value })}>
           <option value="">Prefiro não informar</option>
           {decisionRoles.map((d) => (

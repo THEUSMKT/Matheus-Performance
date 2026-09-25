@@ -32,7 +32,7 @@ import { Footer, Header, asset, mainSiteUrl } from './Chrome';
 import { Configurator } from './Configurator';
 import { ConfirmBox, type Pending } from './Controls';
 import { PrintSummary } from './SummaryStep';
-import { useProject, type ProjectState } from './useProject';
+import { useNarrow, useProject, type ProjectState } from './useProject';
 import s from './Landing.module.css';
 
 const demoSegments = segments.filter((x) => x.id !== 'outro');
@@ -123,7 +123,7 @@ export default function Landing() {
       </main>
       <Footer />
       <div className={s.mobileBarSpacer} aria-hidden="true" />
-      <PrintSummary p={p} />
+      {state.ready && <PrintSummary p={p} />}
     </div>
   );
 }
@@ -133,6 +133,7 @@ function Hero({ state, title, description, primaryLabel, onStart }: { state: Pro
   const [segment, setSegment] = useState<string | null>(null);
   const shown = segment ?? campaign ?? 'local';
   const demo = exampleProject(shown);
+  const narrow = useNarrow();
 
   return (
     <>
@@ -165,7 +166,7 @@ function Hero({ state, title, description, primaryLabel, onStart }: { state: Pro
               </button>
             ))}
           </div>
-          <ProjectPreview project={demo} compact />
+          <ProjectPreview project={demo} compact mobile={narrow} />
           <p className={s.heroVisualNote}>Exemplo demonstrativo · {demoSegments.find((x) => x.id === shown)?.demo} é um nome fictício.</p>
         </div>
       </section>
@@ -214,7 +215,7 @@ function Examples({ state }: { state: ProjectState }) {
   const [open, setOpen] = useState<string | null>(null);
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
 
-  function enlarge(id: string, button: HTMLButtonElement) {
+  function enlarge(id: string, button: HTMLButtonElement | null) {
     opener.current = button;
     setOpen(id);
     setDevice('desktop');
@@ -233,7 +234,8 @@ function Examples({ state }: { state: ProjectState }) {
         <div className={s.examples}>
           {demoSegments.map((x, i) => (
             <article key={x.id} className={s.exampleCard}>
-              <div className={s.exampleThumb} aria-hidden="true">
+              {/* Clique na miniatura amplia; no teclado, o botão "Ampliar" faz o mesmo. */}
+              <div className={s.exampleThumb} aria-hidden="true" onClick={(ev) => enlarge(x.id, ev.currentTarget.parentElement?.querySelector('button') ?? null)}>
                 <InspirationPreview index={i} />
               </div>
               <div className={s.exampleBody}>

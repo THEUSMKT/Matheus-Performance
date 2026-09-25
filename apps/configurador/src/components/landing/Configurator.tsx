@@ -43,7 +43,7 @@ import { whatsappLink } from '@/lib/whatsapp';
 import { ProjectPreview } from '../ProjectPreview';
 import { Check, ConfirmBox, Radios, type Pending } from './Controls';
 import { SummaryStep } from './SummaryStep';
-import type { ProjectState } from './useProject';
+import { useNarrow, type ProjectState } from './useProject';
 import s from './Landing.module.css';
 
 const titles = ['Conte sobre o seu negócio.', 'Nossa recomendação para você.', 'Ajuste o que quiser.', 'Seu projeto, pronto para conversar.'];
@@ -75,7 +75,9 @@ export function Configurator({ state }: { state: ProjectState }) {
   const [pending, setPending] = useState<Pending | null>(null);
   const [resetting, setResetting] = useState(false);
   const [help, setHelp] = useState(false);
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const narrow = useNarrow();
+  const [deviceChoice, setDevice] = useState<'desktop' | 'mobile' | null>(null);
+  const device = deviceChoice ?? (narrow ? 'mobile' : 'desktop');
   const [barVisible, setBarVisible] = useState(false);
   const [typing, setTyping] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);

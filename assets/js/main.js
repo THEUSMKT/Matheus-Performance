@@ -5,10 +5,8 @@
    ========================================================================== */
 
 const CONFIG = {
-  // Somente números, com DDI + DDD. Ex.: 5551999999999
-  whatsapp: '5551999999999',
-  // E-mail usado no fallback do formulário
-  email: 'contato@seudominio.com.br',
+  // Somente números, com DDI + DDD. Mesmo número do configurador (apps/configurador/src/config/contact.ts).
+  whatsapp: '5551981947979',
   // Mensagem padrão quando o botão não tiver data-wa
   mensagemPadrao: 'Olá, Matheus! Vim pelo site e quero falar sobre tráfego pago.'
 };
@@ -30,7 +28,7 @@ const CONFIG = {
   $$('[data-wa]').forEach((el) => {
     el.setAttribute('href', waURL(el.dataset.wa));
     el.setAttribute('target', '_blank');
-    el.setAttribute('rel', 'noopener');
+    el.setAttribute('rel', 'noopener noreferrer');
   });
 
   /* ── 2. Ano no rodapé ──────────────────────────────────────────────────── */
@@ -484,9 +482,9 @@ const CONFIG = {
       note.textContent = 'Abrindo o WhatsApp… se nada acontecer, libere os pop-ups do navegador.';
       window.open(waURL(msg), '_blank', 'noopener');
 
-      // Eventos de conversão (disparam apenas se as tags estiverem instaladas)
-      window.dataLayer?.push({ event: 'lead_form_submit' });
-      window.fbq?.('track', 'Lead');
+      // Abrir o WhatsApp é intenção, não contato recebido: nada de evento de
+      // lead aqui (disparam apenas se as tags estiverem instaladas).
+      window.dataLayer?.push({ event: 'whatsapp_open', context: 'diagnostico' });
     });
   };
 

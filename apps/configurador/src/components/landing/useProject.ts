@@ -119,3 +119,16 @@ export function useProject() {
 }
 
 export type ProjectState = ReturnType<typeof useProject>;
+
+/** Tela estreita (celular): a prévia usa o formato de celular por padrão. */
+export function useNarrow(query = '(max-width: 759px)') {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [query]);
+  return narrow;
+}

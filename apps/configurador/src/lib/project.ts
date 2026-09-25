@@ -637,12 +637,17 @@ export function deadlineText(p: Project): string {
   return `${projectEstimate(p).deadline}, contados após o recebimento de textos, imagens e logo`;
 }
 
+/** Caminho escolhido — ou, se nenhum foi aplicado, qual é o recomendado. */
+export function planText(p: Project): string {
+  const chosen = plans.find((x) => x.id === p.plan);
+  return chosen ? chosen.name : `ainda não escolhido (recomendado: ${plans.find((x) => x.id === recommendedPlan(p))!.name})`;
+}
+
 /**
  * Mensagem do WhatsApp: legível, com o essencial para a conversa começar.
  * Usa exatamente as mesmas funções da página e do PDF.
  */
 export function projectMessage(p: Project, origin?: string): string {
-  const plan = plans.find((x) => x.id === (p.plan ?? recommendedPlan(p)))!;
   const objective = objectives.find((o) => o.id === p.objective)!;
   const extras = selectedExtras(p);
   const lead = p.lead;
@@ -655,7 +660,7 @@ export function projectMessage(p: Project, origin?: string): string {
   lines.push(`Objetivo: ${p.guidance ? 'preciso de orientação para definir' : objective.name}`);
   if (p.description.trim()) lines.push(`Sobre o negócio: ${p.description.trim()}`);
 
-  lines.push('', `Caminho: ${plan.name}${p.plan ? '' : ' (recomendado)'}`);
+  lines.push('', `Caminho: ${planText(p)}`);
   lines.push(`Estrutura: ${pagesLabel(p)}`);
   lines.push(`Seções: ${selectedSections(p).join(', ')}`);
   if (extras.length) lines.push(`Opcionais: ${extras.join(', ')}`);

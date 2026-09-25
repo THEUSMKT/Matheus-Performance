@@ -31,49 +31,50 @@
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
-.page *,
-.page *::before,
-.page *::after {
+:where(.page) *,
+:where(.page) *::before,
+:where(.page) *::after {
   box-sizing: border-box;
 }
-.page h1,
-.page h2,
-.page h3,
-.page h4 {
+:where(.page) h1,
+:where(.page) h2,
+:where(.page) h3,
+:where(.page) h4 {
   margin: 0;
+  font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
   text-wrap: balance;
 }
-.page p {
+:where(.page) p {
   margin: 0;
   text-wrap: pretty;
 }
-.page ul,
-.page ol {
+:where(.page) ul,
+:where(.page) ol {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.page a {
+:where(.page) a {
   color: inherit;
 }
-.page button,
-.page input,
-.page select,
-.page textarea {
+:where(.page) button,
+:where(.page) input,
+:where(.page) select,
+:where(.page) textarea {
   font: inherit;
   color: inherit;
 }
-.page button {
+:where(.page) button {
   cursor: pointer;
 }
-.page :is(a, button, input, select, textarea, summary):focus-visible {
+:where(.page) :is(a, button, input, select, textarea, summary):focus-visible {
   outline: 3px solid var(--blue);
   outline-offset: 3px;
   border-radius: 6px;
 }
-.page fieldset {
+:where(.page) fieldset {
   border: 0;
   padding: 0;
   margin: 0;
@@ -254,6 +255,13 @@
   display: grid;
   gap: 32px;
 }
+.hero > *,
+.workGrid > *,
+.examples > *,
+.plans > *,
+.about > * {
+  min-width: 0;
+}
 .audience {
   font-size: 14px;
   font-weight: 650;
@@ -394,8 +402,15 @@
   flex-direction: column;
 }
 .exampleThumb {
+  display: block;
+  width: 100%;
   padding: 12px 12px 0;
+  border: 0;
   background: var(--tint);
+  text-align: left;
+  cursor: zoom-in;
+}
+.exampleThumb > * {
   pointer-events: none;
 }
 .exampleBody {
@@ -429,6 +444,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+.cardActions > * {
+  flex: 1 1 auto;
 }
 .otherCard {
   border-style: dashed;
@@ -570,8 +588,12 @@
 }
 .editorTools {
   display: flex;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 4px 20px;
   align-items: center;
+}
+.editorTools button {
+  white-space: nowrap;
 }
 .stepTitle {
   margin-top: 14px;
@@ -1188,7 +1210,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
-  background: rgb(255 255 255 / 0.97);
+  background: #fff;
   border-top: 1px solid var(--line-strong);
   box-shadow: 0 -8px 24px -16px rgb(8 27 92 / 0.4);
 }
