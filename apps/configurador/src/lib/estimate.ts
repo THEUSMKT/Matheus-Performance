@@ -18,21 +18,51 @@ export type Estimate = {
 
 const roundTo = (value: number, step: number) => Math.round(value / step) * step;
 
-export function estimate(selection: Selection): Estimate {
-  let total = pricing.base;
+export type BreakdownLine = {
+  kind: 'base' | 'type' | 'identity' | 'colors' | 'feature';
+  /** Id da opção de origem (tipo, modelo/estilo ou recurso). */
+  id: string;
+  value: number;
+};
 
-  if (selection.type) total += pricing.byType[selection.type] ?? 0;
-  if (selection.template) total += pricing.byTemplate[selection.template] ?? 0;
-  if (selection.style) total += pricing.byStyle[selection.style] ?? 0;
-  if (selection.customColor) total += pricing.customColors;
+/**
+ * A composição é a fonte do cálculo: o total da estimativa é exatamente a
+ * soma destas linhas. Página, PDF, mensagem e proposta usam a mesma função,
+ * então não há como divergirem. Recursos repetidos entram uma vez só.
+ */
+export function breakdown(selection: Selection): BreakdownLine[] {
+  const lines: BreakdownLine[] = [{ kind: 'base', id: 'base', value: pricing.base }];
 
-  for (const id of selection.features) {
-    total += pricing.byFeature[id] ?? 0;
+  if (selection.type) {
+    lines.push({ kind: 'type', id: selection.type, value: pricing.byType[selection.type] ?? 0 });
   }
+
+  const identityIncluded = pricing.identity.mode === 'incluida';
+  const identity =
+    (selection.template ? pricing.byTemplate[selection.template] ?? 0 : 0) +
+    (selection.style ? pricing.byStyle[selection.style] ?? 0 : 0);
+  if (selection.template || selection.style) {
+    lines.push({
+      kind: 'identity',
+      id: `${selection.template ?? ''}/${selection.style ?? ''}`,
+      value: identityIncluded ? 0 : identity,
+    });
+  }
+
+  if (selection.customColor) lines.push({ kind: 'colors', id: 'custom', value: pricing.customColors });
+
+  for (const id of new Set(selection.features)) {
+    lines.push({ kind: 'feature', id, value: pricing.byFeature[id] ?? 0 });
+  }
+  return lines;
+}
+
+export function estimate(selection: Selection): Estimate {
+  const total = breakdown(selection).reduce((sum, line) => sum + line.value, 0);
 
   const { perFeature, heavyFeatures, heavyFeatureBonus, byType } = pricing.complexity;
   let complexity = selection.type ? byType[selection.type] ?? 1 : 1;
-  for (const id of selection.features) {
+  for (const id of new Set(selection.features)) {
     complexity += perFeature;
     if ((heavyFeatures as readonly string[]).includes(id)) complexity += heavyFeatureBonus;
   }

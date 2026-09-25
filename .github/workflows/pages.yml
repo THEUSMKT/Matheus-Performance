@@ -48,6 +48,12 @@ jobs:
         working-directory: apps/configurador
         env:
           NEXT_PUBLIC_BASE_PATH: ${{ env.BASE_PATH }}
+          # Build publicado. A indexação ainda depende de indexarNoGoogle em contact.ts.
+          NEXT_PUBLIC_SITE_ENV: production
+          # Opcionais — variáveis do repositório (Settings → Variables), nunca segredos.
+          # Vazias: a página usa o modo WhatsApp. Ver apps/configurador/OPERACAO.md.
+          NEXT_PUBLIC_LEAD_ENDPOINT: ${{ vars.LEAD_ENDPOINT }}
+          NEXT_PUBLIC_RESPONSE_EXPECTATION: ${{ vars.RESPONSE_EXPECTATION }}
         run: npm run build
 
       - name: Montar o site

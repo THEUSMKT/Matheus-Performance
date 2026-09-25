@@ -22,7 +22,7 @@ export function InspirationPreview({ index }: { index: number }) {
   return <div className={`${s.inspiration} ${s['inspiration_' + model.kind]}`}>
     <div className={s.inspirationBar}><span>● ● ●</span><small>www.suaempresa.com.br</small><b>↗</b></div>
     <div className={s.inspirationNav}><strong>{model.label}</strong><span>Início&nbsp;&nbsp; {model.nav}&nbsp;&nbsp; Contato</span><i>Menu</i></div>
-    <div className={s.inspirationHero}><div><small>{model.label} · EXPERIÊNCIA DIGITAL</small><h3>{model.title}</h3><button>Conhecer mais ↗</button></div><div className={s.inspirationArt}><i/><i/><i/></div></div>
+    <div className={s.inspirationHero}><div><small>{model.label} · EXPERIÊNCIA DIGITAL</small><h3>{model.title}</h3><span className={s.inspirationButton}>Conhecer mais ↗</span></div><div className={s.inspirationArt}><i/><i/><i/></div></div>
     <div className={s.inspirationHighlights}><span><b>01</b>Experiência</span><span><b>02</b>Detalhes</span><span><b>03</b>Contato</span></div>
     <div className={s.inspirationFoot}>{model.detail}</div>
   </div>;

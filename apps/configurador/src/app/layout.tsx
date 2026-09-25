@@ -1,29 +1,25 @@
 import type { Metadata, Viewport } from 'next';
 
 import { contact } from '@/config/contact';
+import { isProduction } from '@/config/integrations';
 import './globals.css';
 
-const title = 'Beck Performance | Monte seu Site Profissional';
+const title = 'Beck Performance | Criação de sites para pequenas e médias empresas';
 const description =
-  'Estruture seu site profissional em até 3 minutos. Escolha estilo, funcionalidades e receba uma estimativa clara para o seu projeto.';
+  'Veja uma prévia do site da sua empresa, conheça a estimativa de investimento e receba orientação para publicar. Escopo e custos confirmados antes da contratação.';
+
+/** Indexa só no build de produção E com a liberação em contact.ts. */
+const indexable = isProduction && contact.indexarNoGoogle;
 
 export const metadata: Metadata = {
   metadataBase: new URL(contact.siteUrl),
   title,
   description,
   applicationName: contact.brand,
-  authors: [{ name: contact.brand }],
-  keywords: [
-    'criação de sites',
-    'desenvolvimento de sites',
-    'landing page',
-    'site profissional',
-    'orçamento de site',
-  ],
+  authors: [{ name: contact.owner }],
+  keywords: ['criação de sites', 'site para empresas', 'site profissional', 'landing page', 'orçamento de site'],
   alternates: { canonical: '/' },
-  robots: contact.indexarNoGoogle
-    ? { index: true, follow: true }
-    : { index: false, follow: false },
+  robots: indexable ? { index: true, follow: true } : { index: false, follow: false },
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
@@ -48,16 +44,24 @@ const jsonLd = {
     {
       '@type': 'ProfessionalService',
       '@id': `${contact.siteUrl}/#servico`,
-      name: `${contact.brand} — ${contact.tagline}`,
+      name: contact.brand,
       description,
-      url: contact.siteUrl,
+      url: `${contact.siteUrl}/`,
+      image: `${contact.siteUrl}/icon.png`,
       areaServed: 'BR',
       serviceType: 'Criação de sites',
+      founder: { '@type': 'Person', name: contact.owner },
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer service',
+        telephone: `+${contact.whatsapp}`,
+        availableLanguage: 'pt-BR',
+      },
     },
     {
       '@type': 'WebSite',
       '@id': `${contact.siteUrl}/#site`,
-      url: contact.siteUrl,
+      url: `${contact.siteUrl}/`,
       name: contact.brand,
       inLanguage: 'pt-BR',
     },

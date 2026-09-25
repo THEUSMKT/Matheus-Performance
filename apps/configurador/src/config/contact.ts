@@ -4,19 +4,28 @@
    ========================================================================== */
 
 export const contact = {
-  /** Assinatura da página. */
-  brand: 'Matheus Beck',
-  /** Aparece no rodapé, abaixo da marca. */
-  tagline: 'Criação de sites sob medida',
+  /** Assinatura da marca: só o nome, sem subtítulo. */
+  brand: 'Beck Performance',
+  /** Responsável pelo atendimento e pelo desenvolvimento. */
+  owner: 'Matheus Beck',
+  /** Usada em metadados e dados estruturados. */
+  tagline: 'Criação de sites para pequenas e médias empresas',
 
   /** WhatsApp — apenas dígitos, com DDI + DDD, sem +, espaço ou traço. */
   whatsapp: '5551981947979',
   /** Como o número é exibido na tela. */
   whatsappDisplay: '(51) 98194-7979',
 
-  email: 'contato@seudominio.com.br',
-  instagram: 'https://instagram.com/seuinstagram',
-  instagramHandle: '@seuinstagram',
+  /**
+   * Deixe vazio até existir um endereço real. Campo vazio = o item não
+   * aparece em lugar nenhum da página (nada de endereço de exemplo).
+   */
+  email: '',
+  instagram: '',
+  instagramHandle: '',
+
+  /** Site de gestão de tráfego, publicado na raiz do mesmo repositório. */
+  mainSiteUrl: 'https://theusmkt.github.io/Matheus-Performance/',
 
   /**
    * Deixe `false` enquanto a página estiver em revisão: o link continua
