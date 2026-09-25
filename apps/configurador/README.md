@@ -1,12 +1,15 @@
-# Configurador de sites — Matheus Beck
+# Configurador de sites — Beck Performance
 
-Landing page de conversão: a pessoa monta o próprio site em seis escolhas,
-vê a estimativa de valor e prazo mudar na hora e sai pelo WhatsApp com o
-briefing pronto.
+Landing page de criação de sites para pequenas e médias empresas. O visitante
+vê exemplos, monta a prévia do próprio site em quatro momentos (negócio e
+objetivo → recomendação → ajustes opcionais → resumo e próximo passo), vê a
+composição da estimativa e prepara a conversa no WhatsApp com o resumo pronto.
 
-Next.js 16 · TypeScript · Tailwind CSS 4 · Lucide.
-Exporta HTML estático — nenhuma imagem é carregada, todas as prévias são
-desenhadas em CSS.
+Next.js 16 · React 19 · TypeScript · CSS Modules. Exporta HTML estático e é
+publicado no GitHub Pages em `/Matheus-Performance/configurador/`.
+
+- Operação, CRM, integrações, eventos e indicadores: [`OPERACAO.md`](OPERACAO.md)
+- O que mudou nesta versão e o que depende de você: [`UPGRADE.md`](UPGRADE.md)
 
 ---
 
@@ -14,120 +17,51 @@ desenhadas em CSS.
 
 ```bash
 cd apps/configurador
-npm install
-npm run dev      # http://localhost:3000
-npm run build    # gera a pasta out/
+npm ci
+npm run dev        # http://localhost:3000
+npm test           # regras de preço, migração, orçamento, pedidos e eventos
+npm run typecheck
+NEXT_PUBLIC_BASE_PATH=/Matheus-Performance/configurador npm run build   # gera out/
+npm run preview    # serve out/ no caminho do GitHub Pages
 ```
-
-`npm run build` já roda o TypeScript. Para checar os tipos sozinho:
-`npm run typecheck`.
 
 ---
 
-## O que você vai querer trocar
+## Onde editar
 
-Tudo que muda com frequência está em `src/config/`. **Nenhum preço, texto de
-oferta ou número de contato existe fora dessa pasta** — não é preciso abrir
-componente nenhum.
+Tudo que muda com frequência está em `src/config/`. Nenhum preço, contato ou
+texto comercial fica escrito dentro de componente.
 
 | Arquivo | O que controla |
 |---|---|
-| `contact.ts` | **WhatsApp**, e-mail, Instagram, nome da marca, domínio |
-| `pricing.ts` | Valor base, acréscimos, faixa exibida e prazos |
-| `siteTypes.ts` | Etapa 1 — tipos de site |
-| `templates.ts` | Etapa 2 — modelos e o layout de cada miniatura |
-| `styles.ts` | Etapa 3 — personalidades visuais |
-| `colors.ts` | Etapa 4 — paletas |
-| `fonts.ts` | Etapa 5 — combinações tipográficas |
-| `features.ts` | Etapa 6 — funcionalidades |
-| `faq.ts` | Perguntas frequentes |
-| `portfolio.ts` | Vitrine "Veja o que dá para criar" |
+| `contact.ts` | Marca, responsável, **WhatsApp** (único lugar do número), e-mail e Instagram (vazios = não aparecem), liberação para o Google |
+| `pricing.ts` | Valor base, acréscimos, faixa exibida, prazos e como a identidade visual entra no preço |
+| `offer.ts` | Os três caminhos de contratação, necessidades que exigem diagnóstico, regras de escopo, rodadas de ajuste |
+| `forms.ts` | Formulário por WhatsApp ou e-mail, limite do plano gratuito e textos de volume |
+| `features.ts` · `siteTypes.ts` | Nomes dos recursos e categorias |
+| `projectFaq.ts` | Perguntas frequentes (valores vêm de `pricing.ts`) |
+| `experiments.ts` | Testes de mensagem e CTA (todos inativos) |
+| `integrations.ts` | Receptor de pedidos e ambiente, lidos de variáveis de ambiente |
 
-### 1. Número do WhatsApp
+O cálculo mora em `src/lib/estimate.ts`: a função `breakdown()` gera as
+linhas da composição e o total é a soma delas. Página, PDF, mensagem do
+WhatsApp e receptor usam a mesma função — não há como divergirem.
 
-`src/config/contact.ts`:
+## Estrutura
 
-```ts
-whatsapp: '5551981947979',   // ← DDI + DDD + número, só dígitos
-```
-
-Esse é o único lugar do projeto com o número. Todos os links de WhatsApp
-saem de `whatsappLink()` (`src/lib/whatsapp.ts`), já codificados com
-`encodeURIComponent`.
-
-São duas mensagens, e elas não se misturam:
-
-| Onde | Mensagem |
+| Caminho | Papel |
 |---|---|
-| botão final do configurador | o briefing completo, montado por `buildMessage()` com as escolhas reais |
-| CTAs genéricos (rodapé) | `contact.whatsappCurta`, uma linha só |
-
-### 2. Preços
-
-`src/config/pricing.ts`:
-
-```ts
-base: 500,          // projeto base
-rangeSpread: 0.1,   // a faixa exibida é ±10% sobre o total
-byFeature: { formulario: 50, galeria: 80, ... },
-```
-
-O piso da faixa nunca fica abaixo de `base` — com nada escolhido a página
-mostra **R$ 500 – 550**. O cálculo está em `src/lib/estimate.ts` e não
-contém valor nenhum escrito à mão.
-
-### 3. Prazos
-
-Também em `pricing.ts`, em `deadlines` (faixas por pontos de complexidade) e
-`complexity` (quanto cada escolha pesa).
-
----
-
-## Como o preview funciona
-
-`SitePreview.tsx` desenha uma miniatura de site inteira em CSS, a partir de
-quatro coisas: **paleta** (cores), **skin** (raio, densidade, peso do
-título), **layout** (um dos seis arranjos) e **funcionalidades** (cada uma
-acrescenta um bloco na página). `src/lib/preview.ts` traduz as escolhas
-nesse formato.
-
-A escala usa `cqw` (container query units), então a mesma peça serve de
-miniatura de 200px na vitrine e de prévia grande no configurador, sem media
-query.
-
-Para incluir um layout novo: acrescente o nome em `PreviewLayout`
-(`src/lib/types.ts`) e o `case` correspondente em `renderLayout()`.
-
----
+| `src/components/landing/` | Página: cabeçalho/rodapé (`Chrome`), configurador, resumo, estado (`useProject`) |
+| `src/components/ProjectPreview.tsx` · `InspirationPreview.tsx` | Prévias desenhadas em CSS (`Upgrade.module.css`) |
+| `src/lib/project.ts` | Modelo do projeto (v3), validação, migração da v1/v2, links, mensagem |
+| `src/lib/leads.ts` | Contrato do pedido, validação, envio com idempotência |
+| `src/lib/analytics.ts` · `origin.ts` | Eventos e origem da visita |
+| `integrations/lead-receiver/` | Receptor de referência e modelo do CRM |
+| `public/brand/` | Símbolo oficial e foto do responsável |
 
 ## Publicar
 
-Ainda não há hospedagem configurada — isso fica para quando o provedor for
-escolhido.
-
-O que já está pronto: `npm run build` gera a pasta `out/` com HTML, CSS e
-JS estáticos, sem servidor. É só apontar o host para ela. O que o provedor
-vai precisar saber:
-
-| | |
-|---|---|
-| Diretório base | `apps/configurador` |
-| Comando de build | `npm run build` |
-| Pasta publicada | `out` |
-| Node | 22 |
-
-Duas observações para a hora do deploy: a imagem de compartilhamento sai em
-`out/opengraph-image` sem extensão e precisa ser servida como `image/png`,
-e `out/_next/static/` pode receber cache longo porque os nomes dos arquivos
-já têm hash.
-
----
-
-## Antes de ir ao ar
-
-- [x] `contact.ts`: WhatsApp
-- [ ] `contact.ts`: e-mail, Instagram e `siteUrl`
-- [ ] `pricing.ts`: conferir se os valores batem com o que você cobra
-- [ ] `portfolio.ts`: trocar os nomes fictícios pelos projetos reais
-- [ ] `/privacidade` e `/termos`: revisar os textos
-- [ ] escolher o provedor de hospedagem e configurar o build acima
+O workflow `.github/workflows/pages.yml` publica a cada merge em `main`,
+com `NEXT_PUBLIC_SITE_ENV=production`. Variáveis opcionais do repositório
+(Settings → Secrets and variables → Actions → Variables) estão em
+`.env.example` e em `OPERACAO.md`.

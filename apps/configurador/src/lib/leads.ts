@@ -6,7 +6,7 @@
    estimativa só como referência, e o receptor recalcula com as mesmas
    regras. Sucesso só existe quando o receptor responde que salvou.
    ========================================================================== */
-import { complexNeeds } from '@/config/offer';
+import { complexNeeds } from '../config/offer';
 import {
   budgetInfo,
   FLOW_VERSION,
