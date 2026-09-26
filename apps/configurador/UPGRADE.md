@@ -1,5 +1,20 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — quadrado 3D no topo
+
+- O mockup de computador + celular do topo (site de exemplo “Ateliê Aurora”)
+  saiu. No lugar, um quadrado 3D com a frase “Estruture seu site profissional
+  em até 5 minutos”: gradiente azul-marinho → azul, reflexo discreto no alto,
+  borda clara fina, sombras em camadas e leve perspectiva.
+- Flutua devagar (sobe e desce com leve rotação, ciclo de 5 s) e tem um
+  brilho azul que pulsa a cada 3,6 s; no mouse, cresce 3% e o brilho aumenta.
+  Só `transform` e `opacity` são animados. Com “reduzir movimento”, fica parado.
+- No celular fica à esquerda, fora da faixa do cartão “Estruturar meu site
+  profissional”, e se movimenta menos; no computador fica na coluna direita.
+- **Atenção:** o tempo de 5 minutos foi pedido; ainda não foi medido com
+  visitantes. Vale acompanhar o tempo real até “Sua prévia” antes de usar a
+  frase em anúncios.
+
 ## Edição — cartão flutuante e mais estilos
 
 - “Criar minha prévia” / “Continuar minha prévia” (topo, menu e chamada

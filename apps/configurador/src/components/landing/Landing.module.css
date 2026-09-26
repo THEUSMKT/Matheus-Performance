@@ -374,78 +374,122 @@
   }
 }
 
-/* Ilustração do produto: a prévia de um site no computador e no celular. */
-.showcase {
+/* Quadrado 3D flutuante com a frase de destaque. Só transform e opacity são
+   animados (sem reflow). No celular fica à esquerda, fora da faixa do cartão
+   flutuante do canto inferior direito; com "reduzir movimento" fica parado. */
+.pitch {
+  --cube: clamp(184px, calc(100vw - 172px), 250px);
+  --lift: 5px;
+  --tilt: 1.5deg;
   position: relative;
-  width: 100%;
-  max-width: 560px;
-  margin-inline: auto;
-  padding-bottom: 24px;
+  justify-self: start;
+  width: var(--cube);
+  padding: 10px 0 34px;
+  perspective: 900px;
+}
+.pitchFloat {
+  animation: pitchFloat 5s ease-in-out infinite;
+  will-change: transform;
+}
+.pitchCube {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 14%;
+  border: 1.5px solid rgb(255 255 255 / 0.22);
+  border-radius: 22%;
+  background: linear-gradient(145deg, #041552 0%, var(--navy) 22%, #0a3fc2 62%, #2f8bff 100%);
+  color: #fff;
+  transform: rotateX(8deg) rotateY(-10deg);
+  transform-style: preserve-3d;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.18),
+    inset 0 -10px 24px rgb(2 10 46 / 0.45),
+    0 2px 3px rgb(8 27 92 / 0.25),
+    0 12px 24px -8px rgb(8 27 92 / 0.45),
+    0 30px 60px -20px rgb(7 60 200 / 0.55),
+    14px 26px 0 -12px rgb(6 26 100 / 0.35);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+/* Reflexo discreto no alto, como luz numa superfície polida. */
+.pitchCube::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 70% at 30% 0%, rgb(255 255 255 / 0.26), rgb(255 255 255 / 0.06) 45%, transparent 62%);
   pointer-events: none;
-  user-select: none;
 }
-.showcaseFloat {
+/* Brilho azul ao redor, que pulsa devagar (só opacidade). */
+.pitchCube::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 0 46px 10px rgb(7 97 253 / 0.5);
+  opacity: 0.6;
+  animation: pitchGlow 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.pitchCube p {
   position: relative;
-  animation: floatSoft 7s ease-in-out infinite;
+  margin: 0;
+  font-size: clamp(19px, calc(var(--cube) * 0.108), 34px);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  text-align: center;
+  text-wrap: balance;
+  color: rgb(255 255 255 / 0.97);
+  text-shadow: 0 2px 12px rgb(2 10 46 / 0.35);
 }
-.showcaseBrowser {
-  width: 86%;
-  aspect-ratio: 16 / 10.5;
-  overflow: hidden;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 26px 50px -30px rgb(8 27 92 / 0.6);
+.pitch:hover .pitchCube {
+  transform: rotateX(8deg) rotateY(-10deg) scale(1.03);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.22),
+    inset 0 -10px 24px rgb(2 10 46 / 0.45),
+    0 2px 3px rgb(8 27 92 / 0.25),
+    0 16px 30px -8px rgb(8 27 92 / 0.5),
+    0 36px 70px -18px rgb(7 60 200 / 0.7),
+    14px 26px 0 -12px rgb(6 26 100 / 0.35);
 }
-.showcaseBrowser .desktopFrame {
-  box-shadow: none;
-}
-.showcasePhone {
+.pitchShadow {
   position: absolute;
-  right: 0;
-  bottom: -20px;
-  width: 31%;
-  aspect-ratio: 9 / 18;
-  padding: 5px;
-  border-radius: 22px;
-  background: #0b1233;
-  box-shadow: 0 22px 36px -18px rgb(8 27 92 / 0.75);
-}
-.showcaseScreen {
-  height: 100%;
-  overflow: hidden;
-  border-radius: 17px;
-  background: #fff;
-}
-.showcaseScreen .desktopFrame {
-  border-radius: 0;
-  box-shadow: none;
-}
-.showcaseShadow {
-  position: absolute;
-  inset: auto 12% 0;
-  height: 16px;
+  inset: auto 10% 6px;
+  height: 18px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(8 27 92 / 0.2), transparent);
-  animation: shadowSoft 7s ease-in-out infinite;
+  background: radial-gradient(closest-side, rgb(8 27 92 / 0.26), transparent);
+  animation: pitchShadow 5s ease-in-out infinite;
 }
-@keyframes floatSoft {
+@keyframes pitchFloat {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(var(--lift)) rotate(calc(var(--tilt) * -1));
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(calc(var(--lift) * -1)) rotate(var(--tilt));
   }
 }
-@keyframes shadowSoft {
+@keyframes pitchGlow {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes pitchShadow {
   0%,
   100% {
     transform: scaleX(1);
     opacity: 1;
   }
   50% {
-    transform: scaleX(0.9);
-    opacity: 0.7;
+    transform: scaleX(0.86);
+    opacity: 0.65;
   }
 }
 
@@ -1743,8 +1787,11 @@ button.exampleCard:hover {
   .hero + .section {
     padding-top: 56px;
   }
-  .showcase {
-    max-width: none;
+  .pitch {
+    --cube: clamp(280px, calc(100vw - 880px), 380px);
+    --lift: 8px;
+    --tilt: 2deg;
+    justify-self: center;
   }
   .benefits {
     grid-template-columns: repeat(4, 1fr);

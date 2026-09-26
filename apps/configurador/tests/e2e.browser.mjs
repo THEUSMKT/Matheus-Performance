@@ -85,7 +85,7 @@ await scenario('Apresentação: primeira dobra curta, ação principal e seçõe
   for (const s of ['Projetos a partir de', 'R$ 500', 'Após levantamento', 'contratados à parte']) assert(invest.includes(s), s);
   assert(await page.locator('img[alt=""][src*="simbolo.png"]').count() >= 2);
   const text = await page.locator('body').innerText();
-  for (const bad of [/pequenas e médias/i, /pequenos negócios/i, /minutos/i, /seudominio/, /99999-9999/, /Mais vendido/]) assert(!bad.test(text), String(bad));
+  for (const bad of [/pequenas e médias/i, /pequenos negócios/i, /3 minutos|três minutos|site pronto em/i, /seudominio/, /99999-9999/, /Mais vendido/]) assert(!bad.test(text), String(bad));
   // Brilho: faixa animada atrás do texto, sem mudar o botão nem receber cliques.
   const shine = await heroCta(page).evaluate((el) => {
     const cs = getComputedStyle(el, '::after');
@@ -116,11 +116,44 @@ await scenario('Menos movimento: sem brilho nem flutuação', async (page) => {
   await page.goto(URL);
   const names = await page.evaluate(() => [
     getComputedStyle(document.querySelector('[class*=heroCopy] a[class*=shine]'), '::after').animationName,
-    getComputedStyle(document.querySelector('[class*=showcaseFloat]')).animationName,
+    getComputedStyle(document.querySelector('[class*=pitchFloat]')).animationName,
+    getComputedStyle(document.querySelector('[class*=pitchCube]'), '::after').animationName,
     getComputedStyle(document.querySelector('a[class*=floatCta]')).animationName,
   ]);
-  assert.deepEqual(names, ['none', 'none', 'none']);
+  assert.deepEqual(names, ['none', 'none', 'none', 'none']);
+  assert.match(await page.locator('[class*=pitchCube]').evaluate((e) => getComputedStyle(e).transform), /^matrix3d/, 'visual 3D continua');
 }, { reducedMotion: 'reduce' });
+
+await scenario('Quadrado 3D do topo: frase, flutuação, brilho e sem colidir com o cartão', async (page) => {
+  await page.goto(URL);
+  assert.equal(await page.locator('[class*=showcase]').count(), 0, 'mockups removidos');
+  const cube = page.locator('[class*=pitchCube]');
+  assert.equal((await cube.innerText()).trim(), 'Estruture seu site profissional em até 5 minutos');
+  const anim = await page.evaluate(() => {
+    const f = document.querySelector('[class*=pitchFloat]');
+    const c = document.querySelector('[class*=pitchCube]');
+    const a = getComputedStyle(f), g = getComputedStyle(c, '::after');
+    return { float: a.animationName, dur: parseFloat(a.animationDuration), glow: g.animationName, glowDur: parseFloat(g.animationDuration), shadows: getComputedStyle(c).boxShadow.split('rgba').length - 1 };
+  });
+  assert(anim.float.includes('pitchFloat') && anim.dur >= 4 && anim.dur <= 6, 'flutuação lenta');
+  assert(anim.glow.includes('pitchGlow') && anim.glowDur >= 3, 'brilho pulsante lento');
+  assert(anim.shadows >= 4, 'sombras em camadas');
+  const box = await cube.boundingBox();
+  const card = await page.locator('a[class*=floatCta]').boundingBox();
+  assert(box.x + box.width < card.x || box.y + box.height < card.y, 'não encosta no cartão flutuante');
+  const t = await cube.locator('p').boundingBox();
+  assert(t.x >= box.x && t.x + t.width <= box.x + box.width && t.y >= box.y && t.y + t.height <= box.y + box.height, 'frase inteira dentro do quadrado');
+}, { viewport: { width: 1280, height: 800 } });
+
+await scenario('Quadrado 3D no celular: fora da faixa do cartão flutuante', async (page) => {
+  await page.goto(URL);
+  const box = await page.locator('[class*=pitchCube]').boundingBox();
+  const card = await page.locator('a[class*=floatCta]').boundingBox();
+  assert(box.x + box.width < card.x, 'nunca passa por baixo do cartão ao rolar');
+  const t = await page.locator('[class*=pitchCube] p').boundingBox();
+  assert(t.y + t.height <= box.y + box.height && parseFloat(await page.locator('[class*=pitchCube] p').evaluate((p) => getComputedStyle(p).fontSize)) >= 19);
+  assert.equal(await scrollWidth(page), 360);
+}, { viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true });
 
 await scenario('Sem nada salvo o botão é "Criar minha prévia"; abrir a criação sem escolher nada não muda isso', async (page) => {
   await page.goto(B);
