@@ -20,25 +20,32 @@ import { emptySelection, type Selection } from './types';
 
 export const segments = [
   { id: 'local', name: 'Serviços locais', demo: 'Oficina do Lar', title: 'Sua casa bem cuidada, sem complicação.', intro: 'Reparos e soluções para deixar cada ambiente pronto para o seu dia a dia.', services: ['Pequenos reparos', 'Instalações', 'Manutenção preventiva'], label: 'Cuidado em cada detalhe' },
-  { id: 'beleza', name: 'Beleza e bem-estar', demo: 'Ateliê Aurora', title: 'Um tempo para você. Um cuidado só seu.', intro: 'Beleza e bem-estar com atenção ao seu estilo e à sua rotina.', services: ['Cuidados faciais', 'Beleza natural', 'Rituais de bem-estar'], label: 'Seu momento de cuidado' },
+  { id: 'beleza', name: 'Beleza e bem-estar', demo: 'Ateliê Aurora', title: 'Um tempo para você. Um cuidado só seu.', intro: 'Beleza e bem-estar com atenção ao seu estilo e à sua rotina.', services: ['Cuidados faciais', 'Beleza natural', 'Rituais de bem-estar'], label: 'Seu tempo de cuidado' },
   { id: 'consultoria', name: 'Consultoria e autônomos', demo: 'Clara Consultoria', title: 'Clareza para dar o próximo passo.', intro: 'Orientação próxima para organizar prioridades e transformar ideias em um plano de ação.', services: ['Diagnóstico inicial', 'Planejamento', 'Acompanhamento'], label: 'Ideias que ganham direção' },
   { id: 'criativo', name: 'Portfólio criativo', demo: 'Estúdio Forma', title: 'Boas ideias merecem ganhar forma.', intro: 'Design e direção criativa para marcas com algo próprio a dizer.', services: ['Identidade visual', 'Design editorial', 'Direção de arte'], label: 'Design com intenção' },
   { id: 'alimentacao', name: 'Alimentação', demo: 'Casa Oliva', title: 'Feito com calma. Servido com afeto.', intro: 'Receitas da casa, ingredientes da estação e uma boa razão para reunir quem você gosta.', services: ['Pratos da casa', 'Opções da estação', 'Encomendas especiais'], label: 'Sabores para compartilhar' },
   { id: 'outro', name: 'Outro segmento', demo: 'Seu Negócio · demonstração', title: 'O que você precisa, com atenção de verdade.', intro: 'Conheça nossos serviços e encontre a solução que faz sentido para você.', services: ['Atendimento personalizado', 'Soluções sob medida', 'Acompanhamento'], label: 'Seu negócio, bem apresentado' },
 ] as const;
 
+/**
+ * Objetivo principal. Os quatro primeiros aparecem no configurador; os
+ * demais vêm de versões anteriores e continuam válidos em projetos salvos.
+ */
 export const objectives = [
-  { id: 'orcamento', name: 'Receber pedidos de orçamento', cta: 'Pedir um orçamento' },
-  { id: 'servicos', name: 'Apresentar meus serviços', cta: 'Conhecer os serviços' },
-  { id: 'agenda', name: 'Facilitar solicitações de horário', cta: 'Solicitar um horário' },
-  { id: 'trabalhos', name: 'Mostrar meus trabalhos', cta: 'Ver trabalhos' },
-  { id: 'localizacao', name: 'Apresentar meu negócio e localização', cta: 'Ver localização' },
+  { id: 'orcamento', name: 'Receber contatos', cta: 'Pedir orçamento', visible: true },
+  { id: 'empresa', name: 'Apresentar a empresa', cta: 'Conheça a empresa', visible: true },
+  { id: 'servicos', name: 'Mostrar serviços', cta: 'Ver serviços', visible: true },
+  { id: 'produtos', name: 'Exibir produtos', cta: 'Ver produtos', visible: true },
+  { id: 'agenda', name: 'Receber pedidos de horário', cta: 'Solicitar horário', visible: false },
+  { id: 'trabalhos', name: 'Mostrar trabalhos', cta: 'Ver trabalhos', visible: false },
+  { id: 'localizacao', name: 'Apresentar o negócio e a localização', cta: 'Ver localização', visible: false },
 ] as const;
 
+/** Estilos visuais. Os ids são os mesmos das versões anteriores (links e projetos salvos). */
 export const directions = [
-  { id: 'essencial', name: 'Essencial', template: 'minimal', style: 'minimalista', description: 'Linhas limpas, leitura direta e espaço para respirar.' },
+  { id: 'marcante', name: 'Moderno', template: 'bold', style: 'criativo', description: 'Títulos fortes, contraste e composição expressiva.' },
   { id: 'elegante', name: 'Elegante', template: 'elegance', style: 'elegante', description: 'Tipografia editorial, tons suaves e detalhes delicados.' },
-  { id: 'marcante', name: 'Marcante', template: 'bold', style: 'criativo', description: 'Títulos fortes, contraste e composição expressiva.' },
+  { id: 'essencial', name: 'Minimalista', template: 'minimal', style: 'minimalista', description: 'Linhas limpas, leitura direta e espaço para respirar.' },
 ] as const;
 
 export const palettes = [
@@ -50,8 +57,8 @@ export const palettes = [
 
 export const sections = [
   { id: 'apresentacao', name: 'Apresentação', feature: null, fixed: true },
-  { id: 'servicos', name: 'Serviços', feature: null, fixed: false },
-  { id: 'sobre', name: 'Sobre o negócio', feature: null, fixed: false },
+  { id: 'servicos', name: 'Serviços ou produtos', feature: null, fixed: false },
+  { id: 'sobre', name: 'Sobre a empresa', feature: null, fixed: false },
   { id: 'galeria', name: 'Galeria', feature: 'galeria', fixed: false },
   { id: 'depoimentos', name: 'Depoimentos', feature: 'depoimentos', fixed: false },
   { id: 'faq', name: 'Perguntas frequentes', feature: 'faq', fixed: false },
@@ -63,9 +70,9 @@ export const sections = [
 export const externalFeatures = ['formularioEmail', 'agendamento', 'instagram'];
 
 /** Versão do fluxo apresentado — registrada no projeto e nos eventos. */
-export const FLOW_VERSION = 'assistido-4m-v1';
+export const FLOW_VERSION = 'etapas-4-v2';
 export const STEP_COUNT = 4;
-export const steps = ['Negócio e objetivo', 'Recomendação', 'Ajustes opcionais', 'Resumo e próximo passo'] as const;
+export const steps = ['Seu negócio', 'Aparência', 'Conteúdo', 'Sua prévia'] as const;
 
 /** Chaves de armazenamento, da atual para as anteriores. */
 export const KEY = 'mb.configurador.v3';
@@ -252,8 +259,12 @@ export function normalizeProject(input: unknown): Project {
   };
 }
 
-/** Etapas do fluxo de seis passos (v2) para os quatro momentos (v3). */
-const V2_STEP_TO_V3 = [0, 0, 1, 2, 2, 3];
+/**
+ * Etapas do fluxo de seis passos (v2) para as quatro etapas atuais:
+ * negócio e objetivo → Seu negócio; estrutura e recursos → Conteúdo;
+ * identidade → Aparência; resumo → Sua prévia.
+ */
+const V2_STEP_TO_V3 = [0, 0, 2, 1, 2, 3];
 
 /** Projeto salvo pela versão anterior do configurador (seis etapas). */
 export function fromV2(input: unknown): Project {
@@ -452,31 +463,11 @@ export function recommendations(p: Project): string[] {
   ];
 }
 
-/** Caminho recomendado por regra, a partir das respostas do Momento 1. */
+/** Caminho recomendado por regra, a partir das respostas da Etapa 1. */
 export function recommendedPlan(p: Project): Plan['id'] {
   if (needsDiagnosis(p)) return 'empresarial';
   if (!p.guidance && p.objective === 'orcamento') return 'captacao';
   return 'presenca';
-}
-
-/** Por que esta recomendação — uma frase, para o visitante entender. */
-export function recommendationReason(p: Project): string {
-  if (needsDiagnosis(p))
-    return 'Você indicou uma necessidade que depende de levantamento. O caminho empresarial começa por esse diagnóstico, sem prometer um valor antes da hora.';
-  if (p.guidance)
-    return 'Começamos pelo essencial para você decidir com calma. Na conversa, ajustamos a estrutura ao que fizer sentido para o seu negócio.';
-  switch (p.objective) {
-    case 'orcamento':
-      return 'Como o objetivo é receber pedidos de orçamento, a estrutura organiza a oferta e usa um formulário que já chega pelo WhatsApp com as informações certas.';
-    case 'agenda':
-      return 'Para pedidos de horário, o botão de WhatsApp resolve sem assinatura extra. Agenda automática só entra se você precisar.';
-    case 'trabalhos':
-      return 'Para mostrar trabalhos, a galeria entra na estrutura e o contato fica sempre à mão.';
-    case 'localizacao':
-      return 'Para quem precisa ser encontrado, a localização entra na estrutura junto dos serviços e do contato.';
-    default:
-      return 'Para apresentar serviços com clareza, a estrutura essencial já cobre apresentação, serviços, sobre e contato.';
-  }
 }
 
 /** Aplica um caminho de contratação, preservando identidade e textos. */
@@ -508,7 +499,7 @@ export function exampleProject(id: string): Project {
   const p = normalizeProject({
     ...initialProject(),
     segment: id,
-    objective: id === 'criativo' ? 'trabalhos' : id === 'beleza' ? 'agenda' : id === 'alimentacao' ? 'localizacao' : 'orcamento',
+    objective: id === 'criativo' || id === 'beleza' ? 'servicos' : id === 'alimentacao' ? 'produtos' : 'orcamento',
     direction: id === 'beleza' || id === 'alimentacao' ? 'elegante' : id === 'criativo' ? 'marcante' : 'essencial',
     palette: id === 'alimentacao' ? 'verde' : id === 'beleza' ? 'terracota' : id === 'criativo' ? 'roxo' : 'azul',
   });
@@ -578,7 +569,7 @@ export function shareLink(p: Project): string {
     emailVolume: n.emailVolume,
     step: STEP_COUNT - 1,
   };
-  return `${contact.siteUrl}/#projeto=${encodeURIComponent(JSON.stringify(safe))}`;
+  return `${contact.siteUrl}/criar/#projeto=${encodeURIComponent(JSON.stringify(safe))}`;
 }
 
 /** Lê links da versão atual e da anterior. Lança erro se o link não for válido. */
@@ -647,7 +638,7 @@ export function planText(p: Project): string {
  * Mensagem do WhatsApp: legível, com o essencial para a conversa começar.
  * Usa exatamente as mesmas funções da página e do PDF.
  */
-export function projectMessage(p: Project, origin?: string): string {
+export function projectMessage(p: Project, origin?: string, opts: { logo?: boolean } = {}): string {
   const objective = objectives.find((o) => o.id === p.objective)!;
   const extras = selectedExtras(p);
   const lead = p.lead;
@@ -665,6 +656,7 @@ export function projectMessage(p: Project, origin?: string): string {
   lines.push(`Seções: ${selectedSections(p).join(', ')}`);
   if (extras.length) lines.push(`Opcionais: ${extras.join(', ')}`);
   lines.push(`Identidade: ${directions.find((d) => d.id === p.direction)!.name}, ${p.custom ? `cor própria ${p.custom}` : palettes.find((x) => x.id === p.palette)!.name}`);
+  if (opts.logo) lines.push('Logo: tenho a logo e envio por aqui');
   if (p.features.includes('formularioEmail')) {
     const v = volumeOptions.find((o) => o.id === p.emailVolume);
     lines.push(`Contatos por mês (formulário por e-mail): ${v ? v.messageLabel : 'a definir'}`);
@@ -696,5 +688,5 @@ export function projectMessage(p: Project, origin?: string): string {
 
 /** Mensagem curta para tirar dúvidas no meio do fluxo, sem dados pessoais. */
 export function helpMessage(p: Project): string {
-  return `Olá! Estou configurando um site no simulador (etapa: ${steps[p.step]}) e fiquei com uma dúvida.`;
+  return `Olá! Estou montando a prévia do meu site (etapa: ${steps[p.step]}) e fiquei com uma dúvida.`;
 }

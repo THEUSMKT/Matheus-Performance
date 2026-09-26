@@ -4,9 +4,9 @@ import { contact } from '@/config/contact';
 import { isProduction } from '@/config/integrations';
 import './globals.css';
 
-const title = 'Beck Performance | Criação de sites para pequenas e médias empresas';
+const title = 'Beck Performance | Sites para empresas de todos os portes';
 const description =
-  'Veja uma prévia do site da sua empresa, conheça a estimativa de investimento e receba orientação para publicar. Escopo e custos confirmados antes da contratação.';
+  'Monte uma prévia personalizada do site da sua empresa em poucos passos, sem cadastro. Escopo e investimento confirmados antes da contratação.';
 
 /** Indexa só no build de produção E com a liberação em contact.ts. */
 const indexable = isProduction && contact.indexarNoGoogle;
@@ -75,10 +75,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={fontVars}>
       <body>
         <a
-          href="#configurador"
+          href="#conteudo"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xs focus:bg-ink focus:px-4 focus:py-2 focus:text-surface"
         >
-          Ir para o configurador
+          Ir para o conteúdo
         </a>
         {children}
         <script

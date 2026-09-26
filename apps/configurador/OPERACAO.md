@@ -10,8 +10,9 @@ como ativar cada parte. Nenhum segredo aparece aqui nem no código da página.
 O site é estático (GitHub Pages) e não tem servidor. Por isso, sem receptor
 configurado:
 
-- O botão final é **“Preparar conversa no WhatsApp”**. Ele abre o WhatsApp com
-  o resumo pronto; nada é enviado até o visitante tocar em enviar.
+- O botão final, na etapa “Sua prévia”, é **“Solicitar orçamento”**. Ele abre
+  o WhatsApp com o resumo pronto; nada é enviado até o visitante tocar em
+  enviar.
 - A página **nunca** diz que o pedido foi recebido e **nunca** emite
   `generate_lead`. Abrir o WhatsApp é registrado como `whatsapp_open`
   (intenção).
@@ -22,7 +23,7 @@ configurado:
 nova, crie o card no CRM (ou planilha) na etapa *Novo contato*, colando a
 mensagem recebida. A referência evita duplicar o mesmo projeto.
 
-## 2. Ativar o formulário “Solicitar proposta” (modo receptor)
+## 2. Ativar o formulário de pedido (modo receptor)
 
 O contrato, a validação, a idempotência e um receptor de referência já estão
 prontos e testados (`npm test`).
@@ -46,9 +47,9 @@ prontos e testados (`npm test`).
    - `LEAD_ENDPOINT` = URL pública da função (não é segredo).
    - `RESPONSE_EXPECTATION` = prazo real de retorno, se houver (ex.: “em até
      1 dia útil”). Vazio = nenhuma promessa.
-5. Faça um merge em `main` (ou rode o workflow manualmente). A página passa a
-   mostrar o formulário com nome + canal preferido, qualificação opcional e
-   aceite separado para novidades.
+5. Faça um merge em `main` (ou rode o workflow manualmente). “Solicitar
+   orçamento” passa a abrir o formulário com nome + canal preferido,
+   qualificação opcional e aceite separado para novidades.
 6. Teste em produção com um pedido real seu e confira: registro salvo, card
    no CRM, evento `generate_lead` uma única vez.
 
@@ -68,12 +69,16 @@ outra resposta é tratada como falha pela página.
 
 ## 3. Modelo de dados
 
-- **Projeto** (`src/lib/project.ts`, `version: 3`, `flow: assistido-4m-v1`):
+- **Projeto** (`src/lib/project.ts`, `version: 3`, `flow: etapas-4-v2`):
   segmento, serviço principal, objetivo ou pedido de orientação, necessidades
   complexas, caminho, seções, identidade, recursos, limite de orçamento e
   dados de contato. Validado sempre que é lido. Versões anteriores (v1, v2)
   são convertidas ao abrir; os dados antigos continuam no navegador até o
-  visitante usar “Começar novamente”.
+  visitante usar “Começar novamente”. Projetos salvos com objetivos antigos
+  (horário, trabalhos, localização) continuam válidos.
+- **Logo enviada** (`src/lib/logo.ts`, chave `bp.logo.v1`): reduzida no
+  navegador e guardada só nele. Nunca vai no link, na mensagem nem no pedido —
+  a mensagem só avisa “Logo: tenho a logo e envio por aqui”.
 - **Pedido** (`src/lib/leads.ts`, `schema: 1`): contato, qualificação,
   consentimentos, projeto completo, estimativa do navegador (só referência) e
   origem normalizada.
@@ -106,14 +111,16 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 
 | Evento | Quando | Propriedades |
 |---|---|---|
-| `configurator_start` | Primeira interação no configurador (1× por sessão) | — |
-| `step_complete` | Avançar um momento (1× por momento) | `step` |
-| `recommendation_applied` | Usar a recomendação | `plan`, `source` |
-| `plan_selected` | Escolher um caminho | `plan`, `source` |
+| `configurator_start` | “Criar minha prévia” ou abrir a página de criação (1× por sessão) | — |
+| `step_complete` | Avançar uma etapa (1× por etapa) | `step` |
+| `recommendation_applied` | Usar a estrutura sugerida para o objetivo | `plan` |
+| `plan_selected` | Escolher uma estrutura | `plan`, `source` (`investimento`, `conteudo`) |
 | `example_opened` / `example_applied` | Abrir a demonstração (ou trocar de exemplo nela) / usar como ponto de partida | `segment` |
 | `example_view_mode` | Trocar Computador/Celular na demonstração | `segment`, `device` |
-| `summary_view` | Chegar ao resumo (1× por sessão) | — |
-| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção**) | `context` (`hero`, `barra_fixa`, `ajuda`, `resumo`, `final`, `rodape`) |
+| `summary_view` | Chegar a “Sua prévia” (1× por sessão) | — |
+| `preview_view` | Ver a prévia: ao chegar em “Sua prévia” ou ao tocar em “Ver prévia” no celular | `source` (`etapa`, `alternancia`), `step` |
+| `quote_request` | Clique em “Solicitar orçamento” (**intenção**) | `mode` (`whatsapp`, `formulario`) |
+| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção**) | `context` (`hero`, `barra_fixa`, `ajuda`, `resumo`, `resumo_alternativo`, `final`, `rodape`) |
 | `share_link` / `pdf_save` / `help_open` | Ferramentas do resumo e ajuda | `step` (ajuda) |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |
@@ -133,8 +140,9 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
   `utm_term` — em minúsculas, sem acento, até 60 caracteres. Valores que
   parecem e-mail ou telefone são descartados. Vale a primeira origem da sessão.
 - `?segmento=beleza` (ids: `local`, `beleza`, `consultoria`, `criativo`,
-  `alimentacao`, `outro`) abre a página com a prévia e o configurador daquele
-  segmento. Uma única página atende todas as campanhas — não crie cópias.
+  `alimentacao`, `outro`) começa o carrossel no exemplo do segmento e abre a
+  página de criação com o segmento já escolhido. Uma única página atende
+  todas as campanhas — não crie cópias.
 - Preparar a página para campanhas não inclui iniciar anúncios ou gastar verba.
 
 ### Indicadores
@@ -142,9 +150,9 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
 | Indicador | Cálculo |
 |---|---|
 | Início do configurador | `configurator_start` ÷ visitas |
-| Conclusão por momento | `step_complete(n)` ÷ `configurator_start` |
-| Chegada ao resumo | `summary_view` ÷ `configurator_start` |
-| Intenção de contato | `whatsapp_open(resumo)` ÷ `summary_view` |
+| Conclusão por etapa | `step_complete(n)` ÷ `configurator_start` |
+| Chegada à prévia final | `summary_view` ÷ `configurator_start` |
+| Pedido de orçamento | `quote_request` ÷ `summary_view` |
 | Pedidos confirmados | `generate_lead` (modo receptor) ou cards criados no CRM (modo WhatsApp) |
 | Proposta, fechamento, perda | No CRM, por etapa e motivo de perda |
 | Custo por pedido | Verba da campanha ÷ pedidos confirmados da mesma origem |
@@ -166,7 +174,7 @@ de uma coisa na mesma área ao mesmo tempo. Nenhum resultado foi simulado.
 ## 6. Decisões comerciais em aberto
 
 - **Identidade visual no pacote:** `pricing.identity.mode` está em
-  `'vigente'` (Elegante e Marcante somam acréscimo). Trocar para
+  `'vigente'` (Moderno e Elegante somam acréscimo). Trocar para
   `'incluida'` inclui a aplicação básica da identidade no pacote e mantém
   cobrados só trabalhos identificáveis (como adaptar cores próprias). Os
   testes cobrem os dois modos.

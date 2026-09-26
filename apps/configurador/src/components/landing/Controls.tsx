@@ -5,10 +5,17 @@
    entra e sai do grupo). Confirmação: caixa inline, sem janela surpresa.
    ========================================================================== */
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
 import s from './Landing.module.css';
 
-export type RadioOption = { id: string; label: string; hint?: ReactNode; aside?: ReactNode; lead?: ReactNode };
+export type RadioOption = {
+  id: string;
+  label: string;
+  hint?: ReactNode;
+  aside?: ReactNode;
+  lead?: ReactNode;
+  /** Selo curto ao lado do rótulo, ex.: "Sugerido para seu objetivo". */
+  badge?: string;
+};
 
 export function Radios({
   label,
@@ -21,13 +28,14 @@ export function Radios({
   hideLabel = false,
 }: {
   label: string;
-  /** Título já exibido por fora (ex.: na sanfona); o grupo continua rotulado. */
+  /** Título já exibido por fora; o grupo continua rotulado. */
   hideLabel?: boolean;
   hint?: string;
   value: string;
   options: RadioOption[];
   onChange: (id: string) => void;
-  variant?: 'option' | 'chip';
+  /** option = linha com marcador; chip = pílula; tile = bloco com ícone (grade 2 colunas). */
+  variant?: 'option' | 'chip' | 'tile';
   columns?: boolean;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -46,13 +54,15 @@ export function Radios({
   }
 
   const groupId = `g-${label.replace(/\W+/g, '-').toLowerCase()}`;
+  const groupClass = variant === 'chip' ? s.chips : variant === 'tile' ? s.tiles : `${s.options} ${columns ? s.twoCol : ''}`;
+  const itemClass = variant === 'chip' ? s.chip : variant === 'tile' ? s.tileOpt : s.option;
   return (
     <div className={hideLabel ? undefined : s.block}>
       <span className={hideLabel ? s.srOnly : s.blockTitle} id={groupId}>
         {label}
         {hint && <small>{hint}</small>}
       </span>
-      <div role="radiogroup" aria-labelledby={groupId} className={variant === 'chip' ? s.chips : `${s.options} ${columns ? s.twoCol : ''}`}>
+      <div role="radiogroup" aria-labelledby={groupId} className={groupClass}>
         {options.map((o, i) => {
           const checked = o.id === value;
           return (
@@ -65,18 +75,26 @@ export function Radios({
               role="radio"
               aria-checked={checked}
               tabIndex={checked || (current < 0 && i === 0) ? 0 : -1}
-              className={variant === 'chip' ? s.chip : s.option}
+              className={itemClass}
               onClick={() => onChange(o.id)}
               onKeyDown={(e) => onKey(e, i)}
             >
               {variant === 'chip' ? (
                 o.label
+              ) : variant === 'tile' ? (
+                <>
+                  {o.lead}
+                  <span>{o.label}</span>
+                </>
               ) : (
                 <>
                   <span className={s.radioDot} aria-hidden="true" />
                   <span style={{ flex: 1, minWidth: 0 }}>
                     {o.lead}
-                    <strong>{o.label}</strong>
+                    <strong>
+                      {o.label}
+                      {o.badge && <span className={s.suggest}>{o.badge}</span>}
+                    </strong>
                     {o.hint && <small>{o.hint}</small>}
                   </span>
                   {o.aside && <span className={s.price}>{o.aside}</span>}
@@ -97,6 +115,7 @@ export function Check({
   hint,
   aside,
   disabled,
+  badge,
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -104,12 +123,16 @@ export function Check({
   hint?: ReactNode;
   aside?: ReactNode;
   disabled?: boolean;
+  badge?: string;
 }) {
   return (
     <label className={s.checkRow}>
       <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
       <span>
-        <strong>{title}</strong>
+        <strong>
+          {title}
+          {badge && <span className={s.suggest}>{badge}</span>}
+        </strong>
         {hint && <small>{hint}</small>}
       </span>
       {aside && <b className={s.price}>{aside}</b>}
@@ -141,67 +164,6 @@ export function ConfirmBox({ pending, onCancel }: { pending: Pending; onCancel: 
         <button type="button" className={`${s.secondary} ${s.small}`} onClick={onCancel}>
           Manter minhas escolhas
         </button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Bloco do momento 3. No computador é um bloco com título; no celular vira
- * sanfona (uma aberta por vez) e o cabeçalho fechado mostra a escolha atual.
- */
-export function Fold({
-  id,
-  title,
-  short,
-  value,
-  note,
-  narrow,
-  open,
-  onToggle,
-  desktopTitle = true,
-  children,
-}: {
-  id: string;
-  title: string;
-  /** Título mais curto para o cabeçalho da sanfona no celular. */
-  short?: string;
-  value: string;
-  note?: string;
-  narrow: boolean;
-  open: boolean;
-  onToggle: () => void;
-  desktopTitle?: boolean;
-  children: ReactNode;
-}) {
-  if (!narrow) {
-    if (!desktopTitle) return <>{children}</>;
-    return (
-      <div className={s.block}>
-        <span className={s.blockTitle}>
-          {title}
-          {note && <small>{note}</small>}
-        </span>
-        {children}
-      </div>
-    );
-  }
-  const headId = `dobra-${id}`;
-  const panelId = `painel-${id}`;
-  return (
-    <div className={s.fold} data-open={open}>
-      <h4 className={s.foldHead}>
-        <button type="button" id={headId} aria-expanded={open} aria-controls={panelId} onClick={onToggle}>
-          <span>
-            <span className={s.foldTitle}>{short ?? title}</span>
-            <span className={s.foldValue}> · {value}</span>
-          </span>
-          <ChevronDown aria-hidden="true" />
-        </button>
-      </h4>
-      <div id={panelId} role="region" aria-labelledby={headId} hidden={!open} className={s.foldBody}>
-        {note && <p className={s.hint}>{note}</p>}
-        {children}
       </div>
     </div>
   );

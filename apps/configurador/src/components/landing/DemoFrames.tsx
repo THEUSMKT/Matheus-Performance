@@ -1,14 +1,15 @@
 'use client';
 /* ==========================================================================
-   Molduras da demonstração: computador (site desenhado em 1100px e reduzido
-   para caber) e celular (moldura com "notch").
+   Molduras da prévia: computador (site desenhado numa largura fixa e
+   reduzido para caber) e celular (moldura com "notch").
    ========================================================================== */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import s from './Landing.module.css';
 
 const DESKTOP_WIDTH = 1100;
 
-export function DesktopFrame({ children }: { children: ReactNode }) {
+/** Desenha o conteúdo em `width` px e reduz para caber na largura disponível. */
+export function DesktopFrame({ children, width = DESKTOP_WIDTH, className }: { children: ReactNode; width?: number; className?: string }) {
   const outer = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -19,7 +20,7 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
     const i = inner.current;
     if (!o || !i) return;
     const fit = () => {
-      const next = Math.min(1, o.clientWidth / DESKTOP_WIDTH);
+      const next = Math.min(1, o.clientWidth / width);
       setScale(next);
       setHeight(Math.ceil(i.offsetHeight * next));
     };
@@ -28,11 +29,11 @@ export function DesktopFrame({ children }: { children: ReactNode }) {
     ro.observe(i);
     fit();
     return () => ro.disconnect();
-  }, []);
+  }, [width]);
 
   return (
-    <div ref={outer} className={s.desktopFrame} style={{ height }}>
-      <div ref={inner} className={s.desktopCanvas} style={{ width: DESKTOP_WIDTH, transform: `scale(${scale})` }}>
+    <div ref={outer} className={`${s.desktopFrame} ${className ?? ''}`} style={{ height }}>
+      <div ref={inner} className={s.desktopCanvas} style={{ width, transform: `scale(${scale})` }}>
         {children}
       </div>
     </div>

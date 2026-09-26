@@ -1,0 +1,677 @@
+/* ==========================================================================
+   Página de criação da prévia (/criar/). Usa os tokens e botões de
+   Landing.module.css (a raiz tem a classe .page de lá).
+   Abaixo de 1080px: editor e prévia alternam; a partir de 1080px:
+   controles à esquerda e prévia fixa à direita.
+   ========================================================================== */
+
+.builder {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* Cabeçalho compacto */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 56px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.96);
+  backdrop-filter: saturate(1.4) blur(8px);
+}
+.headerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 100%;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.back:hover {
+  background: var(--tint);
+  color: var(--navy);
+}
+.back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.main {
+  flex: 1;
+  padding: 14px 0 calc(96px + env(safe-area-inset-bottom));
+}
+
+/* Título, etapa e ações secundárias */
+.top {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.top h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+}
+.progressBar {
+  flex: 1;
+  max-width: 180px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: var(--line);
+}
+.progressBar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blue);
+  transition: width 0.3s ease;
+}
+.saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.saved svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ok);
+}
+.notice {
+  color: var(--ok);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Alternância Editar / Ver prévia (celular e tablet) */
+.viewSwitch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border: 1px solid #c9dafb;
+  border-radius: 12px;
+  background: var(--tint);
+}
+.viewSwitch button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+.viewSwitch button[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--navy);
+  box-shadow: 0 2px 8px -4px rgb(8 27 92 / 0.45);
+}
+.viewSwitch svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Editor e prévia */
+.grid {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+.editor {
+  min-width: 0;
+}
+.stepTitle {
+  font-size: 20px;
+  font-weight: 800;
+}
+.stepTitle:focus {
+  outline: none;
+}
+.hint {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.group {
+  margin-top: 20px;
+}
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.label small {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+/* Rodapé do editor: ajuda e "Começar novamente", discretos */
+.editorFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-top: 14px;
+}
+.restart {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.restart:hover {
+  color: var(--navy);
+}
+.helpLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.helpLink:hover {
+  color: var(--navy);
+  text-decoration: underline;
+}
+.helpLink svg {
+  width: 16px;
+  height: 16px;
+}
+
+.previewPane {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.previewTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.previewLabel {
+  font-size: 15px;
+  font-weight: 800;
+}
+.device {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.device button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.device button[aria-pressed='true'] {
+  background: var(--navy);
+  color: #fff;
+}
+.device svg {
+  width: 16px;
+  height: 16px;
+}
+.previewArea {
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+/* Estilos (miniaturas) */
+.styles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.styleOpt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+.styleOpt[aria-checked='true'] {
+  border-color: var(--blue);
+  background: var(--tint);
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+.styleOpt:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.styleThumb {
+  height: 104px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  pointer-events: none;
+}
+.styleName {
+  padding: 0 3px;
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 700;
+}
+.stylePrice {
+  padding: 0 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Cores */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 4px;
+}
+.swatchOpt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 6px 2px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.swatchOpt[aria-checked='true'] {
+  border-color: var(--blue);
+  background: var(--tint);
+  color: var(--navy);
+}
+.swatchDot {
+  width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.16);
+}
+.customDot {
+  background: conic-gradient(#e11d48, #f59e0b, #16a34a, #0891b2, #2563eb, #7c3aed, #e11d48);
+}
+.colorRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* Logo */
+.logoRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.upload {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.upload:hover {
+  border-color: var(--blue);
+}
+.upload:focus-within {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+}
+.upload svg {
+  width: 20px;
+  height: 20px;
+  color: var(--blue-ink);
+}
+.upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.logoThumb {
+  display: block;
+  max-width: 120px;
+  max-height: 56px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  object-fit: contain;
+}
+.textButton {
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--blue-ink);
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Sugestões de texto */
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.suggestions button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+.suggestions button:hover {
+  border-color: var(--blue);
+}
+
+/* Etapa 4: investimento, resumo e pedido */
+.estimate {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--navy);
+  color: #fff;
+}
+.estimateLabel {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.estimateValue {
+  display: block;
+  margin-top: 2px;
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.estimateNote {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+.estimate details {
+  margin-top: 10px;
+}
+.estimate summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.estimate table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.estimate td {
+  padding: 6px 0;
+  border-top: 1px solid rgb(255 255 255 / 0.18);
+  vertical-align: top;
+}
+.estimate td:last-child {
+  padding-left: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.rows {
+  margin: 16px 0 0;
+}
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+.row dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.row dd {
+  grid-column: 1;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.row .textButton {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+}
+.request {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #c9dafb;
+  border-radius: var(--radius);
+  background: var(--tint);
+}
+.request h3 {
+  font-size: 17px;
+}
+.wide {
+  width: 100%;
+  margin-top: 12px;
+}
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* Ações: no computador ficam no fim do editor; no celular, na barra fixa */
+.desktopActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.desktopActions .next {
+  margin-left: auto;
+}
+.backButton {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 700;
+}
+.backButton:hover {
+  border-color: var(--navy);
+}
+.bottomBar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line-strong);
+  background: #fff;
+  box-shadow: 0 -8px 24px -16px rgb(8 27 92 / 0.35);
+}
+.bottomBar > * {
+  white-space: nowrap;
+}
+.bottomBar .backButton {
+  padding-inline: 14px;
+}
+.bottomBar .next {
+  flex: 1;
+  padding-inline: 12px;
+}
+
+@media (max-width: 1079px) {
+  .grid[data-view='edit'] .previewPane {
+    display: none;
+  }
+  .grid[data-view='preview'] .editor {
+    display: none;
+  }
+  /* Etapa 4: a prévia vem primeiro e o resumo logo abaixo */
+  .grid[data-step='3'] .previewPane {
+    display: block;
+    order: -1;
+  }
+  .grid[data-step='3'] .editor {
+    display: block;
+  }
+  .desktopActions,
+  .desktopOnly {
+    display: none;
+  }
+}
+
+@media (min-width: 760px) {
+  .styleThumb {
+    height: 128px;
+  }
+}
+
+@media (min-width: 1080px) {
+  .viewSwitch,
+  .bottomBar {
+    display: none;
+  }
+  .main {
+    padding-bottom: 40px;
+  }
+  .top h1 {
+    font-size: 26px;
+  }
+  .grid {
+    grid-template-columns: minmax(0, 470px) minmax(0, 1fr);
+    gap: 28px;
+  }
+  /* "Continuar" sempre à vista no fim da coluna de opções */
+  .desktopActions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding-bottom: 16px;
+    background: var(--bg);
+  }
+  .previewPane {
+    position: sticky;
+    top: 72px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 88px);
+  }
+  .previewArea {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+@media print {
+  .header,
+  .main,
+  .bottomBar {
+    display: none !important;
+  }
+}

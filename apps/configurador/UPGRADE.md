@@ -1,4 +1,65 @@
-# Upgrade — Beck Performance, configurador assistido (setembro de 2026)
+# Upgrade — Beck Performance, configurador (setembro de 2026)
+
+## Edição — página de criação dedicada e primeira dobra curta
+
+**Apresentação (`/`)**
+- Primeira dobra só com “Sites para empresas de todos os portes”, “Seu próximo
+  site começa aqui.”, “Monte uma prévia personalizada em poucos passos.”, o
+  botão principal e “Sem cadastro.”. O botão diz “Continuar minha prévia” só
+  quando há uma prévia salva que vale retomar. Cabeçalho de 56px; no celular
+  o título ocupa duas linhas e o botão fica a cerca de 290px do topo.
+- Botão com brilho: faixa de luz diagonal atrás do texto, uma passagem de
+  cerca de 2 s a cada 7 s. Não muda o tamanho do botão, não recebe cliques,
+  tem foco visível e desliga com “reduzir movimento”.
+- Ilustração do produto (prévia no computador e no celular) no lugar do
+  quadrado flutuante. O texto “em até 3 minutos” saiu: o tempo nunca foi
+  medido com visitantes.
+- WhatsApp vira link discreto. Custos e escopo saíram do topo: “Investimento”
+  compacto (a partir de R$ 500 e os três caminhos, com valores de
+  `pricing.ts`), domínio e hospedagem nas perguntas, estimativa completa no fim
+  da criação.
+- Saíram as frases que limitavam o atendimento a pequenas e médias empresas.
+
+**Página de criação (`/criar/`)**
+- Cabeçalho compacto com a marca e “Voltar” (nada se perde), “Crie a prévia
+  do seu site” e “Etapa N de 4”; as opções começam logo abaixo.
+- Etapa 1, Seu negócio: nome (único campo obrigatório, com erro no próprio
+  campo), segmento com “Outro” + texto simples e objetivo com ícones —
+  Receber contatos, Apresentar a empresa, Mostrar serviços, Exibir produtos.
+- Etapa 2, Aparência: Moderno, Elegante e Minimalista em miniaturas reais,
+  cores com o acréscimo ao lado e logo opcional (sem logo, vale o nome).
+- Etapa 3, Conteúdo: estrutura com o selo “Sugerido para seu objetivo” (no
+  lugar da etapa de recomendação), seções com preço ao lado, frases sugeridas
+  e editáveis; recursos extras e necessidades complexas recolhidos.
+- Etapa 4, Sua prévia: estimativa em destaque, resumo com “Editar” por item,
+  “Editar prévia” e “Solicitar orçamento” (o pedido só depois de ver a prévia).
+- A prévia segue as escolhas (nome ou logo, estilo, cores, seções, textos do
+  segmento e o botão conforme o objetivo), é marcada “Prévia · não publicada”
+  e os botões dela não enviam nada. No computador fica ao lado das opções, com
+  rolagem própria e “Continuar” sempre à vista; no celular, “Editar” / “Ver
+  prévia” na mesma etapa.
+- Barra do celular só com “Voltar” + “Continuar” (“Ver minha prévia” na
+  etapa 3) e, no fim, “Editar prévia” + “Solicitar orçamento”. Respeita a área
+  segura do iPhone, some enquanto um campo está em edição (voltando só depois
+  do toque, para não roubar o clique) e não cobre o conteúdo. “Começar
+  novamente” discreto e com confirmação.
+- Links antigos (`#configurador`, `#projeto=`) levam à página de criação.
+
+**Dados e medição**
+- Fluxo `etapas-4-v2`; eventos novos `preview_view` e `quote_request`, sem
+  nada do que foi digitado. Seções renomeadas para “Serviços ou produtos” e
+  “Sobre a empresa”. Objetivos antigos continuam válidos em projetos salvos.
+- Logo guardada só no navegador (`bp.logo.v1`), fora de links, mensagem e
+  pedido.
+
+**Validação:** `npm test` (30 testes) e `tests/e2e.browser.mjs` (22 cenários:
+apresentação, brilho e movimento reduzido, as 4 etapas, prévia, salvamento,
+links, PDF, recomeço, teclado, campanha, exemplos, investimento, celular em
+360/390/430, computador em 1280 e modo receptor).
+
+**Limitações:** os prints de referência citados no pedido não chegaram — a
+revisão partiu de capturas da versão publicada. A prévia é ilustrativa: usa
+textos de exemplo marcados como editáveis e não gera textos nem imagens.
 
 ## Edição — versão celular mais simples
 
