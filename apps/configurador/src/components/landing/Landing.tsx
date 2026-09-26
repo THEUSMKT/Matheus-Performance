@@ -105,7 +105,7 @@ export default function Landing() {
               <MessageCircle aria-hidden="true" /> Tirar uma dúvida no WhatsApp
             </a>
           </div>
-          <Showcase segment={state.origin.segment} />
+          <FloatingPitch />
         </section>
 
         <Examples state={state} />
@@ -170,24 +170,14 @@ export default function Landing() {
   );
 }
 
-/** Ilustração do produto: a prévia de um site, no computador e no celular. */
-function Showcase({ segment }: { segment?: string }) {
-  const demo = exampleProject(segment && segment !== 'outro' ? segment : 'beleza');
+/** Quadrado 3D flutuante com a frase de destaque (decorativo, não é botão). */
+function FloatingPitch() {
   return (
-    <div className={s.showcase} aria-hidden="true">
-      <span className={s.showcaseShadow} />
-      <div className={s.showcaseFloat}>
-        <div className={s.showcaseBrowser}>
-          <DesktopFrame width={880}>
-            <SitePreview project={demo} compact />
-          </DesktopFrame>
-        </div>
-        <div className={s.showcasePhone}>
-          <div className={s.showcaseScreen}>
-            <DesktopFrame width={340}>
-              <SitePreview project={demo} compact bare />
-            </DesktopFrame>
-          </div>
+    <div className={s.pitch}>
+      <span className={s.pitchShadow} aria-hidden="true" />
+      <div className={s.pitchFloat}>
+        <div className={s.pitchCube}>
+          <p>Estruture seu site profissional em até 5 minutos</p>
         </div>
       </div>
     </div>
