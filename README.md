@@ -61,7 +61,8 @@ Todos os botões da página (hero, planos, rodapé, botão flutuante e o formul�
 montam o link a partir daí — **um único lugar para alterar**.
 Cada botão já leva a sua própria mensagem pronta, via atributo `data-wa`
 (ex.: o botão do plano Performance Meta abre o WhatsApp escrito
-"Tenho interesse no plano Performance Meta").
+"Tenho interesse no plano Performance Meta de R$ 1.399/mês…").
+Ao mudar um preço, atualize também o valor escrito no `data-wa` do botão do plano.
 
 ### 2. Suas imagens — `assets/img/`
 
@@ -107,7 +108,10 @@ Busque por `[` no `index.html` — todo placeholder está marcado assim:
   Ex.: `<strong class="counter" data-count="120" data-prefix="+">` conta de 0 a 120.
   `data-prefix` e `data-suffix` controlam "R$" e "mi/mil/x".
 - **Preços dos planos**: edite direto no `index.html`, dentro de `<p class="plan__price">`.
-  Para "sob consulta", use a mesma marcação do plano Exclusive.
+  Para "a partir de", use a mesma marcação do plano Exclusive (`<em class="plan__from">`).
+  O menor preço também aparece no subtítulo da seção Pacotes ("a partir de R$ 899/mês").
+- **Detalhes dos planos**: cada card tem um `<details class="plan__more">` ("Ver detalhes do plano")
+  com os limites de escopo. As entregas principais ficam em `<ul class="plan__list">`.
 
 ### 5. Domínio e SEO — `index.html` (topo do arquivo)
 
