@@ -46,6 +46,9 @@ export const directions = [
   { id: 'marcante', name: 'Moderno', template: 'bold', style: 'criativo', description: 'Títulos fortes, contraste e composição expressiva.' },
   { id: 'elegante', name: 'Elegante', template: 'elegance', style: 'elegante', description: 'Tipografia editorial, tons suaves e detalhes delicados.' },
   { id: 'essencial', name: 'Minimalista', template: 'minimal', style: 'minimalista', description: 'Linhas limpas, leitura direta e espaço para respirar.' },
+  { id: 'tecnologico', name: 'Tecnológico', template: 'modern', style: 'tecnologico', description: 'Topo escuro com grade e detalhes digitais.' },
+  { id: 'sofisticado', name: 'Sofisticado', template: 'premium', style: 'premium', description: 'Serifa, linhas finas e tons de papel.' },
+  { id: 'escuro', name: 'Escuro', template: 'dark', style: 'dark', description: 'Fundo escuro em todo o site, destaque na cor da marca.' },
 ] as const;
 
 export const palettes = [

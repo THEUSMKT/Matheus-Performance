@@ -587,6 +587,211 @@
   border-radius: 0;
 }
 
+/* ── Tecnológico: topo escuro com grade, detalhes digitais ──────────────── */
+.tecnologico .nav {
+  border-bottom-color: rgb(255 255 255 / 0.08);
+  background: #0b1120;
+  color: #fff;
+}
+.tecnologico .links {
+  color: #aeb7c9;
+}
+.tecnologico .navCta,
+.tecnologico .btn,
+.tecnologico .btnGhost {
+  border-radius: 8px;
+}
+.tecnologico .navCta {
+  border-color: var(--acc);
+  background: var(--acc);
+  color: var(--on);
+}
+.tecnologico .hero {
+  background-color: #0b1120;
+  background-image: linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: #fff;
+}
+.tecnologico .eyebrow {
+  color: color-mix(in srgb, var(--acc) 40%, #fff);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+}
+.tecnologico .title {
+  color: #fff;
+  font-weight: 800;
+}
+.tecnologico .lead {
+  color: #c3cad8;
+}
+.tecnologico .btnGhost {
+  border-color: rgb(255 255 255 / 0.35);
+  color: #fff;
+}
+.tecnologico .art {
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.04);
+}
+.tecnologico .artShape {
+  border-radius: 14px;
+  opacity: 0.55;
+}
+.tecnologico .artShape2 {
+  opacity: 0.35;
+}
+.tecnologico .artIcon {
+  color: #fff;
+}
+.tecnologico .num {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+.tecnologico .card {
+  border-radius: 10px;
+  border-left: 3px solid var(--acc);
+}
+
+/* ── Sofisticado: serifa, linhas finas e tons de papel ──────────────────── */
+.sofisticado .site {
+  background: #faf8f4;
+}
+.sofisticado .nav {
+  border-bottom-color: #e7e1d6;
+}
+.sofisticado .brand {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.sofisticado .navCta,
+.sofisticado .btn,
+.sofisticado .btnGhost {
+  border-radius: 0;
+}
+.sofisticado .navCta {
+  border-color: #1c1a16;
+  color: #1c1a16;
+}
+.sofisticado .eyebrow {
+  color: #7c6a4a;
+  letter-spacing: 0.24em;
+}
+.sofisticado .title,
+.sofisticado .h {
+  font-weight: 500;
+}
+.sofisticado .btn {
+  background: #1c1a16;
+  color: #fff;
+}
+.sofisticado .btnGhost {
+  border-color: #1c1a16;
+  color: #1c1a16;
+}
+.sofisticado .art {
+  border: 1px solid #d9d0bf;
+  border-radius: 0;
+  background: color-mix(in srgb, var(--acc) 14%, #faf8f4);
+  outline: 1px solid #d9d0bf;
+  outline-offset: -10px;
+}
+.sofisticado .artShape,
+.sofisticado .artShape2 {
+  border-radius: 0;
+}
+.sofisticado .section {
+  border-top-color: #ece6db;
+}
+.sofisticado .card {
+  border-color: #e7e1d6;
+  border-radius: 0;
+}
+.sofisticado .footer {
+  border-top-color: #e7e1d6;
+  background: #f3efe7;
+}
+
+/* ── Escuro: fundo escuro em todo o site ────────────────────────────────── */
+.escuro .site {
+  background: #0f1115;
+  color: #e8eaf0;
+}
+.escuro .nav,
+.escuro .section,
+.escuro .footer {
+  border-color: #232733;
+}
+.escuro .links,
+.escuro .lead,
+.escuro .text,
+.escuro .map {
+  color: #b9bfcc;
+}
+.escuro .title,
+.escuro .h,
+.escuro .cardTitle {
+  color: #fff;
+}
+.escuro .eyebrow,
+.escuro .num {
+  color: color-mix(in srgb, var(--acc) 50%, #fff);
+}
+.escuro .navCta {
+  border-color: color-mix(in srgb, var(--acc) 50%, #fff);
+  color: color-mix(in srgb, var(--acc) 50%, #fff);
+}
+.escuro .btnGhost {
+  border-color: #3a3f4d;
+  color: #e8eaf0;
+}
+.escuro .art,
+.escuro .card,
+.escuro .quote,
+.escuro .productImg,
+.escuro .tile,
+.escuro .input {
+  border-color: #2b303c;
+  background: #171a21;
+}
+.escuro .tile:nth-child(even) {
+  background: color-mix(in srgb, var(--acc) 30%, #171a21);
+}
+.escuro .tile,
+.escuro .quote svg {
+  color: color-mix(in srgb, var(--acc) 50%, #fff);
+}
+.escuro .cardText,
+.escuro .input {
+  color: #9aa1b0;
+}
+.escuro .faq span {
+  border-color: #2b303c;
+}
+.escuro .map {
+  background: repeating-linear-gradient(45deg, #171a21, #171a21 12px, #0f1115 12px, #0f1115 24px);
+}
+.escuro .tag {
+  border-color: #394050;
+  background: #1c2029;
+  color: #b9bfcc;
+}
+.escuro .footer {
+  background: #0b0d11;
+  color: #9aa1b0;
+}
+.escuro .navCta,
+.escuro .btn,
+.escuro .btnGhost {
+  border-radius: 99px;
+}
+.escuro .hero {
+  background: radial-gradient(120% 90% at 85% 10%, color-mix(in srgb, var(--acc) 38%, transparent), transparent 60%);
+}
+.escuro .art {
+  border-radius: 999px 999px 18px 18px;
+}
+
 /* ── Layout de computador ───────────────────────────────────────────────── */
 @container site (min-width: 620px) {
   .nav {

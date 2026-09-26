@@ -1,5 +1,23 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — cartão flutuante e mais estilos
+
+- “Criar minha prévia” / “Continuar minha prévia” (topo, menu e chamada
+  final) não abrem mais a criação direto: rolam suavemente até os exemplos e
+  destacam o cartão flutuante **“Estruturar meu site profissional”**, fixo no
+  canto inferior direito (quadrado, com brilho pulsante suave e aumento ao
+  passar o mouse). É esse cartão que abre `/criar/`. Com “reduzir movimento”,
+  a rolagem é imediata e o cartão fica parado. A barra fixa do celular saiu
+  (o cartão ocupa o lugar dela); o WhatsApp continua no topo, na chamada final
+  e no rodapé.
+- Aparência com seis estilos: Moderno, Elegante, Minimalista e os novos
+  **Tecnológico** (+ R$ 60), **Sofisticado** (+ R$ 110) e **Escuro**
+  (+ R$ 70). Os valores saem da tabela que já existia em `pricing.ts`
+  (modelo + estilo), sem preço novo. A prévia mostra cada um na hora.
+- Abaixo dos estilos, “Escolher um estilo diferente (entrar em contato no
+  WhatsApp)” abre a conversa com a mensagem pronta; não muda o estilo
+  escolhido. Evento: `whatsapp_open` com `context: estilo_diferente`.
+
 ## Edição — página de criação dedicada e primeira dobra curta
 
 **Apresentação (`/`)**

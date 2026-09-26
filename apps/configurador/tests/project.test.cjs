@@ -56,7 +56,7 @@ test('Composição soma exatamente o total em todas as combinações', () => {
     assert(msg.includes(model.priceLabel(p)), 'mensagem usa a mesma faixa');
     n++;
   }
-  assert.equal(n, 6 * 7 * 3 * 3, '4 objetivos visíveis + 3 antigos, ainda aceitos');
+  assert.equal(n, 6 * 7 * 6 * 3, '4 objetivos visíveis + 3 antigos, ainda aceitos; 6 estilos');
 });
 
 test('Recurso repetido não é cobrado duas vezes', () => {
@@ -196,11 +196,14 @@ test('Contraste do texto dos botões com cor própria (WCAG AA)', () => {
 
 /* ── Página de criação ────────────────────────────────────────────────── */
 
-test('Quatro etapas, quatro objetivos visíveis e três estilos com nomes simples', () => {
+test('Quatro etapas, quatro objetivos visíveis e seis estilos com nomes simples', () => {
   assert.deepEqual([...model.steps], ['Seu negócio', 'Aparência', 'Conteúdo', 'Sua prévia']);
   assert.equal(model.STEP_COUNT, 4);
   assert.deepEqual(model.objectives.filter((o) => o.visible).map((o) => o.name), ['Receber contatos', 'Apresentar a empresa', 'Mostrar serviços', 'Exibir produtos']);
-  assert.deepEqual(model.directions.map((d) => d.name), ['Moderno', 'Elegante', 'Minimalista']);
+  assert.deepEqual(model.directions.map((d) => d.name), ['Moderno', 'Elegante', 'Minimalista', 'Tecnológico', 'Sofisticado', 'Escuro']);
+  // Preço de cada estilo sai só da tabela de pricing.ts (modelo + estilo).
+  for (const d of model.directions) assert.equal(model.directionPrice(d.id), pricing.byTemplate[d.template] + pricing.byStyle[d.style], d.name);
+  assert.equal(model.normalizeProject({ ...model.initialProject(), direction: 'escuro' }).direction, 'escuro');
   assert.equal(model.normalizeProject({ ...model.initialProject(), objective: 'agenda' }).objective, 'agenda', 'objetivo antigo continua válido');
   const names = model.sections.map((s) => s.name);
   for (const s of ['Apresentação', 'Sobre a empresa', 'Serviços ou produtos', 'Galeria', 'Contato']) assert(names.includes(s), s);

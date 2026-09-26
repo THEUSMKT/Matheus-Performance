@@ -120,7 +120,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 | `summary_view` | Chegar a “Sua prévia” (1× por sessão) | — |
 | `preview_view` | Ver a prévia: ao chegar em “Sua prévia” ou ao tocar em “Ver prévia” no celular | `source` (`etapa`, `alternancia`), `step` |
 | `quote_request` | Clique em “Solicitar orçamento” (**intenção**) | `mode` (`whatsapp`, `formulario`) |
-| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção**) | `context` (`hero`, `barra_fixa`, `ajuda`, `resumo`, `resumo_alternativo`, `final`, `rodape`) |
+| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção**) | `context` (`hero`, `ajuda`, `estilo_diferente`, `resumo`, `resumo_alternativo`, `final`, `rodape`) |
 | `share_link` / `pdf_save` / `help_open` | Ferramentas do resumo e ajuda | `step` (ajuda) |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |
@@ -174,7 +174,7 @@ de uma coisa na mesma área ao mesmo tempo. Nenhum resultado foi simulado.
 ## 6. Decisões comerciais em aberto
 
 - **Identidade visual no pacote:** `pricing.identity.mode` está em
-  `'vigente'` (Moderno e Elegante somam acréscimo). Trocar para
+  `'vigente'` (todos os estilos, menos o Minimalista, somam acréscimo). Trocar para
   `'incluida'` inclui a aplicação básica da identidade no pacote e mantém
   cobrados só trabalhos identificáveis (como adaptar cores próprias). Os
   testes cobrem os dois modos.

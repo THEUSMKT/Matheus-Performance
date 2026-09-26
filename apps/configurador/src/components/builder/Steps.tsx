@@ -4,13 +4,16 @@
    Só o nome da empresa é obrigatório; o resto são escolhas com um toque.
    ========================================================================== */
 import type { RefObject } from 'react';
-import { Building2, Inbox, LayoutGrid, ShoppingBag } from 'lucide-react';
+import { Building2, Inbox, LayoutGrid, MessageCircle, ShoppingBag } from 'lucide-react';
 import { pricing, brl } from '@/config/pricing';
 import { features } from '@/config/features';
 import { siteTypes } from '@/config/siteTypes';
 import { FORM_EMAIL, FORM_WHATSAPP, emailFormNotice, volumeOptions, volumeQuestion } from '@/config/forms';
 import { complexNeeds, plans, scopeRules } from '@/config/offer';
 import { introSuggestions } from '@/config/copy';
+import { contact } from '@/config/contact';
+import { track } from '@/lib/analytics';
+import { whatsappLink } from '@/lib/whatsapp';
 import { applyPlan, needsDiagnosis, objectives, projectEstimate, recommendedPlan, sections, segments, type Project } from '@/lib/project';
 import { Check, Radios } from '../landing/Controls';
 import { LogoField, StylePicker, SwatchPicker } from './Pickers';
@@ -81,6 +84,15 @@ export function StepLook({ p, edit, logo, setLogo }: { p: Project; edit: Edit; l
           Estilo
         </span>
         <StylePicker p={p} onChange={(id) => edit({ direction: id, font: 'auto', legacyTemplate: undefined, legacyStyle: undefined })} />
+        <a
+          className={b.otherStyle}
+          href={whatsappLink(contact.whatsappEstilo)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track('whatsapp_open', { context: 'estilo_diferente' })}
+        >
+          <MessageCircle aria-hidden="true" /> Escolher um estilo diferente (entrar em contato no WhatsApp)
+        </a>
       </div>
       <div className={b.group}>
         <span className={b.label} id="rotulo-cores">

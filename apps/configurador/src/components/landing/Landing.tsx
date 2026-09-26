@@ -4,8 +4,8 @@
    benefícios → como funciona → investimento → quem cuida → perguntas →
    chamada final. A construção da prévia fica numa página própria (/criar/).
    ========================================================================== */
-import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Inbox, LayoutTemplate, ListChecks, Megaphone, MessageCircle, Monitor, Pointer, Smartphone, X } from 'lucide-react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { ArrowRight, ChevronLeft, ChevronRight, Inbox, LayoutTemplate, ListChecks, Megaphone, MessageCircle, Monitor, Pointer, Smartphone, X } from 'lucide-react';
 import { contact } from '@/config/contact';
 import { pricing, brl } from '@/config/pricing';
 import { plans } from '@/config/offer';
@@ -31,7 +31,7 @@ import { Carousel, type CarouselApi } from './Carousel';
 import { Footer, Header, asset, builderHref, mainSiteUrl } from './Chrome';
 import { ConfirmBox, type Pending } from './Controls';
 import { DesktopFrame, PhoneFrame } from './DemoFrames';
-import { useScrolledPast } from './hooks';
+import { prefersReducedMotion } from './hooks';
 import { useProject, type ProjectState } from './useProject';
 import s from './Landing.module.css';
 
@@ -67,6 +67,19 @@ export default function Landing() {
   const primaryLabel = resumable ? 'Continuar minha prévia' : cta.primary;
   const start = () => track('configurator_start');
 
+  // Os botões principais não abrem a criação direto: levam ao cartão
+  // flutuante "Estruturar meu site profissional", que é quem abre.
+  const card = useRef<HTMLAnchorElement>(null);
+  const [spot, setSpot] = useState(0);
+  function toCard(ev: MouseEvent<HTMLAnchorElement>) {
+    ev.preventDefault();
+    const target = document.getElementById('exemplos');
+    const smooth = !prefersReducedMotion();
+    if (target && target.getBoundingClientRect().top > 80) target.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    card.current?.focus({ preventScroll: true });
+    setSpot((n) => n + 1);
+  }
+
   // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…).
   useEffect(() => {
     const h = location.hash;
@@ -74,20 +87,17 @@ export default function Landing() {
     else if (h === '#configurador') location.replace(builderHref);
   }, []);
 
-  // Barra fixa do celular: aparece quando o botão principal do topo sai da tela.
-  const heroCta = useRef<HTMLAnchorElement>(null);
-  const ctaGone = useScrolledPast(heroCta);
 
   return (
     <div className={s.page} id="topo">
-      <Header ctaLabel={primaryLabel} onStart={start} />
+      <Header ctaLabel={primaryLabel} ctaHref="#exemplos" onStart={toCard} />
       <main id="conteudo">
         <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
           <div className={s.heroCopy}>
             <p className={s.audience}>{hero.eyebrow}</p>
             <h1 id="hero-titulo">{hero.title}</h1>
             <p className={s.heroLead}>{hero.description}</p>
-            <a ref={heroCta} className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start}>
+            <a className={`${s.primary} ${s.shine}`} href="#exemplos" onClick={toCard}>
               <span>{primaryLabel}</span>
             </a>
             <p className={s.micro}>Sem cadastro.</p>
@@ -140,7 +150,7 @@ export default function Landing() {
             <h2 id="final-titulo">Veja como o site da sua empresa pode ficar.</h2>
             <p>Monte a prévia e receba a estimativa na hora.</p>
             <div className={s.finalActions}>
-              <a className={s.primary} href={builderHref} onClick={start}>
+              <a className={s.primary} href="#exemplos" onClick={toCard}>
                 {primaryLabel}
               </a>
               <a className={s.quietLight} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'final' })}>
@@ -151,24 +161,11 @@ export default function Landing() {
         </section>
       </main>
       <Footer />
-      <div className={s.mobileBarSpacer} aria-hidden="true" />
-      {ctaGone && (
-        <div className={`${s.mobileBar} ${s.pageBar}`} data-bar="pagina">
-          <a className={`${s.primary} ${s.small}`} href={builderHref} onClick={start}>
-            {primaryLabel}
-          </a>
-          <a
-            className={s.waIcon}
-            href={whatsappLink(contact.whatsappCurta)}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Tirar uma dúvida no WhatsApp"
-            onClick={() => track('whatsapp_open', { context: 'barra_fixa' })}
-          >
-            <MessageCircle aria-hidden="true" />
-          </a>
-        </div>
-      )}
+      <a ref={card} className={s.floatCta} href={builderHref} onClick={start} data-spot={spot ? (spot % 2 ? 'a' : 'b') : undefined}>
+        <LayoutTemplate aria-hidden="true" />
+        <span>Estruturar meu site profissional</span>
+        <ArrowRight aria-hidden="true" className={s.floatArrow} />
+      </a>
     </div>
   );
 }
@@ -246,7 +243,8 @@ function Examples({ state }: { state: ProjectState }) {
     }
     if (index === null) return;
     carousel.current?.goTo(index, false);
-    cards.current[index]?.focus({ preventScroll: true });
+    // Depois da devolução de foco do próprio <dialog>, que volta ao card que o abriu.
+    requestAnimationFrame(() => cards.current[index]?.focus({ preventScroll: true }));
   }
 
   function applyOpened() {
