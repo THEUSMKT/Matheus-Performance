@@ -1,4 +1,4 @@
-import s from './Upgrade.module.css';
+import s from './Inspiration.module.css';
 
 type Model = {
   label: string;

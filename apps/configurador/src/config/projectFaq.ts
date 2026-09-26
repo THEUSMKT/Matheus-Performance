@@ -57,8 +57,8 @@ export const projectFaq: [string, string][] = [
     'Sem plataforma externa, o visitante pede um horário pelo WhatsApp e você confirma. Agenda com disponibilidade automática exige uma plataforma de agendamento, com assinatura própria e avaliação de compatibilidade.',
   ],
   [
-    'O que acontece quando eu clico em "Preparar conversa no WhatsApp"?',
-    'A página abre o WhatsApp com um resumo do projeto já escrito. Nada é enviado automaticamente: você revisa a mensagem e decide se envia.',
+    'O que acontece quando eu clico em "Solicitar orçamento"?',
+    'Você revisa o resumo do projeto antes de enviar: a página abre uma mensagem pronta no WhatsApp ou, quando disponível, um formulário curto. Nada é enviado sem você confirmar.',
   ],
   [
     'Minhas respostas ficam salvas?',

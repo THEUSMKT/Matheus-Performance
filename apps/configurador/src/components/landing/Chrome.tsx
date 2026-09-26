@@ -16,6 +16,9 @@ export const asset = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? '
 /** Site de gestão de tráfego, na raiz do mesmo repositório publicado. */
 export const mainSiteUrl = contact.mainSiteUrl;
 
+/** Página dedicada à criação da prévia. */
+export const builderHref = asset('/criar/');
+
 export function Brand({ href = '#topo', onHome = true }: { href?: string; onHome?: boolean }) {
   const inner = (
     <>
@@ -39,7 +42,7 @@ export function Brand({ href = '#topo', onHome = true }: { href?: string; onHome
 const navItems = [
   ['#exemplos', 'Exemplos'],
   ['#como-funciona', 'Como funciona'],
-  ['#opcoes', 'Opções'],
+  ['#investimento', 'Investimento'],
   ['#perguntas', 'Perguntas'],
 ] as const;
 
@@ -56,7 +59,7 @@ function NavLink({ hash, onHome, className, onClick, children }: { hash: string;
   );
 }
 
-export function Header({ onHome = true, ctaLabel = 'Ver a prévia do meu site', onStart }: { onHome?: boolean; ctaLabel?: string; onStart?: () => void }) {
+export function Header({ onHome = true, ctaLabel = 'Criar minha prévia', onStart }: { onHome?: boolean; ctaLabel?: string; onStart?: () => void }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -79,9 +82,9 @@ export function Header({ onHome = true, ctaLabel = 'Ver a prévia do meu site', 
               </NavLink>
             ))}
           </div>
-          <NavLink hash="#configurador" onHome={onHome} className={`${s.primary} ${s.small} ${s.navCta}`} onClick={onStart}>
+          <a href={builderHref} className={`${s.primary} ${s.small} ${s.navCta}`} onClick={onStart}>
             {ctaLabel}
-          </NavLink>
+          </a>
           <button type="button" className={s.menuButton} aria-expanded={open} aria-controls="menu-celular" onClick={() => setOpen(!open)}>
             {open ? 'Fechar' : 'Menu'}
           </button>
@@ -93,9 +96,8 @@ export function Header({ onHome = true, ctaLabel = 'Ver a prévia do meu site', 
                 {label}
               </NavLink>
             ))}
-            <NavLink
-              hash="#configurador"
-              onHome={onHome}
+            <a
+              href={builderHref}
               className={s.primary}
               onClick={() => {
                 close();
@@ -103,7 +105,7 @@ export function Header({ onHome = true, ctaLabel = 'Ver a prévia do meu site', 
               }}
             >
               {ctaLabel}
-            </NavLink>
+            </a>
           </div>
         )}
       </div>
@@ -119,19 +121,22 @@ export function Footer({ onHome = true }: { onHome?: boolean }) {
           <div>
             <Brand onHome={onHome} />
             <p style={{ marginTop: 10, maxWidth: '36ch' }}>
-              Criação de sites para pequenas e médias empresas, com escopo e investimento combinados antes do início.
+              Sites para empresas de todos os portes, com escopo e investimento combinados antes do início.
             </p>
           </div>
           <div>
             <h3>Navegação</h3>
             <ul>
-              {[...navItems.slice(0, 2), ['#configurador', 'Montar a prévia'] as const, ...navItems.slice(2)].map(([hash, label]) => (
+              {navItems.map(([hash, label]) => (
                 <li key={hash}>
                   <NavLink hash={hash} onHome={onHome}>
                     {label}
                   </NavLink>
                 </li>
               ))}
+              <li>
+                <a href={builderHref}>Criar minha prévia</a>
+              </li>
             </ul>
           </div>
           <div>

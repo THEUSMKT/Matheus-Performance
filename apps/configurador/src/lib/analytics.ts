@@ -26,6 +26,10 @@ export const EVENTS = {
   /** Troca entre computador e celular na demonstração de um exemplo. */
   example_view_mode: { once: false, props: ['segment', 'device'] },
   summary_view: { once: 'session', props: [] },
+  /** Prévia aberta: ao chegar em "Sua prévia" ou ao tocar em "Ver prévia" no celular. */
+  preview_view: { once: false, props: ['source', 'step'] },
+  /** Clique em "Solicitar orçamento" (intenção). Confirmação só com generate_lead. */
+  quote_request: { once: false, props: ['mode'] },
   whatsapp_open: { once: false, props: ['context'] },
   share_link: { once: false, props: [] },
   pdf_save: { once: false, props: [] },

@@ -5,25 +5,9 @@
    ========================================================================== */
 import { useEffect, useState, type RefObject } from 'react';
 
-/** Faixa em que o configurador conta como "na tela" para as barras fixas. */
-export const CONFIG_IN_VIEW_MARGIN = '0px 0px -30% 0px';
-
 /** Visitante prefere menos movimento. */
 export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-/** Elemento visível na janela (com margem opcional). */
-export function useInView(target: RefObject<Element | null> | string, rootMargin = '0px'): boolean {
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = typeof target === 'string' ? document.getElementById(target) : target.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { rootMargin });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [target, rootMargin]);
-  return inView;
 }
 
 /** O elemento já passou para cima da tela (saiu por cima, não por baixo). */
@@ -43,13 +27,25 @@ export function useScrolledPast(target: RefObject<Element | null>): boolean {
 export function useTyping(): boolean {
   const [typing, setTyping] = useState(false);
   useEffect(() => {
+    let timer: number | undefined;
     const isField = (t: EventTarget | null) =>
       t instanceof HTMLElement && t.matches('input:not([type=checkbox]):not([type=radio]):not([type=color]), textarea, select');
-    const onIn = (ev: FocusEvent) => isField(ev.target) && setTyping(true);
-    const onOut = (ev: FocusEvent) => isField(ev.target) && setTyping(false);
+    const onIn = (ev: FocusEvent) => {
+      if (!isField(ev.target)) return;
+      window.clearTimeout(timer);
+      setTyping(true);
+    };
+    // Espera um instante: o toque que tirou o foco do campo termina antes de a
+    // barra voltar para baixo do dedo.
+    const onOut = (ev: FocusEvent) => {
+      if (!isField(ev.target)) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setTyping(isField(document.activeElement)), 300);
+    };
     document.addEventListener('focusin', onIn);
     document.addEventListener('focusout', onOut);
     return () => {
+      window.clearTimeout(timer);
       document.removeEventListener('focusin', onIn);
       document.removeEventListener('focusout', onOut);
     };

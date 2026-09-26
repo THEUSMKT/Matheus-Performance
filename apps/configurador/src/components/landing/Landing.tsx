@@ -1,11 +1,11 @@
 'use client';
 /* ==========================================================================
-   Página principal. Ordem: apresentação → exemplos (carrossel) →
-   benefícios → processo → configurador → opções de contratação → quem
-   atende → perguntas → chamada final e rodapé.
+   Página de apresentação. Ordem: abertura curta → exemplos (carrossel) →
+   benefícios → como funciona → investimento → quem cuida → perguntas →
+   chamada final. A construção da prévia fica numa página própria (/criar/).
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronLeft, ChevronRight, Clock, Inbox, LayoutTemplate, ListChecks, Megaphone, MessageCircle, Monitor, Pointer, Smartphone, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Inbox, LayoutTemplate, ListChecks, Megaphone, MessageCircle, Monitor, Pointer, Smartphone, X } from 'lucide-react';
 import { contact } from '@/config/contact';
 import { pricing, brl } from '@/config/pricing';
 import { plans } from '@/config/offer';
@@ -18,39 +18,35 @@ import {
   exampleProject,
   hasOwnChoices,
   initialProject,
-  investmentLabel,
   mergeStartingPoint,
   projectEstimate,
-  recommendedPlan,
   segments,
   type Project,
 } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
-import { ProjectPreview } from '../ProjectPreview';
 import { InspirationPreview } from '../InspirationPreview';
+import { SitePreview } from '../preview/SitePreview';
 import { Carousel, type CarouselApi } from './Carousel';
-import { Footer, Header, asset, mainSiteUrl } from './Chrome';
-import { Configurator } from './Configurator';
+import { Footer, Header, asset, builderHref, mainSiteUrl } from './Chrome';
 import { ConfirmBox, type Pending } from './Controls';
 import { DesktopFrame, PhoneFrame } from './DemoFrames';
-import { CONFIG_IN_VIEW_MARGIN, useInView, useScrolledPast, useTyping } from './hooks';
-import { PrintSummary } from './SummaryStep';
+import { useScrolledPast } from './hooks';
 import { useProject, type ProjectState } from './useProject';
 import s from './Landing.module.css';
 
 const demoSegments = segments.filter((x) => x.id !== 'outro');
 
 const benefits = [
-  { icon: LayoutTemplate, title: 'Apresenta seus serviços', text: 'O que você faz, para quem e como contratar, organizado em uma página clara.' },
-  { icon: Inbox, title: 'Facilita pedidos de orçamento', text: 'Botão de WhatsApp e, se quiser, um formulário que já chega com as informações certas.' },
+  { icon: LayoutTemplate, title: 'Apresenta seus serviços', text: 'O que você faz, para quem e como contratar, em uma página clara.' },
+  { icon: Inbox, title: 'Facilita pedidos de orçamento', text: 'Botão de WhatsApp e, se quiser, um formulário que já chega organizado.' },
   { icon: ListChecks, title: 'Organiza as informações', text: 'Serviços, perguntas frequentes, localização e contato em um endereço só.' },
-  { icon: Megaphone, title: 'Apoia a sua divulgação', text: 'Um link profissional para usar nas redes sociais, no cartão e em anúncios.' },
+  { icon: Megaphone, title: 'Apoia a sua divulgação', text: 'Um link profissional para redes sociais, cartões e anúncios.' },
 ] as const;
 
 const processSteps = [
-  ['Configuração', 'Você monta a prévia e vê a estimativa, sem cadastro.'],
-  ['Confirmação do escopo', 'Escopo, valor e prazo confirmados por escrito.'],
+  ['Prévia', 'Você monta a prévia e vê a estimativa, sem cadastro.'],
+  ['Escopo', 'Escopo, valor e prazo confirmados por escrito.'],
   ['Desenvolvimento', 'Feito depois de receber textos, imagens e logo.'],
   ['Aprovação', 'Você revisa; duas rodadas de ajustes incluídas.'],
   ['Publicação', 'O site vai ao ar no seu domínio.'],
@@ -58,32 +54,52 @@ const processSteps = [
 
 const FAQ_PREVIEW = 5;
 
-function scrollToConfigurator() {
-  document.getElementById('configurador')?.scrollIntoView({ block: 'start' });
+/** Vai para a página de criação (o projeto já foi gravado antes). */
+function openBuilder() {
+  location.href = builderHref;
 }
 
 export default function Landing() {
-  const state = useProject();
-  const { project: p, hasProgress, variants } = state;
+  const state = useProject({ readHash: false });
+  const { resumable, variants } = state;
   const hero = heroVariants[variants.hero as keyof typeof heroVariants] ?? heroVariants.a;
   const cta = ctaVariants[variants.cta as keyof typeof ctaVariants] ?? ctaVariants.a;
-  const primaryLabel = hasProgress ? 'Continuar minha prévia' : cta.primary;
-
+  const primaryLabel = resumable ? 'Continuar minha prévia' : cta.primary;
   const start = () => track('configurator_start');
 
-  // Barra fixa do celular: aparece quando o botão principal do topo sai da
-  // tela e dá lugar à barra do configurador quando ele está na tela.
+  // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…).
+  useEffect(() => {
+    const h = location.hash;
+    if (h.startsWith('#projeto=')) location.replace(builderHref + h);
+    else if (h === '#configurador') location.replace(builderHref);
+  }, []);
+
+  // Barra fixa do celular: aparece quando o botão principal do topo sai da tela.
   const heroCta = useRef<HTMLAnchorElement>(null);
   const ctaGone = useScrolledPast(heroCta);
-  const configInView = useInView('configurador', CONFIG_IN_VIEW_MARGIN);
-  const typing = useTyping();
 
   return (
     <div className={s.page} id="topo">
       <Header ctaLabel={primaryLabel} onStart={start} />
-      <main>
-        <Hero title={hero.title} description={hero.description} primaryLabel={primaryLabel} onStart={start} ctaRef={heroCta} />
+      <main id="conteudo">
+        <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
+          <div className={s.heroCopy}>
+            <p className={s.audience}>{hero.eyebrow}</p>
+            <h1 id="hero-titulo">{hero.title}</h1>
+            <p className={s.heroLead}>{hero.description}</p>
+            <a ref={heroCta} className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start}>
+              <span>{primaryLabel}</span>
+            </a>
+            <p className={s.micro}>Sem cadastro.</p>
+            <a className={s.quiet} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'hero' })}>
+              <MessageCircle aria-hidden="true" /> Tirar uma dúvida no WhatsApp
+            </a>
+          </div>
+          <Showcase segment={state.origin.segment} />
+        </section>
+
         <Examples state={state} />
+
         <div className={s.wrap}>
           <ul className={s.benefits} aria-label="O que o site faz pela sua empresa">
             {benefits.map(({ icon: Icon, title, text }) => (
@@ -97,10 +113,11 @@ export default function Landing() {
             ))}
           </ul>
         </div>
+
         <section className={`${s.section} ${s.band}`} id="como-funciona" aria-labelledby="processo-titulo">
           <div className={s.wrap}>
             <div className={s.sectionHead}>
-              <h2 id="processo-titulo">Como funciona, do primeiro clique à publicação</h2>
+              <h2 id="processo-titulo">Como funciona</h2>
               <p>Nada é contratado ou publicado sem a sua aprovação.</p>
             </div>
             <ol className={s.process}>
@@ -113,20 +130,21 @@ export default function Landing() {
             </ol>
           </div>
         </section>
-        <Configurator state={state} />
-        <Plans state={state} />
+
+        <Investment state={state} />
         <About />
         <Faq />
+
         <section className={s.final} aria-labelledby="final-titulo">
           <div className={s.wrap}>
-            <h2 id="final-titulo">Veja como o site da sua empresa pode ficar antes de decidir.</h2>
-            <p>Prévia sem cadastro. Escopo e custos confirmados antes da contratação.</p>
-            <div className={s.heroActions}>
-              <a className={s.primary} href="#configurador" onClick={start}>
+            <h2 id="final-titulo">Veja como o site da sua empresa pode ficar.</h2>
+            <p>Monte a prévia e receba a estimativa na hora.</p>
+            <div className={s.finalActions}>
+              <a className={s.primary} href={builderHref} onClick={start}>
                 {primaryLabel}
               </a>
-              <a className={s.secondary} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'final' })}>
-                Tirar uma dúvida no WhatsApp
+              <a className={s.quietLight} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'final' })}>
+                <MessageCircle aria-hidden="true" /> Tirar uma dúvida no WhatsApp
               </a>
             </div>
           </div>
@@ -134,9 +152,9 @@ export default function Landing() {
       </main>
       <Footer />
       <div className={s.mobileBarSpacer} aria-hidden="true" />
-      {ctaGone && !configInView && !typing && (
+      {ctaGone && (
         <div className={`${s.mobileBar} ${s.pageBar}`} data-bar="pagina">
-          <a className={`${s.primary} ${s.small}`} href="#configurador" onClick={start}>
+          <a className={`${s.primary} ${s.small}`} href={builderHref} onClick={start}>
             {primaryLabel}
           </a>
           <a
@@ -151,53 +169,31 @@ export default function Landing() {
           </a>
         </div>
       )}
-      {state.ready && <PrintSummary p={p} />}
     </div>
   );
 }
 
-function Hero({ title, description, primaryLabel, onStart, ctaRef }: { title: string; description: string; primaryLabel: string; onStart: () => void; ctaRef: React.RefObject<HTMLAnchorElement | null> }) {
+/** Ilustração do produto: a prévia de um site, no computador e no celular. */
+function Showcase({ segment }: { segment?: string }) {
+  const demo = exampleProject(segment && segment !== 'outro' ? segment : 'beleza');
   return (
-    <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
-      <div>
-        <p className={s.audience}>Criação de sites para pequenas e médias empresas</p>
-        <h1 id="hero-titulo">{title}</h1>
-        <p className={s.heroLead}>{description}</p>
-        <div className={s.heroActions}>
-          <a ref={ctaRef} className={s.primary} href="#configurador" onClick={onStart}>
-            {primaryLabel}
-          </a>
-          <a className={s.secondary} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'hero' })}>
-            Tirar uma dúvida no WhatsApp
-          </a>
+    <div className={s.showcase} aria-hidden="true">
+      <span className={s.showcaseShadow} />
+      <div className={s.showcaseFloat}>
+        <div className={s.showcaseBrowser}>
+          <DesktopFrame width={880}>
+            <SitePreview project={demo} compact />
+          </DesktopFrame>
         </div>
-        <ul className={s.support}>
-          <li>Prévia sem cadastro</li>
-          <li>Escopo e custos confirmados antes da contratação</li>
-          <li>
-            Projetos a partir de <strong>{brl(pricing.base)}</strong>
-          </li>
-        </ul>
+        <div className={s.showcasePhone}>
+          <div className={s.showcaseScreen}>
+            <DesktopFrame width={340}>
+              <SitePreview project={demo} compact bare />
+            </DesktopFrame>
+          </div>
+        </div>
       </div>
-      <div className={s.floatZone}>
-        <span className={s.floatShadow} aria-hidden="true" />
-        <a className={s.floatCard} href="#configurador" onClick={onStart} aria-label="Estruture seu próprio site em até 3 minutos — abrir o configurador">
-          <span className={s.floatFace}>
-            <span className={s.floatBadge}>
-              <Clock aria-hidden="true" /> 3 min
-            </span>
-            <span className={s.floatTitle}>Estruture seu próprio site em até 3 minutos</span>
-            <span className={s.floatPill}>Começar agora →</span>
-          </span>
-        </a>
-        <span className={`${s.floatTag} ${s.floatTag1}`}>
-          <Check aria-hidden="true" /> Estimativa na hora
-        </span>
-        <span className={`${s.floatTag} ${s.floatTag2}`}>
-          <Check aria-hidden="true" /> Prévia no computador e no celular
-        </span>
-      </div>
-    </section>
+    </div>
   );
 }
 
@@ -206,14 +202,10 @@ function startingPoint(state: ProjectState, id: string) {
   const p = state.project;
   const next = mergeStartingPoint(p, exampleProject(id));
   const run = () => {
-    state.replace({ ...next, step: 0 });
+    state.commit({ ...next, step: 0 });
     track('example_applied', { segment: id });
     track('configurator_start');
-    state.setNotice(`Ponto de partida aplicado: ${segments.find((x) => x.id === id)!.name}. O que você já tinha digitado foi mantido.`);
-    requestAnimationFrame(() => {
-      scrollToConfigurator();
-      if (id === 'outro') document.getElementById('segmento-outro')?.focus({ preventScroll: true });
-    });
+    openBuilder();
   };
   const changes = choiceChanges(p, next);
   return { needs: state.hasProgress && hasOwnChoices(p) && changes.length > 0, changes, run };
@@ -288,7 +280,7 @@ function Examples({ state }: { state: ProjectState }) {
         <div className={s.sectionHead}>
           <h2 id="exemplos-titulo">Veja exemplos de sites</h2>
           <p>Arraste para o lado e clique para ver no computador e no celular.</p>
-          <small className={s.sectionNote}>Exemplos demonstrativos, com nomes fictícios — não são sites de clientes.</small>
+          <small className={s.sectionNote}>Exemplos demonstrativos, com nomes fictícios.</small>
         </div>
       </div>
       <Carousel id="carrossel-exemplos" label="Exemplos de sites" itemLabel={(i, n) => `Exemplo ${i + 1} de ${n}`} start={start} apiRef={carousel}>
@@ -349,11 +341,11 @@ function Examples({ state }: { state: ProjectState }) {
             <div className={s.demoBody}>
               {device === 'desktop' ? (
                 <DesktopFrame key={`d-${opened.id}`}>
-                  <ProjectPreview project={exampleProject(opened.id)} />
+                  <SitePreview project={exampleProject(opened.id)} />
                 </DesktopFrame>
               ) : (
                 <PhoneFrame key={`m-${opened.id}`}>
-                  <ProjectPreview project={exampleProject(opened.id)} mobile bare />
+                  <SitePreview project={exampleProject(opened.id)} bare />
                 </PhoneFrame>
               )}
             </div>
@@ -381,88 +373,56 @@ function Examples({ state }: { state: ProjectState }) {
   );
 }
 
-function Plans({ state }: { state: ProjectState }) {
-  const { project: p, hasProgress } = state;
-  const [pending, setPending] = useState<{ id: string; data: Pending } | null>(null);
-  const rec = recommendedPlan(p);
+/** Área compacta de investimento: preço inicial e os três caminhos. */
+function Investment({ state }: { state: ProjectState }) {
+  const [pending, setPending] = useState<Pending | null>(null);
 
   function choose(id: Project['plan'] & string) {
-    const next = { ...applyPlan(p, id), step: 1 };
+    const p = state.project;
+    const next = { ...applyPlan(p, id), step: p.name.trim() ? 2 : 0 };
     const run = () => {
-      state.replace(next);
-      track('plan_selected', { plan: id, source: 'secao' });
+      state.commit(next);
+      track('plan_selected', { plan: id, source: 'investimento' });
       track('configurator_start');
-      state.setNotice(`Caminho “${plans.find((x) => x.id === id)!.name}” aplicado. Confira a recomendação e a estimativa.`);
-      requestAnimationFrame(scrollToConfigurator);
+      openBuilder();
     };
     const changes = choiceChanges(p, next).filter((c) => c !== 'caminho de contratação');
-    if (customStructure(p).length && changes.length) setPending({ id, data: { title: 'Este caminho muda a estrutura que você ajustou.', changes, confirmLabel: 'Aplicar mesmo assim', apply: run } });
+    if (customStructure(p).length && changes.length) setPending({ title: 'Este caminho muda a estrutura que você ajustou.', changes, confirmLabel: 'Aplicar mesmo assim', apply: run });
     else run();
   }
 
   return (
-    <section className={`${s.section} ${s.band}`} id="opcoes" aria-labelledby="opcoes-titulo">
+    <section className={s.section} id="investimento" aria-labelledby="investimento-titulo">
       <div className={s.wrap}>
         <div className={s.sectionHead}>
-          <h2 id="opcoes-titulo">Opções de contratação</h2>
-          <p>Escolher um caminho aplica a estrutura e recalcula a estimativa.</p>
+          <h2 id="investimento-titulo">Investimento</h2>
+          <p>Estimativa na prévia; valor confirmado por escrito antes da contratação.</p>
         </div>
-      </div>
-      <Carousel
-        id="carrossel-opcoes"
-        label="Opções de contratação"
-        itemLabel={(i, n) => `Opção ${i + 1} de ${n}`}
-        start={hasProgress ? Math.max(0, plans.findIndex((x) => x.id === rec)) : 0}
-        untilDesktop
-        slideClassName={s.planSlide}
-      >
-        {plans.map((plan) => {
-          const base = applyPlan(initialProject(), plan.id);
-          const e = projectEstimate(base);
-          const recommended = hasProgress && rec === plan.id;
-          const current = p.plan === plan.id;
-          return (
-            <article key={plan.id} className={`${s.plan} ${recommended ? s.planRecommended : ''}`} aria-labelledby={`plano-${plan.id}`}>
-              {recommended && <span className={s.badge}>Recomendado para este objetivo</span>}
-              <h3 id={`plano-${plan.id}`}>{plan.name}</h3>
-              <p className={s.planFor}>{plan.forWhom}</p>
-              <p className={s.planPrice}>
-                {plan.needsAssessment ? 'Faixa inicial, confirmada após o levantamento' : 'Desenvolvimento a partir de'}
-                <strong>{plan.needsAssessment ? investmentLabel(base) : brl(e.min)}</strong>
-              </p>
-              <div className={s.planList}>
-                <h4>Inclui</h4>
-                <ul className={s.checkList}>
-                  {plan.includes.map((i) => (
-                    <li key={i}>{i}</li>
-                  ))}
-                </ul>
-              </div>
-              <details className={s.planExtras}>
-                <summary>
-                  Ver o que fica à parte <ChevronDown aria-hidden="true" />
-                </summary>
-                <ul className={`${s.checkList} ${s.dashList}`}>
-                  {plan.extras.map((i) => (
-                    <li key={i}>{i}</li>
-                  ))}
-                </ul>
-              </details>
-              <p className={s.planNext}>
-                <strong>Próximo passo:</strong> {plan.next}
-              </p>
-              {pending?.id === plan.id && <ConfirmBox pending={pending.data} onCancel={() => setPending(null)} />}
-              <button type="button" className={current ? s.secondary : s.primary} onClick={() => choose(plan.id)} style={{ marginTop: 'auto' }}>
-                {current ? 'Caminho em uso — revisar' : 'Escolher este caminho'}
-              </button>
-            </article>
-          );
-        })}
-      </Carousel>
-      <div className={s.wrap}>
-        <p className={s.hint} style={{ marginTop: 16 }}>
-          Valores de desenvolvimento, em pagamento único, com a identidade Essencial. Domínio, hospedagem e plataformas são contratados à parte, direto com os fornecedores.
-        </p>
+        <div className={s.invest}>
+          <div className={s.investMain}>
+            <span>Projetos a partir de</span>
+            <strong>{brl(pricing.base)}</strong>
+            <small>Pagamento único pelo desenvolvimento.</small>
+          </div>
+          <ul className={s.investList}>
+            {plans.map((plan) => {
+              const e = projectEstimate(applyPlan(initialProject(), plan.id));
+              return (
+                <li key={plan.id}>
+                  <button type="button" onClick={() => choose(plan.id)} aria-label={`Começar a prévia com ${plan.name}`}>
+                    <span className={s.investName}>{plan.name}</span>
+                    <span className={s.investPrice}>{plan.needsAssessment ? 'Após levantamento' : `a partir de ${brl(e.min)}`}</span>
+                    <ChevronRight aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {pending && <ConfirmBox pending={pending} onCancel={() => setPending(null)} />}
+          <p className={s.hint}>
+            Domínio, hospedagem e plataformas externas são contratados à parte. <a href="#perguntas">Ver dúvidas</a>
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -470,16 +430,15 @@ function Plans({ state }: { state: ProjectState }) {
 
 function About() {
   return (
-    <section className={s.section} id="quem-atende" aria-labelledby="sobre-titulo">
+    <section className={`${s.section} ${s.band}`} id="quem-atende" aria-labelledby="sobre-titulo">
       <div className={`${s.wrap} ${s.about}`}>
         <img className={s.aboutPhoto} src={asset('/brand/matheus-beck.webp')} alt={`Foto de ${contact.owner}`} width={280} height={334} loading="lazy" />
         <div>
           <h2 id="sobre-titulo">Quem cuida do seu projeto</h2>
           <p>Sou {contact.owner}, da Beck Performance. Conduzo seu projeto do escopo à publicação.</p>
-          <p className={s.desktopOnly}>Além de sites, trabalho com gestão de tráfego pago — por isso a página é pensada para apresentar bem a empresa e facilitar o contato de quem chega até ela.</p>
           <ul className={`${s.checkList} ${s.aboutFacts}`}>
             <li>Atendimento direto, sem intermediários</li>
-            <li>Escopo, investimento e prazo confirmados por escrito antes do início</li>
+            <li>Escopo, investimento e prazo por escrito antes do início</li>
             <li>WhatsApp {contact.whatsappDisplay}</li>
           </ul>
           <div className={s.actionRow} style={{ marginTop: 18 }}>

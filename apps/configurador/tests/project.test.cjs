@@ -56,7 +56,7 @@ test('Composição soma exatamente o total em todas as combinações', () => {
     assert(msg.includes(model.priceLabel(p)), 'mensagem usa a mesma faixa');
     n++;
   }
-  assert.equal(n, 6 * 5 * 3 * 3);
+  assert.equal(n, 6 * 7 * 3 * 3, '4 objetivos visíveis + 3 antigos, ainda aceitos');
 });
 
 test('Recurso repetido não é cobrado duas vezes', () => {
@@ -192,6 +192,47 @@ test('Ajuste manual pede confirmação antes de um caminho substituí-lo', () =>
 test('Contraste do texto dos botões com cor própria (WCAG AA)', () => {
   const lum = (h) => { const c = h.slice(1).match(/../g).map((x) => parseInt(x, 16) / 255).map((x) => (x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)); return c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722; };
   for (let i = 0; i < 0xffffff; i += 3571) { const hex = '#' + i.toString(16).padStart(6, '0'), a = lum(hex), b = lum(model.contrastInk(hex)); assert((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5); }
+});
+
+/* ── Página de criação ────────────────────────────────────────────────── */
+
+test('Quatro etapas, quatro objetivos visíveis e três estilos com nomes simples', () => {
+  assert.deepEqual([...model.steps], ['Seu negócio', 'Aparência', 'Conteúdo', 'Sua prévia']);
+  assert.equal(model.STEP_COUNT, 4);
+  assert.deepEqual(model.objectives.filter((o) => o.visible).map((o) => o.name), ['Receber contatos', 'Apresentar a empresa', 'Mostrar serviços', 'Exibir produtos']);
+  assert.deepEqual(model.directions.map((d) => d.name), ['Moderno', 'Elegante', 'Minimalista']);
+  assert.equal(model.normalizeProject({ ...model.initialProject(), objective: 'agenda' }).objective, 'agenda', 'objetivo antigo continua válido');
+  const names = model.sections.map((s) => s.name);
+  for (const s of ['Apresentação', 'Sobre a empresa', 'Serviços ou produtos', 'Galeria', 'Contato']) assert(names.includes(s), s);
+});
+
+test('Link compartilhado abre a página de criação', () => {
+  assert(model.shareLink(model.initialProject()).includes('/criar/#projeto='));
+});
+
+test('Logo entra na mensagem só como aviso, nunca como dado', () => {
+  const p = model.initialProject();
+  assert(!model.projectMessage(p).includes('Logo:'));
+  assert(model.projectMessage(p, undefined, { logo: true }).includes('Logo: tenho a logo e envio por aqui'));
+  assert(!model.shareLink(p).includes('data:image'));
+});
+
+test('"Continuar minha prévia" só quando há algo que valha retomar', () => {
+  const { canResume } = require('../src/components/landing/useProject.ts');
+  assert(!canResume(model.initialProject()));
+  assert(canResume({ ...model.initialProject(), name: 'Loja' }));
+  assert(canResume({ ...model.initialProject(), step: 2 }));
+  assert(!canResume(model.normalizeProject({ version: 3, step: 'x', name: 42 })));
+});
+
+test('Eventos da prévia e do pedido não levam o que foi digitado', () => {
+  analytics._resetForTests(); session.clear(); events.length = 0;
+  analytics.track('preview_view', { source: 'etapa', step: 4, name: 'Loja da Ana' });
+  analytics.track('preview_view', { source: 'alternancia', step: 2 });
+  analytics.track('quote_request', { mode: 'whatsapp', message: 'Olá, quero um site' });
+  assert.equal(events.filter((e) => e.event === 'preview_view').length, 2);
+  assert.equal(events.find((e) => e.event === 'quote_request').mode, 'whatsapp');
+  assert(!JSON.stringify(events).match(/Ana|Olá/));
 });
 
 /* ── Pedido de proposta ───────────────────────────────────────────────── */

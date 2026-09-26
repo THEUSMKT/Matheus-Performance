@@ -9,7 +9,7 @@ export const contact = {
   /** Responsável pelo atendimento e pelo desenvolvimento. */
   owner: 'Matheus Beck',
   /** Usada em metadados e dados estruturados. */
-  tagline: 'Criação de sites para pequenas e médias empresas',
+  tagline: 'Sites para empresas de todos os portes',
 
   /** WhatsApp — apenas dígitos, com DDI + DDD, sem +, espaço ou traço. */
   whatsapp: '5551981947979',
@@ -39,7 +39,7 @@ export const contact = {
 
   /** Abertura da mensagem enviada ao WhatsApp com o briefing montado. */
   whatsappIntro:
-    'Olá! Montei uma ideia de site pelo configurador e gostaria de solicitar um orçamento.',
+    'Olá! Montei a prévia do meu site e gostaria de solicitar um orçamento.',
   /** Fechamento da mensagem. */
   whatsappOutro: 'Gostaria de conversar sobre o projeto.',
 
@@ -48,5 +48,5 @@ export const contact = {
    * briefing do configurador, que é montado em src/lib/whatsapp.ts.
    */
   whatsappCurta:
-    'Olá! Vi o configurador de sites e gostaria de saber mais sobre a criação de um site.',
+    'Olá! Vi o site da Beck Performance e gostaria de tirar uma dúvida sobre a criação de um site.',
 } as const;
