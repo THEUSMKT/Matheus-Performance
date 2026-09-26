@@ -24,7 +24,7 @@ export type ExperimentId = keyof typeof experiments;
 export const heroVariants = {
   a: {
     eyebrow: 'Sites para empresas de todos os portes',
-    title: 'Seu próximo site começa aqui.',
+    title: 'Estruture seu site profissional em até 5 minutos.',
     description: 'Monte uma prévia personalizada em poucos passos.',
   },
   b: {
