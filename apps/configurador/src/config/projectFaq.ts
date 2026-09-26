@@ -1,5 +1,6 @@
 /* ==========================================================================
    Perguntas frequentes — EDITE AQUI
+   As 5 primeiras aparecem direto na página; as demais, em "Ver todas".
    Cada resposta descreve o que a página e o serviço fazem hoje. Valores
    vêm de pricing.ts e offer.ts para não divergirem da estimativa.
    ========================================================================== */
@@ -11,22 +12,6 @@ const numbers = pricing.deadlines.flatMap((d) => d.label.match(/\d+/g) ?? []).ma
 const prazos = `${Math.min(...numbers)} a ${Math.max(...numbers)} dias úteis`;
 
 export const projectFaq: [string, string][] = [
-  [
-    'A prévia já é o meu site?',
-    'Não. A prévia é demonstrativa: mostra a estrutura, a identidade e o tipo de conteúdo. Textos, imagens e nomes são ilustrativos. O site final é desenvolvido com o seu conteúdo depois que o escopo é confirmado.',
-  ],
-  [
-    'Como a estimativa é calculada?',
-    `Parte do projeto base de ${brl(pricing.base)} e soma a categoria, a identidade visual, as cores próprias e os recursos escolhidos. O resumo mostra cada item. A faixa varia ${spread}% para cima ou para baixo porque o valor final depende do conteúdo e dos detalhes confirmados na conversa.`,
-  ],
-  [
-    'O valor exibido é uma proposta?',
-    'Não. É uma estimativa para você decidir com informação. Escopo, investimento e prazo são confirmados por escrito antes de qualquer contratação. Depois de aprovado, mudanças de escopo são orçadas à parte.',
-  ],
-  [
-    'Por que alguns projetos aparecem como "sob diagnóstico"?',
-    'Várias unidades, loja virtual com pagamento, sistema de reservas próprio, integrações, área de login ou mais de um idioma dependem de levantamento. Para esses casos a página não mostra um valor automático, que poderia não se sustentar.',
-  ],
   [
     'O que está incluído?',
     `Página principal responsiva, botão de WhatsApp, links para as redes sociais, ${revisionRounds} rodadas de ajustes antes da publicação e acompanhamento até o site ir ao ar. Os opcionais escolhidos aparecem no resumo com o valor de cada um.`,
@@ -42,6 +27,22 @@ export const projectFaq: [string, string][] = [
   [
     'Quanto tempo leva?',
     `A estimativa atual vai de ${prazos}, conforme a complexidade. A contagem começa quando textos, imagens e logo são entregues.`,
+  ],
+  [
+    'A prévia já é o meu site?',
+    'Não. A prévia é demonstrativa: mostra a estrutura, a identidade e o tipo de conteúdo. Textos, imagens e nomes são ilustrativos. O site final é desenvolvido com o seu conteúdo depois que o escopo é confirmado.',
+  ],
+  [
+    'Como a estimativa é calculada?',
+    `Parte do projeto base de ${brl(pricing.base)} e soma a categoria, a identidade visual, as cores próprias e os recursos escolhidos. O resumo mostra cada item. A faixa varia ${spread}% para cima ou para baixo porque o valor final depende do conteúdo e dos detalhes confirmados na conversa.`,
+  ],
+  [
+    'O valor exibido é uma proposta?',
+    'Não. É uma estimativa para você decidir com informação. Escopo, investimento e prazo são confirmados por escrito antes de qualquer contratação. Depois de aprovado, mudanças de escopo são orçadas à parte.',
+  ],
+  [
+    'Por que alguns projetos aparecem como "sob diagnóstico"?',
+    'Várias unidades, loja virtual com pagamento, sistema de reservas próprio, integrações, área de login ou mais de um idioma dependem de levantamento. Para esses casos a página não mostra um valor automático, que poderia não se sustentar.',
   ],
   [
     'Qual a diferença entre seção, página e categoria?',

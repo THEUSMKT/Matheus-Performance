@@ -23,6 +23,8 @@ export const EVENTS = {
   plan_selected: { once: false, props: ['plan', 'source'] },
   example_opened: { once: false, props: ['segment'] },
   example_applied: { once: false, props: ['segment'] },
+  /** Troca entre computador e celular na demonstração de um exemplo. */
+  example_view_mode: { once: false, props: ['segment', 'device'] },
   summary_view: { once: 'session', props: [] },
   whatsapp_open: { once: false, props: ['context'] },
   share_link: { once: false, props: [] },

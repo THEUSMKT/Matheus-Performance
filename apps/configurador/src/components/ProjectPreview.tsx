@@ -1,15 +1,17 @@
 import type { CSSProperties } from 'react';
 import { contrastInk, objectives, palettes, segments, type Project } from '@/lib/project';
 import s from './Upgrade.module.css';
-export function ProjectPreview({ project: p, compact = false, mobile = false }: {
+export function ProjectPreview({ project: p, compact = false, mobile = false, bare = false }: {
     project: Project;
     compact?: boolean;
     mobile?: boolean;
+    /** Sem barra de navegador nem borda — para usar dentro de uma moldura de celular. */
+    bare?: boolean;
 }) {
     const segment = segments.find(a => a.id === p.segment)!, palette = palettes.find(a => a.id === p.palette)!, accent = p.custom ?? palette.accent;
     const vars = { '--preview-accent': accent, '--preview-on': contrastInk(accent), '--preview-bg': palette.bg, '--preview-font': p.font === 'serif' || (p.font === 'auto' && p.direction === 'elegante') ? 'Georgia, serif' : 'Arial, sans-serif' } as CSSProperties;
-    return <div className={`${s.browser} ${mobile ? s.phone : ''} ${compact ? s.compact : ''}`} style={vars}>
- <div className={s.browserBar}><span aria-hidden="true">● ● ●</span><span>seu futuro site</span><span aria-hidden="true">↗</span></div><div className={`${s.site} ${s[p.direction]}`}>
+    return <div className={`${s.browser} ${mobile ? s.phone : ''} ${compact ? s.compact : ''} ${bare ? s.bare : ''}`} style={vars}>
+ {!bare && <div className={s.browserBar}><span aria-hidden="true">● ● ●</span><span>seu futuro site</span><span aria-hidden="true">↗</span></div>}<div className={`${s.site} ${s[p.direction]}`}>
  <div className={s.siteNav}><strong>{p.name || segment.demo}</strong><span>Serviços <b>↗</b></span></div>
  <div className={s.siteHero}><div><span className={s.siteLabel}>{segment.label}</span><h3>{segment.title}</h3><p>{p.description || segment.intro}</p><span className={s.previewCta}>{objectives.find(o => o.id === p.objective)!.cta} ↗</span></div><div className={`${s.art} ${s['art_' + p.segment]}`} aria-label="Composição gráfica demonstrativa"><span className={s.artOrb}/><span className={s.artArch}/><span className={s.artStem}/><span className={s.artCaption}>{p.segment === 'alimentacao' ? 'à mesa' : p.segment === 'criativo' ? 'forma & ideia' : p.segment === 'beleza' ? 'respire.' : 'feito para você'}</span></div></div>
  {p.sections.includes('servicos') && <div className={s.siteServices}>{segment.services.map((name, i) => <div key={name}><span>0{i + 1}</span><h4>{name}</h4><p>{['Uma conversa para entender o que você precisa.', 'Uma proposta pensada para a sua rotina.', 'Atenção aos detalhes do início ao fim.'][i]}</p></div>)}</div>}

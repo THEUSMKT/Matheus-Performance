@@ -17,14 +17,15 @@ const models: Model[] = [
   { label: 'ALIMENTAÇÃO', title: 'Feito com calma. Servido com afeto.', detail: 'Cardápio · Encomendas · Localização', nav: 'Cardápio', kind: 'restaurant' },
 ];
 
+// Só elementos de texto (span): a miniatura fica dentro do botão do card.
 export function InspirationPreview({ index }: { index: number }) {
   const model = models[index % models.length];
-  return <div className={`${s.inspiration} ${s['inspiration_' + model.kind]}`}>
-    <div className={s.inspirationBar}><span>● ● ●</span><small>www.suaempresa.com.br</small><b>↗</b></div>
-    <div className={s.inspirationNav}><strong>{model.label}</strong><span>Início&nbsp;&nbsp; {model.nav}&nbsp;&nbsp; Contato</span><i>Menu</i></div>
-    <div className={s.inspirationHero}><div><small>{model.label} · EXPERIÊNCIA DIGITAL</small><h3>{model.title}</h3><span className={s.inspirationButton}>Conhecer mais ↗</span></div><div className={s.inspirationArt}><i/><i/><i/></div></div>
-    <div className={s.inspirationHighlights}><span><b>01</b>Experiência</span><span><b>02</b>Detalhes</span><span><b>03</b>Contato</span></div>
-    <div className={s.inspirationFoot}>{model.detail}</div>
-  </div>;
+  return <span className={`${s.inspiration} ${s['inspiration_' + model.kind]}`}>
+    <span className={s.inspirationBar}><span>● ● ●</span><small>www.suaempresa.com.br</small><b>↗</b></span>
+    <span className={s.inspirationNav}><strong>{model.label}</strong><span>Início&nbsp;&nbsp; {model.nav}&nbsp;&nbsp; Contato</span><i>Menu</i></span>
+    <span className={s.inspirationHero}><span className={s.inspirationCopy}><small>{model.label} · EXPERIÊNCIA DIGITAL</small><span className={s.inspirationTitle}>{model.title}</span><span className={s.inspirationButton}>Conhecer mais ↗</span></span><span className={s.inspirationArt}><i/><i/><i/></span></span>
+    <span className={s.inspirationHighlights}><span><b>01</b>Experiência</span><span><b>02</b>Detalhes</span><span><b>03</b>Contato</span></span>
+    <span className={s.inspirationFoot}>{model.detail}</span>
+  </span>;
 }
 

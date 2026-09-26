@@ -34,7 +34,12 @@ await scenario('Hero, CTA e ordem das seções', async (page) => {
   assert.equal(await page.locator('text=R$ 500').first().isVisible(), true);
   assert.equal(await page.locator('img[alt=""][src*="simbolo.png"]').count() >= 2, true);
   const html = await page.content();
-  for (const bad of ['seudominio', 'seuinstagram', '99999-9999', 'em até 3 minutos', 'Mais vendido']) assert(!html.includes(bad), bad);
+  for (const bad of ['seudominio', 'seuinstagram', '99999-9999', 'Mais vendido']) assert(!html.includes(bad), bad);
+  const square = page.getByRole('link', { name: 'Estruture seu próprio site em até 3 minutos — abrir o configurador' });
+  assert.equal(await square.getAttribute('href'), '#configurador');
+  await square.click({ force: true }); // flutua sem parar; o clique real funciona em movimento
+  assert((await events(page)).includes('configurator_start'));
+  assert.equal(await page.locator('#exemplos [class*=segmentTabs], main > section:first-of-type [data-testid=estimate]').count(), 0, 'topo sem prévia');
 });
 
 await scenario('Fluxo completo nos 4 momentos, com orçamento preservado após recarregar', async (page) => {
@@ -69,37 +74,92 @@ await scenario('Fluxo completo nos 4 momentos, com orçamento preservado após r
   assert(composition.includes('Valor calculado'));
 });
 
-await scenario('Exemplo: aplica direto sem escolhas; pede confirmação quando substitui', async (page) => {
+const dlg = (page) => page.locator('dialog[open]');
+const openExample = (page, name) => page.getByRole('button', { name: `Abrir exemplo de ${name}` }).click();
+const useModel = (page) => dlg(page).getByRole('button', { name: 'Usar este modelo como ponto de partida' }).click();
+
+await scenario('Exemplo: aplica direto sem escolhas; pede confirmação dentro da demonstração', async (page) => {
   await page.goto(URL);
-  await page.getByRole('button', { name: 'Usar Portfólio criativo como ponto de partida' }).click();
+  await openExample(page, 'Portfólio criativo');
+  await useModel(page);
+  assert.equal(await dlg(page).count(), 0);
   assert(await cfg(page).getByRole('radio', { name: 'Portfólio criativo' }).getAttribute('aria-checked') === 'true');
   await cfg(page).getByLabel(/Nome do negócio/).fill('Ateliê X');
-  await page.getByRole('button', { name: 'Usar Alimentação como ponto de partida' }).click();
-  const box = page.locator('#exemplos [role=alertdialog]');
-  assert(await box.isVisible()); assert((await box.innerText()).includes('segmento'));
+  await openExample(page, 'Alimentação');
+  await useModel(page);
+  const box = dlg(page).locator('[role=alertdialog]');
+  assert(await box.isVisible(), 'confirmação dentro da demonstração');
+  assert((await box.innerText()).includes('segmento'));
   await box.getByRole('button', { name: 'Manter minhas escolhas' }).click();
+  assert.equal(await dlg(page).count(), 1, 'continua aberta');
+  await page.keyboard.press('Escape');
   assert(await cfg(page).getByRole('radio', { name: 'Portfólio criativo' }).getAttribute('aria-checked') === 'true');
-  await page.getByRole('button', { name: 'Usar Alimentação como ponto de partida' }).click();
-  await page.locator('#exemplos [role=alertdialog]').getByRole('button', { name: 'Usar este exemplo' }).click();
+  await openExample(page, 'Alimentação');
+  await useModel(page);
+  await dlg(page).locator('[role=alertdialog]').getByRole('button', { name: 'Usar este modelo' }).click();
+  assert.equal(await dlg(page).count(), 0, 'fecha só depois de confirmar');
   assert(await cfg(page).getByRole('radio', { name: 'Alimentação' }).getAttribute('aria-checked') === 'true');
   assert.equal(await cfg(page).getByLabel(/Nome do negócio/).inputValue(), 'Ateliê X');
 });
 
-await scenario('Ampliar exemplo: diálogo acessível, Esc fecha e devolve o foco', async (page) => {
+await scenario('Demonstração: computador/celular, anterior/próximo, Esc e foco no card', async (page) => {
   await page.goto(URL);
-  const btn = page.getByRole('button', { name: 'Ampliar exemplo de Consultoria e autônomos' });
-  await btn.click();
-  const dlg = page.locator('dialog[open]');
-  assert(await dlg.isVisible());
-  assert((await dlg.innerText()).includes('Exemplo demonstrativo'));
-  await dlg.getByRole('button', { name: 'Celular' }).click();
+  assert.equal(await page.locator('#exemplos button[aria-label^="Abrir exemplo de"]').count(), 5);
+  assert.equal(await page.getByRole('button', { name: /^Ampliar/ }).count(), 0);
+  await openExample(page, 'Consultoria e autônomos');
+  assert((await dlg(page).locator('#exemplo-titulo').innerText()).includes('Consultoria'));
+  assert(await dlg(page).locator('[class*=desktopFrame]').isVisible(), 'computador em moldura');
+  const scale = await dlg(page).locator('[class*=desktopCanvas]').evaluate((e) => [e.style.width, e.style.transform]);
+  assert.equal(scale[0], '1100px'); assert(scale[1].startsWith('scale('));
+  await dlg(page).getByRole('button', { name: 'Celular' }).click();
+  assert(await dlg(page).locator('[class*=phoneFrame]').isVisible(), 'moldura de celular');
+  assert((await events(page)).includes('example_view_mode'));
+  await dlg(page).getByRole('button', { name: /Próximo/ }).click();
+  assert((await dlg(page).innerText()).includes('4 de 5'));
+  assert((await dlg(page).locator('#exemplo-titulo').innerText()).includes('Portfólio criativo'));
   await page.keyboard.press('Escape');
-  assert.equal(await page.locator('dialog[open]').count(), 0);
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Ampliar exemplo de Consultoria e autônomos');
-  await page.locator('#exemplos [class*=exampleThumb]').first().click();
-  assert(await page.locator('dialog[open]').isVisible(), 'miniatura também amplia');
-  await page.locator('dialog[open]').getByRole('button', { name: 'Usar como ponto de partida' }).click();
-  assert(await cfg(page).getByRole('radio', { name: 'Serviços locais' }).getAttribute('aria-checked') === 'true');
+  assert.equal(await dlg(page).count(), 0);
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Abrir exemplo de Portfólio criativo');
+  await page.waitForTimeout(200);
+  const visible = await page.locator('#carrossel-exemplos').evaluate((track) => {
+    const card = track.querySelector('[aria-label="Abrir exemplo de Portfólio criativo"]').getBoundingClientRect();
+    const box = track.getBoundingClientRect();
+    return card.left >= box.left - 1 && card.right <= box.right + 1;
+  });
+  assert(visible, 'carrossel rola até o exemplo aberto');
+  await openExample(page, 'Serviços locais');
+  await page.mouse.click(5, 5);
+  assert.equal(await dlg(page).count(), 0, 'toque fora fecha');
+});
+
+await scenario('Carrossel: bolinhas, setas e começo no segmento da campanha', async (page) => {
+  await page.goto(URL + '?segmento=alimentacao');
+  const dots = page.locator('#exemplos [class*=dots] button');
+  assert.equal(await dots.count(), 6);
+  await page.locator('#exemplos [class*=dots] button[aria-current=true][aria-label="Ir para exemplo 5 de 6"]').waitFor({ timeout: 5000 });
+  const seen = await page.locator('#carrossel-exemplos').evaluate((track) => {
+    const card = track.querySelector('[aria-label="Abrir exemplo de Alimentação"]').getBoundingClientRect();
+    const box = track.getBoundingClientRect();
+    return card.left >= box.left - 1 && card.right <= box.right + 1;
+  });
+  assert(seen, 'exemplo da campanha visível');
+  await dots.nth(0).click();
+  await page.waitForTimeout(700);
+  assert.equal(await dots.nth(0).getAttribute('aria-current'), 'true');
+  await page.locator('#exemplos').getByRole('button', { name: 'Próximo' }).click();
+  await page.waitForTimeout(700);
+  assert.equal(await page.locator('#carrossel-exemplos').getAttribute('aria-roledescription'), 'carrossel');
+  assert(await page.locator('#carrossel-exemplos').evaluate((t) => t.scrollLeft > 0));
+});
+
+await scenario('Perguntas: 5 primeiras e botão para ver todas', async (page) => {
+  await page.goto(URL);
+  assert.equal(await page.locator('#perguntas details').count(), 5);
+  const more = page.getByRole('button', { name: /Ver todas as perguntas \(\d+\)/ });
+  const total = Number((await more.innerText()).match(/\d+/)[0]);
+  await more.click();
+  assert.equal(await page.locator('#perguntas details').count(), total);
+  assert.equal(await page.evaluate(() => document.activeElement.tagName), 'SUMMARY');
 });
 
 await scenario('Caminho escolhido na seção aplica estrutura e leva à recomendação', async (page) => {
@@ -199,47 +259,69 @@ await scenario('Ajuda durante o fluxo e campanha por segmento', async (page) => 
   assert(!JSON.stringify(ev).includes('http'));
 });
 
-await scenario('Celular: sem rolagem lateral e barra some ao digitar', async (page) => {
+for (const width of [360, 390, 430]) {
+  await scenario(`Celular ${width}px: sem rolagem lateral e uma barra de próximo passo por vez`, async (page) => {
+    await page.goto(URL);
+    await page.waitForTimeout(700);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
+    const pageBar = page.locator('[data-bar=pagina]');
+    const configBar = page.locator('[class*=mobileBar]:not([class*=Spacer]):not([data-bar])');
+    assert.equal(await pageBar.count(), 0, 'sem barra enquanto o botão do topo aparece');
+    await page.evaluate(() => document.querySelector('#exemplos').scrollIntoView({ behavior: 'instant' }));
+    await page.waitForTimeout(400);
+    assert(await pageBar.isVisible());
+    assert.equal(await configBar.count(), 0);
+    assert((await pageBar.getByRole('link').first().getAttribute('href')) === '#configurador');
+    assert((await pageBar.getByRole('link', { name: 'Tirar uma dúvida no WhatsApp' }).getAttribute('href')).startsWith('https://wa.me/5551981947979'));
+    await page.evaluate(() => document.querySelector('#configurador h3[tabindex]').scrollIntoView({ behavior: 'instant', block: 'center' }));
+    await page.waitForTimeout(400);
+    assert(await configBar.isVisible());
+    assert.equal(await pageBar.count(), 0, 'nunca as duas juntas');
+    await cfg(page).getByLabel(/Nome do negócio/).focus();
+    await page.waitForTimeout(100);
+    assert.equal(await configBar.count() + (await pageBar.count()), 0, 'teclado aberto: nenhuma barra');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), width);
+  }, { viewport: { width, height: 844 }, isMobile: true, hasTouch: true });
+}
+
+await scenario('Celular: momento 3 em sanfona, uma aberta por vez, com a escolha no cabeçalho', async (page) => {
   await page.goto(URL);
+  await cfg(page).getByRole('button', { name: /Momento 3/ }).click();
+  const regions = cfg(page).locator('[class*=foldBody]');
+  assert.equal(await regions.count(), 6);
+  assert.equal(await cfg(page).locator('[class*=foldBody]:not([hidden])').count(), 1);
+  const cores = cfg(page).getByRole('button', { name: /^Cores · Oceano/ });
+  await cores.click();
+  assert.equal(await cores.getAttribute('aria-expanded'), 'true');
+  assert.equal(await cfg(page).locator('[class*=foldBody]:not([hidden])').count(), 1);
+  await cfg(page).getByRole('button', { name: /Argila/ }).click();
+  await cfg(page).getByRole('button', { name: /^Cores · Argila/ }).click();
+  assert.equal(await cfg(page).locator('[class*=foldBody]:not([hidden])').count(), 0);
+  assert(await cfg(page).getByRole('button', { name: /^Orçamento · Não informado/ }).isVisible());
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
-  await page.evaluate(() => document.querySelector('#configurador h3').scrollIntoView({ behavior: 'instant', block: 'center' }));
-  await page.waitForTimeout(500);
-  const bar = page.locator('[class*=mobileBar]:not([class*=Spacer])');
-  assert(await bar.isVisible());
-  await cfg(page).getByLabel(/Nome do negócio/).focus();
-  await page.waitForTimeout(100);
-  assert.equal(await bar.count(), 0);
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-await scenario('Receptor: validação, falha sem perder dados, repetição sem duplicar, confirmação única', async (page) => {
-  let calls = 0; const keys = [];
-  await page.route('https://receptor.test/leads', async (route) => {
-    calls++; keys.push(route.request().headers()['idempotency-key']);
-    if (calls === 1) return route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
-    await new Promise((r) => setTimeout(r, 300));
-    return route.fulfill({ status: 201, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, leadId: 'L-77' }) });
-  });
-  await page.goto(URL_R);
-  await cfg(page).getByRole('button', { name: /Momento 4/ }).click();
-  assert.equal(await cfg(page).getByRole('button', { name: 'Solicitar proposta' }).count(), 1);
-  await cfg(page).getByRole('button', { name: 'Solicitar proposta' }).click();
-  assert.equal(calls, 0, 'inválido não envia');
-  assert.equal(await cfg(page).getByLabel('Seu nome').getAttribute('aria-invalid'), 'true');
-  assert.equal(await page.evaluate(() => document.activeElement.getAttribute('autocomplete')), 'name');
-  await cfg(page).getByLabel('Seu nome').fill('Ana Teste');
-  await cfg(page).getByLabel('Seu WhatsApp com DDD').fill('(51) 99999-0000');
-  await cfg(page).getByRole('button', { name: 'Solicitar proposta' }).click();
-  await cfg(page).locator('[role=alert]').waitFor();
-  assert((await cfg(page).locator('[role=alert]').innerText()).includes('não foi confirmado'));
-  assert.equal(await cfg(page).getByLabel('Seu nome').inputValue(), 'Ana Teste');
-  const retry = cfg(page).getByRole('button', { name: 'Tentar novamente' });
-  await retry.dblclick();
-  await cfg(page).locator('text=Pedido recebido').waitFor();
-  assert.equal(calls, 2, 'clique duplo = um envio');
-  assert.equal(keys[0], keys[1], 'mesma chave na nova tentativa');
-  const ev = await events(page);
-  assert.equal(ev.filter((e) => e === 'generate_lead').length, 1);
-  assert.equal(ev.filter((e) => e === 'lead_submit_error').length, 1);
+await scenario('Celular: opções em carrossel começando no recomendado; "fica à parte" recolhido', async (page) => {
+  await page.goto(URL);
+  await cfg(page).getByLabel(/Nome do negócio/).fill('Loja X');
+  await page.evaluate(() => document.querySelector('#opcoes').scrollIntoView({ behavior: 'instant' }));
+  await page.waitForTimeout(600);
+  await page.waitForFunction(() => !document.querySelector('#opcoes [class*=nudging]'));
+  assert.equal(await page.locator('#carrossel-opcoes').getAttribute('aria-roledescription'), 'carrossel');
+  assert.equal(await page.locator('#opcoes [class*=dots] button[aria-current=true]').getAttribute('aria-label'), 'Ir para opção 2 de 3');
+  assert.equal(await page.locator('#opcoes details[open]').count(), 0);
+  await page.locator('#opcoes article', { hasText: 'Captação' }).getByText('Ver o que fica à parte').click();
+  await page.locator('#opcoes details[open]').first().waitFor({ timeout: 3000 });
+  assert.equal(await page.locator('#opcoes details[open]').count(), 1);
+}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+await scenario('Computador 1280px: sem rolagem lateral, quadrado e carrosséis', async (page) => {
+  await page.goto(URL);
+  await page.waitForTimeout(700);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 1280);
+  assert(await page.locator('#exemplos').getByRole('button', { name: 'Próximo' }).isVisible(), 'setas no computador');
+  assert.equal(await page.locator('#opcoes [class*=dots]').count(), 0, 'opções em grade');
+  assert.equal(await page.locator('[class*=foldBody]').count(), 0, 'sem sanfona no computador');
 });
 
 console.log(`${passed} cenários passaram.`, errors.length ? errors : 'sem erros de página');

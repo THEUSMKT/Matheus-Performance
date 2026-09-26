@@ -5,6 +5,7 @@
    entra e sai do grupo). Confirmação: caixa inline, sem janela surpresa.
    ========================================================================== */
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import s from './Landing.module.css';
 
 export type RadioOption = { id: string; label: string; hint?: ReactNode; aside?: ReactNode; lead?: ReactNode };
@@ -17,8 +18,11 @@ export function Radios({
   onChange,
   variant = 'option',
   columns = false,
+  hideLabel = false,
 }: {
   label: string;
+  /** Título já exibido por fora (ex.: na sanfona); o grupo continua rotulado. */
+  hideLabel?: boolean;
   hint?: string;
   value: string;
   options: RadioOption[];
@@ -43,8 +47,8 @@ export function Radios({
 
   const groupId = `g-${label.replace(/\W+/g, '-').toLowerCase()}`;
   return (
-    <div className={s.block}>
-      <span className={s.blockTitle} id={groupId}>
+    <div className={hideLabel ? undefined : s.block}>
+      <span className={hideLabel ? s.srOnly : s.blockTitle} id={groupId}>
         {label}
         {hint && <small>{hint}</small>}
       </span>
@@ -137,6 +141,67 @@ export function ConfirmBox({ pending, onCancel }: { pending: Pending; onCancel: 
         <button type="button" className={`${s.secondary} ${s.small}`} onClick={onCancel}>
           Manter minhas escolhas
         </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Bloco do momento 3. No computador é um bloco com título; no celular vira
+ * sanfona (uma aberta por vez) e o cabeçalho fechado mostra a escolha atual.
+ */
+export function Fold({
+  id,
+  title,
+  short,
+  value,
+  note,
+  narrow,
+  open,
+  onToggle,
+  desktopTitle = true,
+  children,
+}: {
+  id: string;
+  title: string;
+  /** Título mais curto para o cabeçalho da sanfona no celular. */
+  short?: string;
+  value: string;
+  note?: string;
+  narrow: boolean;
+  open: boolean;
+  onToggle: () => void;
+  desktopTitle?: boolean;
+  children: ReactNode;
+}) {
+  if (!narrow) {
+    if (!desktopTitle) return <>{children}</>;
+    return (
+      <div className={s.block}>
+        <span className={s.blockTitle}>
+          {title}
+          {note && <small>{note}</small>}
+        </span>
+        {children}
+      </div>
+    );
+  }
+  const headId = `dobra-${id}`;
+  const panelId = `painel-${id}`;
+  return (
+    <div className={s.fold} data-open={open}>
+      <h4 className={s.foldHead}>
+        <button type="button" id={headId} aria-expanded={open} aria-controls={panelId} onClick={onToggle}>
+          <span>
+            <span className={s.foldTitle}>{short ?? title}</span>
+            <span className={s.foldValue}> · {value}</span>
+          </span>
+          <ChevronDown aria-hidden="true" />
+        </button>
+      </h4>
+      <div id={panelId} role="region" aria-labelledby={headId} hidden={!open} className={s.foldBody}>
+        {note && <p className={s.hint}>{note}</p>}
+        {children}
       </div>
     </div>
   );
