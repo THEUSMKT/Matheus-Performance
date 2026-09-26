@@ -1,5 +1,25 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — vitrine do serviço no topo
+
+- O quadrado com a frase grande virou uma vitrine: janela de navegador em
+  perspectiva com um site demonstrativo (Atelier Norte, arquitetura e
+  interiores: cabeçalho, título, imagem, botão e três cartões), o mesmo site
+  num celular sobreposto e o selo “Sua prévia em até 5 minutos”, sobre a base
+  azul. Marcada como “Exemplo ilustrativo”; nada nela é clicável. A imagem é
+  uma ilustração SVG leve (`public/demo/interiores.svg`, 3,5 KB) com
+  dimensões reservadas.
+- Montagem em ~1,8 s quando a vitrine entra na tela (base, janela, cabeçalho,
+  imagem, cartões, celular e selo), uma única vez; depois só uma flutuação de
+  5px a cada 8 s. Com “reduzir movimento” ou sem JavaScript, aparece pronta e
+  parada. No celular fica abaixo do texto, com menos perspectiva e altura
+  proporcional (sem rolagem lateral de 320 a 430px).
+- O cartão “Estruturar meu site profissional” só aparece quando o botão
+  principal do topo sai da tela (IntersectionObserver) e some, com transição,
+  quando ele volta. Os botões principais continuam levando até o cartão. No
+  celular virou uma pílula compacta, acima da área segura.
+- Ajuste: em 320px, a marca e o botão “Menu” do cabeçalho passavam da tela.
+
 ## Edição — quadrado 3D no topo
 
 - O mockup de computador + celular do topo (site de exemplo “Ateliê Aurora”)
