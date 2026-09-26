@@ -4,7 +4,7 @@
    nos termos e na privacidade. A marca é só o símbolo oficial + o nome
    "Beck Performance", sem subtítulo.
    ========================================================================== */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { contact } from '@/config/contact';
 import { whatsappLink } from '@/lib/whatsapp';
@@ -59,7 +59,18 @@ function NavLink({ hash, onHome, className, onClick, children }: { hash: string;
   );
 }
 
-export function Header({ onHome = true, ctaLabel = 'Criar minha prévia', onStart }: { onHome?: boolean; ctaLabel?: string; onStart?: () => void }) {
+export function Header({
+  onHome = true,
+  ctaLabel = 'Criar minha prévia',
+  ctaHref = builderHref,
+  onStart,
+}: {
+  onHome?: boolean;
+  ctaLabel?: string;
+  /** Na página inicial o botão leva ao cartão flutuante; nas outras, à criação. */
+  ctaHref?: string;
+  onStart?: (ev: MouseEvent<HTMLAnchorElement>) => void;
+}) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -82,7 +93,7 @@ export function Header({ onHome = true, ctaLabel = 'Criar minha prévia', onStar
               </NavLink>
             ))}
           </div>
-          <a href={builderHref} className={`${s.primary} ${s.small} ${s.navCta}`} onClick={onStart}>
+          <a href={ctaHref} className={`${s.primary} ${s.small} ${s.navCta}`} onClick={onStart}>
             {ctaLabel}
           </a>
           <button type="button" className={s.menuButton} aria-expanded={open} aria-controls="menu-celular" onClick={() => setOpen(!open)}>
@@ -97,11 +108,11 @@ export function Header({ onHome = true, ctaLabel = 'Criar minha prévia', onStar
               </NavLink>
             ))}
             <a
-              href={builderHref}
+              href={ctaHref}
               className={s.primary}
-              onClick={() => {
+              onClick={(ev) => {
                 close();
-                onStart?.();
+                onStart?.(ev);
               }}
             >
               {ctaLabel}

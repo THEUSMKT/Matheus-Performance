@@ -1,26 +1,13 @@
 'use client';
 /* ==========================================================================
-   Pequenos hooks de apresentação compartilhados pela página e pelo
-   configurador — mesmos critérios para as duas barras do celular.
+   Pequenos hooks de apresentação compartilhados pela página e pela
+   criação da prévia.
    ========================================================================== */
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useState } from 'react';
 
 /** Visitante prefere menos movimento. */
 export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-/** O elemento já passou para cima da tela (saiu por cima, não por baixo). */
-export function useScrolledPast(target: RefObject<Element | null>): boolean {
-  const [past, setPast] = useState(false);
-  useEffect(() => {
-    const el = target.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(([entry]) => setPast(!entry.isIntersecting && entry.boundingClientRect.top < 0));
-    io.observe(el);
-    return () => io.disconnect();
-  }, [target]);
-  return past;
 }
 
 /** Algum campo de texto está em edição — o teclado virtual pode estar aberto. */

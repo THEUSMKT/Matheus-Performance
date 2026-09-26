@@ -30,6 +30,13 @@ async function scenario(name, fn, opts = {}) {
 const allEvents = (page) => page.evaluate(() => JSON.parse(sessionStorage.getItem('__ev') || '[]'));
 const events = async (page) => (await allEvents(page)).map((e) => e.event);
 const heroCta = (page) => page.locator('[class*=heroCopy] a[class*=shine]');
+const floatCta = (page) => page.locator('a[class*=floatCta]');
+/** Abre a criação pelo cartão flutuante (os botões principais só levam até ele). */
+async function openBuilder(page) {
+  await floatCta(page).click();
+  await page.waitForURL(/\/criar\/$/);
+  await ready(page);
+}
 const stepText = (page) => page.getByText(/^Etapa \d de 4$/).innerText();
 const preview = (page) => page.getByRole('complementary', { name: 'Prévia do seu site' });
 const est = (page) => page.getByTestId('estimate');
@@ -64,7 +71,11 @@ await scenario('Apresentação: primeira dobra curta, ação principal e seçõe
   const copy = page.locator('[class*=heroCopy]');
   assert.deepEqual(await copy.locator('p').allInnerTexts(), ['Sites para empresas de todos os portes', 'Monte uma prévia personalizada em poucos passos.', 'Sem cadastro.']);
   assert.equal((await heroCta(page).innerText()).trim(), 'Criar minha prévia');
-  assert((await heroCta(page).getAttribute('href')).endsWith('/configurador/criar/'));
+  assert.equal(await heroCta(page).getAttribute('href'), '#exemplos');
+  assert.equal(await page.locator('header nav a[class*=navCta]').getAttribute('href'), '#exemplos');
+  assert.equal((await floatCta(page).innerText()).trim(), 'Estruturar meu site profissional');
+  assert((await floatCta(page).getAttribute('href')).endsWith('/configurador/criar/'));
+  assert.equal(await floatCta(page).evaluate((e) => getComputedStyle(e).position), 'fixed');
   const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
   assert.deepEqual(ids, ['exemplos', 'como-funciona', 'investimento', 'quem-atende', 'perguntas']);
   const wa = copy.getByRole('link', { name: 'Tirar uma dúvida no WhatsApp' });
@@ -85,9 +96,17 @@ await scenario('Apresentação: primeira dobra curta, ação principal e seçõe
   const before = await heroCta(page).boundingBox();
   await page.waitForTimeout(2200);
   assert.deepEqual(await heroCta(page).boundingBox(), before, 'o brilho não mexe no botão');
+  // O botão principal rola até os exemplos e destaca o cartão, sem abrir a criação.
   await heroCta(page).click();
-  await page.waitForURL(/\/criar\/$/);
-  await ready(page);
+  await page.waitForFunction(() => document.getElementById('exemplos').getBoundingClientRect().top < 120);
+  assert(page.url().endsWith('/configurador/'), 'continua na apresentação');
+  assert.equal(await page.evaluate(() => document.activeElement?.className.includes('floatCta')), true, 'foco no cartão');
+  assert.equal(await floatCta(page).getAttribute('data-spot'), 'a');
+  const box = await floatCta(page).boundingBox();
+  assert(box.y + box.height <= 900 && box.x + box.width <= 1280, 'cartão à vista');
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  assert(await floatCta(page).isVisible(), 'visível até o fim da página');
+  await openBuilder(page);
   assert.equal(await h1(page), 'Crie a prévia do seu site');
   assert.equal(await stepText(page), 'Etapa 1 de 4');
   assert((await events(page)).includes('configurator_start'));
@@ -98,8 +117,9 @@ await scenario('Menos movimento: sem brilho nem flutuação', async (page) => {
   const names = await page.evaluate(() => [
     getComputedStyle(document.querySelector('[class*=heroCopy] a[class*=shine]'), '::after').animationName,
     getComputedStyle(document.querySelector('[class*=showcaseFloat]')).animationName,
+    getComputedStyle(document.querySelector('a[class*=floatCta]')).animationName,
   ]);
-  assert.deepEqual(names, ['none', 'none']);
+  assert.deepEqual(names, ['none', 'none', 'none']);
 }, { reducedMotion: 'reduce' });
 
 await scenario('Sem nada salvo o botão é "Criar minha prévia"; abrir a criação sem escolher nada não muda isso', async (page) => {
@@ -136,7 +156,19 @@ await scenario('Criação em 4 etapas: nome obrigatório, prévia fiel às escol
   assert.equal(await stepText(page), 'Etapa 2 de 4');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'etapa-titulo');
   assert.equal(await page.locator('#etapa-titulo').innerText(), 'Aparência');
-  assert.deepEqual(await page.locator('[aria-labelledby=rotulo-estilo] [role=radio]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label').split(',')[0])), ['Moderno', 'Elegante', 'Minimalista']);
+  assert.deepEqual(await page.locator('[aria-labelledby=rotulo-estilo] [role=radio]').evaluateAll((els) => els.map((e) => e.getAttribute('aria-label').split(',')[0])), ['Moderno', 'Elegante', 'Minimalista', 'Tecnológico', 'Sofisticado', 'Escuro']);
+  const other = page.getByRole('link', { name: 'Escolher um estilo diferente (entrar em contato no WhatsApp)' });
+  const otherHref = await other.getAttribute('href');
+  assert(otherHref.startsWith('https://wa.me/5551981947979?text='));
+  assert.equal(new globalThis.URL(otherHref).searchParams.get('text'), 'Olá! Gostaria de um estilo diferente dos disponíveis no configurador para o meu site.');
+  assert.equal(await other.getAttribute('target'), '_blank');
+  const checkedBefore = await page.locator('[aria-labelledby=rotulo-estilo] [aria-checked=true]').getAttribute('aria-label');
+  const waTab = page.waitForEvent('popup');
+  await other.click();
+  await (await waTab).close();
+  assert.equal(await page.locator('[aria-labelledby=rotulo-estilo] [aria-checked=true]').getAttribute('aria-label'), checkedBefore, 'não muda o estilo escolhido');
+  await page.getByRole('radio', { name: /^Escuro/ }).click();
+  assert.equal(await pv.locator('[aria-roledescription="prévia"][class*=escuro]').count(), 1, 'estilo novo aplicado na prévia');
   await page.getByRole('radio', { name: /^Elegante/ }).click();
   await page.getByRole('radio', { name: 'Argila' }).click();
   assert.equal(await pv.locator('[aria-roledescription="prévia"][class*=elegante]').count(), 1, 'estilo aplicado na prévia');
@@ -203,8 +235,9 @@ await scenario('Criação em 4 etapas: nome obrigatório, prévia fiel às escol
   await page.goto(URL);
   await heroCta(page).filter({ hasText: 'Continuar minha prévia' }).waitFor();
   await heroCta(page).click();
-  await page.waitForURL(/\/criar\/$/);
-  await ready(page);
+  await page.waitForTimeout(300);
+  assert(page.url().endsWith('/configurador/'), '"Continuar minha prévia" não pula para a criação');
+  await openBuilder(page);
   assert.equal(await page.locator('#nome-empresa').inputValue(), 'Studio Lua');
 });
 
@@ -327,9 +360,7 @@ await scenario('Teclado: setas no grupo de opções e foco no título ao avança
 
 await scenario('Ajuda na criação e campanha por segmento', async (page) => {
   await page.goto(URL + '?utm_source=Meta&utm_campaign=Beleza_Set&segmento=beleza');
-  await heroCta(page).click();
-  await page.waitForURL(/\/criar\/$/);
-  await ready(page);
+  await openBuilder(page);
   assert.equal(await page.getByRole('radio', { name: 'Beleza e bem-estar' }).getAttribute('aria-checked'), 'true');
   const help = page.getByRole('link', { name: /Dúvidas\? Fale no WhatsApp/ });
   assert(decodeURIComponent(await help.getAttribute('href')).includes('etapa: Seu negócio'));
@@ -411,7 +442,7 @@ await scenario('Demonstração: computador/celular, anterior/próximo, Esc e foc
   assert((await dlg(page).locator('#exemplo-titulo').innerText()).includes('Portfólio criativo'));
   await page.keyboard.press('Escape');
   assert.equal(await dlg(page).count(), 0);
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Abrir exemplo de Portfólio criativo');
+  await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Abrir exemplo de Portfólio criativo', null, { timeout: 2000 });
   await page.waitForTimeout(200);
   const visible = await page.locator('#carrossel-exemplos').evaluate((track) => {
     const card = track.querySelector('[aria-label="Abrir exemplo de Portfólio criativo"]').getBoundingClientRect();
@@ -473,7 +504,7 @@ await scenario('Investimento: caminho escolhido aplica a estrutura e abre a cria
 /* ── Celular ────────────────────────────────────────────────────────────── */
 
 for (const width of [360, 390, 430]) {
-  await scenario(`Celular ${width}px: primeira dobra, barra fixa, Editar/Ver prévia e sem rolagem lateral`, async (page) => {
+  await scenario(`Celular ${width}px: primeira dobra, cartão flutuante, Editar/Ver prévia e sem rolagem lateral`, async (page) => {
     await page.goto(URL);
     await page.waitForTimeout(600);
     assert.equal(await scrollWidth(page), width);
@@ -482,17 +513,28 @@ for (const width of [360, 390, 430]) {
     const lines = await page.locator('#hero-titulo').evaluate((h) => Math.round(h.getBoundingClientRect().height / parseFloat(getComputedStyle(h).lineHeight)));
     assert(lines <= 3, `título em ${lines} linhas`);
     assert((await page.locator('header').first().boundingBox()).height <= 60, 'cabeçalho baixo');
-    const pageBar = page.locator('[data-bar=pagina]');
-    assert.equal(await pageBar.count(), 0, 'sem barra enquanto o botão do topo aparece');
-    await page.evaluate(() => document.querySelector('#exemplos').scrollIntoView({ behavior: 'instant' }));
-    await page.waitForTimeout(400);
-    assert(await pageBar.isVisible());
-    assert((await pageBar.getByRole('link').first().getAttribute('href')).endsWith('/criar/'));
-    assert((await pageBar.getByRole('link', { name: 'Tirar uma dúvida no WhatsApp' }).getAttribute('href')).startsWith('https://wa.me/5551981947979'));
-
-    await pageBar.getByRole('link').first().click();
-    await page.waitForURL(/\/criar\/$/);
-    await ready(page);
+    const card = await floatCta(page).boundingBox();
+    assert(card.x + card.width <= width && card.y + card.height <= 844, 'cartão dentro da tela');
+    assert(Math.abs(card.width - card.height) < 1, 'cartão quadrado');
+    const wa = page.locator('[class*=heroCopy]').getByRole('link', { name: 'Tirar uma dúvida no WhatsApp' });
+    const waBox = await wa.boundingBox();
+    assert(waBox.y + waBox.height < card.y || waBox.x + waBox.width < card.x, 'cartão não cobre o WhatsApp');
+    await heroCta(page).click();
+    await page.waitForFunction(() => document.getElementById('exemplos').getBoundingClientRect().top < 120);
+    assert(page.url().endsWith('/configurador/'));
+    await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+    await page.waitForTimeout(200);
+    const last = await page.locator('footer [class*=footerBottom]').boundingBox();
+    const fixed = await floatCta(page).boundingBox();
+    assert(last.y + last.height <= fixed.y + 1, 'o fim da página rola acima do cartão');
+    assert.equal(await scrollWidth(page), width);
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.locator('#menu-celular a[class*=primary]').click();
+    await page.waitForTimeout(300);
+    assert(page.url().endsWith('/configurador/'), 'botão do menu também não abre a criação');
+    assert.equal(await page.locator('#menu-celular').count(), 0, 'menu fecha');
+    assert.equal(await page.evaluate(() => document.activeElement?.className.includes('floatCta')), true);
+    await openBuilder(page);
     const bar = page.locator('[data-bar=configurador]');
     assert(await bar.isVisible());
     const name = page.locator('#nome-empresa');

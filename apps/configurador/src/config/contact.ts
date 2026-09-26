@@ -47,6 +47,9 @@ export const contact = {
    * Mensagem dos CTAs genéricos — rodapé e afins. Não se mistura com o
    * briefing do configurador, que é montado em src/lib/whatsapp.ts.
    */
+  /** Pedido de um estilo fora dos disponíveis na etapa Aparência. */
+  whatsappEstilo: 'Olá! Gostaria de um estilo diferente dos disponíveis no configurador para o meu site.',
+
   whatsappCurta:
     'Olá! Vi o site da Beck Performance e gostaria de tirar uma dúvida sobre a criação de um site.',
 } as const;

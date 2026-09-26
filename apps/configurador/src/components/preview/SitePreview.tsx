@@ -19,7 +19,7 @@ const segmentIcon: Record<string, typeof Store> = {
   outro: Store,
 };
 
-const styleClass: Record<string, string> = { marcante: s.moderno, elegante: s.elegante, essencial: s.minimal };
+const styleClass: Record<string, string> = { marcante: s.moderno, elegante: s.elegante, essencial: s.minimal, tecnologico: s.tecnologico, sofisticado: s.sofisticado, escuro: s.escuro };
 
 function Tag({ children }: { children: ReactNode }) {
   return <span className={s.tag}>{children}</span>;
@@ -52,7 +52,7 @@ export function SitePreview({
   const has = (id: string) => p.sections.includes(id);
   const feature = (id: string) => p.features.includes(id);
   const Icon = segmentIcon[p.segment] ?? Store;
-  const serif = p.font === 'serif' || (p.font === 'auto' && p.direction === 'elegante');
+  const serif = p.font === 'serif' || (p.font === 'auto' && (p.direction === 'elegante' || p.direction === 'sofisticado'));
   const vars = {
     '--acc': accent,
     '--on': contrastInk(accent),

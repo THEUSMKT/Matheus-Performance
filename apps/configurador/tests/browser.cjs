@@ -73,7 +73,7 @@ async function next(page) {
     await noSideScroll(page, `início ${width}px`);
     await shot(page, `mobile-${width}-top`);
     if (width === 390) await shot(page, 'mobile', true);
-    await page.locator('[class*=heroCopy] a[class*=shine]').click();
+    await page.locator('a[class*=floatCta]').click();
     await page.waitForURL(/\/criar\/$/);
     await ready(page);
     await page.locator('#nome-empresa').fill('Loja Azul');
