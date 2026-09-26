@@ -31,7 +31,7 @@ async function next(page) {
   await page.goto(base);
   await shot(page, 'desktop-top');
   await shot(page, 'desktop', true);
-  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Seu próximo site começa aqui.');
+  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Estruture seu site profissional em até 5 minutos.');
   assert.deepEqual(
     await page.locator('#exemplos [class*="inspirationNav"] strong').allTextContents(),
     ['SERVIÇOS LOCAIS', 'BELEZA E BEM-ESTAR', 'CONSULTORIA', 'PORTFÓLIO CRIATIVO', 'ALIMENTAÇÃO'],

@@ -273,10 +273,10 @@
 }
 .hero h1 {
   margin-top: 10px;
-  font-size: clamp(32px, 8.6vw, 58px);
+  font-size: clamp(28px, 7.6vw, 48px);
   font-weight: 750;
   letter-spacing: -0.03em;
-  max-width: 15ch;
+  max-width: 18ch;
 }
 .heroLead {
   margin-top: 12px;
@@ -1711,8 +1711,8 @@ button.exampleCard:hover {
     padding-block: 56px 24px;
   }
   .hero h1 {
-    font-size: clamp(44px, 4.4vw, 56px);
-    max-width: 17ch;
+    font-size: clamp(38px, 3.8vw, 50px);
+    max-width: 18ch;
   }
   .hero + .section {
     padding-top: 56px;

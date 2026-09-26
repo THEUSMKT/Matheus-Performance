@@ -72,7 +72,7 @@ async function toSummary(page, name) {
 
 await scenario('Apresentação: primeira dobra curta, ação principal e seções', async (page) => {
   await page.goto(URL);
-  assert.equal(await h1(page), 'Seu próximo site começa aqui.');
+  assert.equal(await h1(page), 'Estruture seu site profissional em até 5 minutos.');
   const copy = page.locator('[class*=heroCopy]');
   assert.deepEqual(await copy.locator('p').allInnerTexts(), ['Sites para empresas de todos os portes', 'Monte uma prévia personalizada em poucos passos.', 'Sem cadastro.']);
   assert.equal((await heroCta(page).innerText()).trim(), 'Criar minha prévia');
