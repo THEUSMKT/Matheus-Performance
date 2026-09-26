@@ -33,6 +33,11 @@ const heroCta = (page) => page.locator('[class*=heroCopy] a[class*=shine]');
 const floatCta = (page) => page.locator('a[class*=floatCta]');
 /** Abre a criação pelo cartão flutuante (os botões principais só levam até ele). */
 async function openBuilder(page) {
+  // O cartão só aparece depois que o botão do topo sai da tela.
+  if ((await floatCta(page).getAttribute('data-shown')) === null) {
+    await page.evaluate(() => window.scrollTo({ top: document.getElementById('exemplos').offsetTop + 200, behavior: 'instant' }));
+    await page.locator('a[class*=floatCta][data-shown]').waitFor();
+  }
   await floatCta(page).click();
   await page.waitForURL(/\/criar\/$/);
   await ready(page);
@@ -73,9 +78,12 @@ await scenario('Apresentação: primeira dobra curta, ação principal e seçõe
   assert.equal((await heroCta(page).innerText()).trim(), 'Criar minha prévia');
   assert.equal(await heroCta(page).getAttribute('href'), '#exemplos');
   assert.equal(await page.locator('header nav a[class*=navCta]').getAttribute('href'), '#exemplos');
-  assert.equal((await floatCta(page).innerText()).trim(), 'Estruturar meu site profissional');
+  assert.equal((await floatCta(page).textContent()).trim(), 'Estruturar meu site profissional');
   assert((await floatCta(page).getAttribute('href')).endsWith('/configurador/criar/'));
   assert.equal(await floatCta(page).evaluate((e) => getComputedStyle(e).position), 'fixed');
+  await page.waitForTimeout(400);
+  assert.equal(await floatCta(page).getAttribute('data-shown'), null, 'cartão escondido enquanto o botão do topo aparece');
+  assert(!(await floatCta(page).isVisible()));
   const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
   assert.deepEqual(ids, ['exemplos', 'como-funciona', 'investimento', 'quem-atende', 'perguntas']);
   const wa = copy.getByRole('link', { name: 'Tirar uma dúvida no WhatsApp' });
@@ -116,44 +124,68 @@ await scenario('Menos movimento: sem brilho nem flutuação', async (page) => {
   await page.goto(URL);
   const names = await page.evaluate(() => [
     getComputedStyle(document.querySelector('[class*=heroCopy] a[class*=shine]'), '::after').animationName,
-    getComputedStyle(document.querySelector('[class*=pitchFloat]')).animationName,
-    getComputedStyle(document.querySelector('[class*=pitchCube]'), '::after').animationName,
+    ...[...document.querySelectorAll('[data-showcase] *')].map((e) => getComputedStyle(e).animationName).filter((n) => n !== 'none'),
     getComputedStyle(document.querySelector('a[class*=floatCta]')).animationName,
   ]);
-  assert.deepEqual(names, ['none', 'none', 'none', 'none']);
-  assert.match(await page.locator('[class*=pitchCube]').evaluate((e) => getComputedStyle(e).transform), /^matrix3d/, 'visual 3D continua');
+  assert.deepEqual(names, ['none', 'none'], 'nada anima');
+  const w = page.locator('[data-showcase] [class*=window]').first();
+  assert.equal(await w.evaluate((e) => getComputedStyle(e).opacity), '1', 'composição já montada');
+  assert.match(await w.evaluate((e) => getComputedStyle(e).transform), /^matrix3d/, 'perspectiva continua');
 }, { reducedMotion: 'reduce' });
 
-await scenario('Quadrado 3D do topo: frase, flutuação, brilho e sem colidir com o cartão', async (page) => {
+await scenario('Vitrine do topo: janela, celular e selo, montada uma vez e sem cortar nada', async (page) => {
   await page.goto(URL);
-  assert.equal(await page.locator('[class*=showcase]').count(), 0, 'mockups removidos');
-  const cube = page.locator('[class*=pitchCube]');
-  assert.equal((await cube.innerText()).trim(), 'Estruture seu site profissional em até 5 minutos');
-  const anim = await page.evaluate(() => {
-    const f = document.querySelector('[class*=pitchFloat]');
-    const c = document.querySelector('[class*=pitchCube]');
-    const a = getComputedStyle(f), g = getComputedStyle(c, '::after');
-    return { float: a.animationName, dur: parseFloat(a.animationDuration), glow: g.animationName, glowDur: parseFloat(g.animationDuration), shadows: getComputedStyle(c).boxShadow.split('rgba').length - 1 };
-  });
-  assert(anim.float.includes('pitchFloat') && anim.dur >= 4 && anim.dur <= 6, 'flutuação lenta');
-  assert(anim.glow.includes('pitchGlow') && anim.glowDur >= 3, 'brilho pulsante lento');
-  assert(anim.shadows >= 4, 'sombras em camadas');
-  const box = await cube.boundingBox();
-  const card = await page.locator('a[class*=floatCta]').boundingBox();
-  assert(box.x + box.width < card.x || box.y + box.height < card.y, 'não encosta no cartão flutuante');
-  const t = await cube.locator('p').boundingBox();
-  assert(t.x >= box.x && t.x + t.width <= box.x + box.width && t.y >= box.y && t.y + t.height <= box.y + box.height, 'frase inteira dentro do quadrado');
+  const sc = page.locator('[data-showcase]');
+  assert.equal(await sc.getAttribute('role'), 'img');
+  assert((await sc.getAttribute('aria-label')).includes('Exemplo ilustrativo'));
+  const txt = await sc.textContent();
+  for (const s of ['Exemplo ilustrativo', 'Atelier Norte', 'Espaços pensados para viver bem.', 'Residencial', 'Sua prévia em até 5 minutos']) assert(txt.includes(s), s);
+  assert.equal(await sc.locator('a, button, input, form').count(), 0, 'nada clicável na ilustração');
+  const imgs = await sc.locator('img').evaluateAll((els) => els.map((e) => [e.getAttribute('width'), e.getAttribute('height'), e.complete && e.naturalWidth > 0]));
+  assert.equal(imgs.length, 2); for (const [w, h, ok] of imgs) assert(w && h && ok, 'imagem com dimensões reservadas e carregada');
+  await page.waitForFunction(() => document.querySelector('[data-showcase]').hasAttribute('data-play'));
+  const durations = await page.evaluate(() => [...document.querySelectorAll('[data-showcase] *')].map((e) => {
+    const cs = getComputedStyle(e);
+    if (cs.animationName === 'none') return null;
+    const d = cs.animationDuration.split(',').map(parseFloat), l = cs.animationDelay.split(',').map(parseFloat), it = cs.animationIterationCount;
+    return { end: d[0] + l[0], it };
+  }).filter(Boolean));
+  const assembly = durations.filter((x) => x.it !== 'infinite');
+  const endAt = Math.max(...assembly.map((x) => x.end));
+  assert(endAt >= 1.5 && endAt <= 2, `montagem em ${endAt}s`);
+  const loop = durations.filter((x) => x.it === 'infinite');
+  assert.equal(loop.length, 1, 'só a flutuação fica em loop');
+  await page.waitForTimeout(2100);
+  const box = await sc.boundingBox();
+  const copy = await page.locator('[class*=heroCopy]').boundingBox();
+  assert(box.x > copy.x + copy.width + 24, 'espaço entre texto e ilustração');
+  for (const sel of ['[class*=window]', '[class*=phone]', '[class*=badge]']) {
+    const b = await sc.locator(sel).first().boundingBox();
+    assert(b.x >= box.x - 2 && b.x + b.width <= box.x + box.width + 12 && b.y >= box.y - 12 && b.y + b.height <= box.y + box.height + 6, `${sel} dentro da vitrine`);
+  }
+  const badge = await sc.locator('[class*=badge]').boundingBox();
+  const phone = await sc.locator('[class*=phone]').first().boundingBox();
+  assert(badge.x + badge.width <= phone.x, 'selo não encosta no celular');
 }, { viewport: { width: 1280, height: 800 } });
 
-await scenario('Quadrado 3D no celular: fora da faixa do cartão flutuante', async (page) => {
-  await page.goto(URL);
-  const box = await page.locator('[class*=pitchCube]').boundingBox();
-  const card = await page.locator('a[class*=floatCta]').boundingBox();
-  assert(box.x + box.width < card.x, 'nunca passa por baixo do cartão ao rolar');
-  const t = await page.locator('[class*=pitchCube] p').boundingBox();
-  assert(t.y + t.height <= box.y + box.height && parseFloat(await page.locator('[class*=pitchCube] p').evaluate((p) => getComputedStyle(p).fontSize)) >= 19);
-  assert.equal(await scrollWidth(page), 360);
-}, { viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true });
+for (const width of [320, 375, 390, 430]) {
+  await scenario(`Vitrine no celular ${width}px: abaixo do texto, inteira e legível`, async (page) => {
+    await page.goto(URL);
+    await page.waitForTimeout(2200);
+    assert.equal(await scrollWidth(page), width);
+    const sc = page.locator('[data-showcase]');
+    const box = await sc.boundingBox();
+    const cta = await heroCta(page).boundingBox();
+    assert(box.y > cta.y + cta.height, 'ilustração depois do botão');
+    assert(box.height < 0.5 * 844, 'não ocupa a tela inteira');
+    const phone = await sc.locator('[class*=phone]').first().boundingBox();
+    assert(phone.x + phone.width <= width, 'celular inteiro na tela');
+    const badge = await sc.locator('[class*=badge]').boundingBox();
+    assert(badge.x >= 0 && badge.x + badge.width <= phone.x + 1, 'selo sem encostar no celular');
+    const sizes = await sc.locator('[class*=badge], [class*=title], [class*=tag]').evaluateAll((els) => els.map((e) => parseFloat(getComputedStyle(e).fontSize)));
+    for (const s of sizes) assert(s >= 9.5, `texto legível (${s}px)`);
+  }, { viewport: { width, height: 844 }, isMobile: true, hasTouch: true });
+}
 
 await scenario('Sem nada salvo o botão é "Criar minha prévia"; abrir a criação sem escolher nada não muda isso', async (page) => {
   await page.goto(B);
@@ -546,12 +578,17 @@ for (const width of [360, 390, 430]) {
     const lines = await page.locator('#hero-titulo').evaluate((h) => Math.round(h.getBoundingClientRect().height / parseFloat(getComputedStyle(h).lineHeight)));
     assert(lines <= 3, `título em ${lines} linhas`);
     assert((await page.locator('header').first().boundingBox()).height <= 60, 'cabeçalho baixo');
+    assert(!(await floatCta(page).isVisible()), 'sem cartão enquanto o botão do topo aparece');
+    await page.evaluate(() => window.scrollTo({ top: document.getElementById('como-funciona').offsetTop, behavior: 'instant' }));
+    await page.locator('a[class*=floatCta][data-shown]').waitFor();
+    await page.waitForTimeout(400);
     const card = await floatCta(page).boundingBox();
-    assert(card.x + card.width <= width && card.y + card.height <= 844, 'cartão dentro da tela');
-    assert(Math.abs(card.width - card.height) < 1, 'cartão quadrado');
-    const wa = page.locator('[class*=heroCopy]').getByRole('link', { name: 'Tirar uma dúvida no WhatsApp' });
-    const waBox = await wa.boundingBox();
-    assert(waBox.y + waBox.height < card.y || waBox.x + waBox.width < card.x, 'cartão não cobre o WhatsApp');
+    assert(card.x >= 0 && card.x + card.width <= width && card.y + card.height <= 844 - 8, 'cartão inteiro, acima da borda');
+    assert(card.height <= 48, 'formato compacto no celular');
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForFunction(() => !document.querySelector('a[class*=floatCta]').hasAttribute('data-shown'));
+    await page.waitForTimeout(400);
+    assert(!(await floatCta(page).isVisible()), 'volta a esconder no topo');
     await heroCta(page).click();
     await page.waitForFunction(() => document.getElementById('exemplos').getBoundingClientRect().top < 120);
     assert(page.url().endsWith('/configurador/'));

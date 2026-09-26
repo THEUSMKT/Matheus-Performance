@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Ilustração de um ambiente de interiores (exemplo fictício) -->
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efe7dc"/><stop offset="1" stop-color="#e3d7c8"/></linearGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcd3e6"/><stop offset="1" stop-color="#e8eef1"/></linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c79f79"/><stop offset="1" stop-color="#a97f5c"/></linearGradient>
+    <linearGradient id="sofa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7f8f86"/><stop offset="1" stop-color="#63736b"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0" r="0.9"><stop offset="0" stop-color="#fff8e8" stop-opacity=".9"/><stop offset="1" stop-color="#fff8e8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="light" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fffaf0" stop-opacity=".55"/><stop offset="1" stop-color="#fffaf0" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="480" height="360" fill="url(#wall)"/>
+  <!-- janela em arco -->
+  <path d="M40 250V110a70 70 0 0 1 140 0v140z" fill="#d9ccbb"/>
+  <path d="M50 250V112a60 60 0 0 1 120 0v138z" fill="url(#sky)"/>
+  <path d="M110 52v198M50 170h120" stroke="#d9ccbb" stroke-width="6"/>
+  <path d="M60 238c14-18 30-22 44-12 10-16 30-20 46-6v18H60z" fill="#a9bfa4" opacity=".7"/>
+  <!-- luz entrando -->
+  <path d="M50 250 170 250 330 360 150 360z" fill="url(#light)"/>
+  <!-- piso -->
+  <rect y="262" width="480" height="98" fill="url(#floor)"/>
+  <path d="M0 290h480M0 322h480" stroke="#b58c67" stroke-width="2" opacity=".5"/>
+  <rect y="256" width="480" height="8" fill="#f6f0e7"/>
+  <!-- quadro -->
+  <rect x="268" y="72" width="92" height="64" rx="3" fill="#faf6ef" stroke="#b89a78" stroke-width="4"/>
+  <path d="M282 124c14-22 26-30 38-18 8-10 18-12 28 0v6h-66z" fill="#c9a27e"/>
+  <circle cx="336" cy="92" r="8" fill="#d8b48c"/>
+  <!-- luminária pendente -->
+  <path d="M410 0v74" stroke="#5a4a3c" stroke-width="2"/>
+  <path d="M390 94a20 20 0 0 1 40 0z" fill="#2f3a36"/>
+  <ellipse cx="410" cy="120" rx="70" ry="40" fill="url(#glow)"/>
+  <!-- tapete -->
+  <ellipse cx="316" cy="316" rx="150" ry="26" fill="#e9dccb"/>
+  <!-- sofá -->
+  <rect x="210" y="190" width="220" height="56" rx="18" fill="url(#sofa)"/>
+  <rect x="198" y="214" width="244" height="58" rx="16" fill="#6c7c74"/>
+  <rect x="222" y="206" width="94" height="30" rx="10" fill="#8a9a91"/>
+  <rect x="324" y="206" width="94" height="30" rx="10" fill="#8a9a91"/>
+  <rect x="236" y="196" width="34" height="26" rx="8" fill="#d8b48c"/>
+  <rect x="210" y="270" width="8" height="14" fill="#4a3c30"/>
+  <rect x="422" y="270" width="8" height="14" fill="#4a3c30"/>
+  <!-- mesa de centro -->
+  <ellipse cx="316" cy="300" rx="54" ry="10" fill="#3b3430"/>
+  <rect x="312" y="300" width="8" height="18" fill="#3b3430"/>
+  <rect x="300" y="282" width="16" height="16" rx="3" fill="#f3ede3"/>
+  <!-- planta -->
+  <path d="M120 300h36l-6 44h-24z" fill="#b58c67"/>
+  <g fill="#6f8b6a">
+    <path d="M138 300c-30-20-40-50-30-80 18 18 26 44 30 80z"/>
+    <path d="M138 300c24-26 44-40 64-44-8 22-30 40-64 44z"/>
+    <path d="M138 300c-4-36 4-66 22-86 6 28 0 56-22 86z" fill="#80a07a"/>
+    <path d="M138 300c-26-6-48-22-58-40 26 4 44 18 58 40z" fill="#5f7a5b"/>
+  </g>
+</svg>

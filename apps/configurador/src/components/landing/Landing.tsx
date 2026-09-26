@@ -32,6 +32,7 @@ import { Footer, Header, asset, builderHref, mainSiteUrl } from './Chrome';
 import { ConfirmBox, type Pending } from './Controls';
 import { DesktopFrame, PhoneFrame } from './DemoFrames';
 import { prefersReducedMotion } from './hooks';
+import { HeroShowcase } from './HeroShowcase';
 import { useProject, type ProjectState } from './useProject';
 import s from './Landing.module.css';
 
@@ -69,15 +70,47 @@ export default function Landing() {
 
   // Os botões principais não abrem a criação direto: levam ao cartão
   // flutuante "Estruturar meu site profissional", que é quem abre.
+  // O cartão só aparece depois que o botão principal do topo sai da tela
+  // (ou quando um botão principal leva o visitante até ele).
   const card = useRef<HTMLAnchorElement>(null);
+  const heroCta = useRef<HTMLAnchorElement>(null);
   const [spot, setSpot] = useState(0);
+  const [ctaOut, setCtaOut] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const cardShown = ctaOut || pinned;
+
+  useEffect(() => {
+    const el = heroCta.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setCtaOut(true);
+      return;
+    }
+    let wasOut = false;
+    const io = new IntersectionObserver(([entry]) => {
+      const out = !entry.isIntersecting;
+      setCtaOut(out);
+      // O botão voltou à tela depois de ter saído: o cartão some de novo.
+      if (!out && wasOut) setPinned(false);
+      wasOut = out;
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   function toCard(ev: MouseEvent<HTMLAnchorElement>) {
     ev.preventDefault();
-    const target = document.getElementById('exemplos');
     const smooth = !prefersReducedMotion();
-    if (target && target.getBoundingClientRect().top > 80) target.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
-    card.current?.focus({ preventScroll: true });
+    const target = document.getElementById('exemplos');
+    const cta = heroCta.current;
+    if (target && cta) {
+      // Rola até os exemplos, e no mínimo até o botão do topo sair da tela.
+      const header = 64;
+      const top = Math.max(target.getBoundingClientRect().top, cta.getBoundingClientRect().bottom - header + 8) + window.scrollY;
+      if (top > window.scrollY + 8) window.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
+    }
+    setPinned(true);
     setSpot((n) => n + 1);
+    requestAnimationFrame(() => card.current?.focus({ preventScroll: true }));
   }
 
   // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…).
@@ -97,7 +130,7 @@ export default function Landing() {
             <p className={s.audience}>{hero.eyebrow}</p>
             <h1 id="hero-titulo">{hero.title}</h1>
             <p className={s.heroLead}>{hero.description}</p>
-            <a className={`${s.primary} ${s.shine}`} href="#exemplos" onClick={toCard}>
+            <a ref={heroCta} className={`${s.primary} ${s.shine}`} href="#exemplos" onClick={toCard}>
               <span>{primaryLabel}</span>
             </a>
             <p className={s.micro}>Sem cadastro.</p>
@@ -105,7 +138,7 @@ export default function Landing() {
               <MessageCircle aria-hidden="true" /> Tirar uma dúvida no WhatsApp
             </a>
           </div>
-          <FloatingPitch />
+          <HeroShowcase />
         </section>
 
         <Examples state={state} />
@@ -161,25 +194,20 @@ export default function Landing() {
         </section>
       </main>
       <Footer />
-      <a ref={card} className={s.floatCta} href={builderHref} onClick={start} data-spot={spot ? (spot % 2 ? 'a' : 'b') : undefined}>
+      <a
+        ref={card}
+        className={s.floatCta}
+        href={builderHref}
+        onClick={start}
+        data-shown={cardShown || undefined}
+        aria-hidden={cardShown ? undefined : true}
+        tabIndex={cardShown ? undefined : -1}
+        data-spot={spot ? (spot % 2 ? 'a' : 'b') : undefined}
+      >
         <LayoutTemplate aria-hidden="true" />
         <span>Estruturar meu site profissional</span>
         <ArrowRight aria-hidden="true" className={s.floatArrow} />
       </a>
-    </div>
-  );
-}
-
-/** Quadrado 3D flutuante com a frase de destaque (decorativo, não é botão). */
-function FloatingPitch() {
-  return (
-    <div className={s.pitch}>
-      <span className={s.pitchShadow} aria-hidden="true" />
-      <div className={s.pitchFloat}>
-        <div className={s.pitchCube}>
-          <p>Estruture seu site profissional em até 5 minutos</p>
-        </div>
-      </div>
     </div>
   );
 }
