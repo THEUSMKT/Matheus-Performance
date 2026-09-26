@@ -110,9 +110,10 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 | `step_complete` | Avançar um momento (1× por momento) | `step` |
 | `recommendation_applied` | Usar a recomendação | `plan`, `source` |
 | `plan_selected` | Escolher um caminho | `plan`, `source` |
-| `example_opened` / `example_applied` | Ampliar / usar exemplo | `segment` |
+| `example_opened` / `example_applied` | Abrir a demonstração (ou trocar de exemplo nela) / usar como ponto de partida | `segment` |
+| `example_view_mode` | Trocar Computador/Celular na demonstração | `segment`, `device` |
 | `summary_view` | Chegar ao resumo (1× por sessão) | — |
-| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção**) | `context` |
+| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção**) | `context` (`hero`, `barra_fixa`, `ajuda`, `resumo`, `final`, `rodape`) |
 | `share_link` / `pdf_save` / `help_open` | Ferramentas do resumo e ajuda | `step` (ajuda) |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |

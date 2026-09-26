@@ -1,5 +1,24 @@
 # Upgrade — Beck Performance, configurador assistido (setembro de 2026)
 
+## Edição — versão celular mais simples
+
+- Exemplos em carrossel (toque, trackpad, teclado, bolinhas e setas no
+  computador), com selo “Clique aqui”. O card inteiro abre a demonstração,
+  que no celular ocupa a tela toda e mostra o site em moldura de
+  **Computador** (desenhado em 1100px e reduzido) ou **Celular**, com
+  anterior/próximo e “Usar este modelo como ponto de partida”.
+- Topo sem prévia: no lugar, um quadrado flutuante que leva ao configurador.
+  Campanhas com `?segmento=` agora começam o carrossel no exemplo do segmento.
+- Benefícios com ícone, “Como funciona” em linha do tempo, opções em
+  carrossel no celular (com “fica à parte” recolhido e início no caminho
+  recomendado) e perguntas com as 5 primeiras + “Ver todas”.
+- Barra fixa no celular depois que o botão do topo sai da tela, trocada
+  pela barra do configurador quando ele aparece; momento 3 em sanfona.
+- Evento novo: `example_view_mode`. Preços, cálculo e textos legais não mudaram.
+- **Atenção:** o texto “Estruture seu próprio site em até 3 minutos” foi
+  pedido na edição. O tempo ainda não foi medido com visitantes; vale
+  confirmar com uso real antes de anunciar em campanhas.
+
 Especificação aplicada: *Prompt Upgrades Beck Performance* (14 seções).
 Fluxo registrado nos projetos e eventos como `assistido-4m-v1`.
 

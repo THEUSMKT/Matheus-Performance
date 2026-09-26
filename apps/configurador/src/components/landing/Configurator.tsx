@@ -41,9 +41,10 @@ import {
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { ProjectPreview } from '../ProjectPreview';
-import { Check, ConfirmBox, Radios, type Pending } from './Controls';
+import { Check, ConfirmBox, Fold, Radios, type Pending } from './Controls';
 import { SummaryStep } from './SummaryStep';
 import { useNarrow, type ProjectState } from './useProject';
+import { CONFIG_IN_VIEW_MARGIN, useInView, useTyping } from './hooks';
 import s from './Landing.module.css';
 
 const titles = ['Conte sobre o seu negócio.', 'Nossa recomendação para você.', 'Ajuste o que quiser.', 'Seu projeto, pronto para conversar.'];
@@ -78,8 +79,7 @@ export function Configurator({ state }: { state: ProjectState }) {
   const narrow = useNarrow();
   const [deviceChoice, setDevice] = useState<'desktop' | 'mobile' | null>(null);
   const device = deviceChoice ?? (narrow ? 'mobile' : 'desktop');
-  const [barVisible, setBarVisible] = useState(false);
-  const [typing, setTyping] = useState(false);
+  const [fold, setFold] = useState<string | null>('identidade');
   const heading = useRef<HTMLHeadingElement>(null);
   const editor = useRef<HTMLDivElement>(null);
   const section = useRef<HTMLElement>(null);
@@ -99,23 +99,18 @@ export function Configurator({ state }: { state: ProjectState }) {
   }, [p.step]);
 
   // Barra do celular: só enquanto o configurador está na tela e nenhum campo
-  // está em edição (o teclado virtual não fica coberto).
+  // está em edição (o teclado virtual não fica coberto). A barra da página
+  // usa os mesmos critérios, então as duas nunca aparecem juntas.
+  const barVisible = useInView(section, CONFIG_IN_VIEW_MARGIN);
+  const typing = useTyping();
+
+  // Sanfona do momento 3: ao abrir um bloco, o cabeçalho dele fica na tela.
   useEffect(() => {
-    const el = section.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(([entry]) => setBarVisible(entry.isIntersecting), { rootMargin: '0px 0px -30% 0px' });
-    io.observe(el);
-    const isField = (t: EventTarget | null) => t instanceof HTMLElement && t.matches('input:not([type=checkbox]):not([type=radio]):not([type=color]), textarea, select');
-    const onIn = (ev: FocusEvent) => isField(ev.target) && setTyping(true);
-    const onOut = (ev: FocusEvent) => isField(ev.target) && setTyping(false);
-    document.addEventListener('focusin', onIn);
-    document.addEventListener('focusout', onOut);
-    return () => {
-      io.disconnect();
-      document.removeEventListener('focusin', onIn);
-      document.removeEventListener('focusout', onOut);
-    };
-  }, []);
+    if (!fold || !narrow) return;
+    const head = document.getElementById(`dobra-${fold}`);
+    if (head && head.getBoundingClientRect().top < 72) head.scrollIntoView({ block: 'start' });
+  }, [fold, narrow]);
+  const foldProps = (id: string) => ({ id, narrow, open: fold === id, onToggle: () => setFold(fold === id ? null : id) });
 
   function edit(patch: Partial<Project>) {
     track('configurator_start');
@@ -159,13 +154,18 @@ export function Configurator({ state }: { state: ProjectState }) {
 
   const form = p.features.includes(FORM_EMAIL) ? FORM_EMAIL : p.features.includes(FORM_WHATSAPP) ? FORM_WHATSAPP : 'nenhum';
   const optional = features.filter((f) => ['animacoes', 'catalogo', 'paginaExtra', 'agendamento', 'instagram'].includes(f.id));
+  const formLabel: Record<string, string> = { nenhum: 'Sem formulário', [FORM_WHATSAPP]: 'Para WhatsApp', [FORM_EMAIL]: 'Por e-mail' };
+  const chosenExtras = optional.filter((f) => p.features.includes(f.id));
+  const extrasLabel = chosenExtras.length === 0 ? 'Nenhum' : chosenExtras.length === 1 ? chosenExtras[0].name : `${chosenExtras.length} escolhidos`;
+  const budget = budgetInfo(p);
+  const budgetLabel = budget.status === 'ausente' ? 'Não informado' : budget.status === 'invalido' ? 'Valor a revisar' : brl(budget.value);
 
   return (
     <section className={s.workspace} id="configurador" ref={section} aria-labelledby="configurador-titulo">
       <div className={s.wrap}>
         <div className={s.sectionHead}>
           <h2 id="configurador-titulo">Monte a prévia do seu site</h2>
-          <p>Sem cadastro. Suas respostas ficam salvas só neste navegador enquanto você decide.</p>
+          <p>Sem cadastro. Respostas salvas só neste navegador.</p>
         </div>
         <div className={s.notice} role="status" aria-live="polite">
           {notice}
@@ -373,8 +373,7 @@ export function Configurator({ state }: { state: ProjectState }) {
 
             {p.step === 2 && (
               <>
-                <div className={s.block}>
-                  <span className={s.blockTitle}>Identidade visual</span>
+                <Fold {...foldProps('identidade')} title="Identidade visual" value={p.legacyTemplate || p.legacyStyle ? 'Modelo anterior' : directions.find((d) => d.id === p.direction)!.name}>
                   {(p.legacyTemplate || p.legacyStyle) && (
                     <p className={s.infoBox}>
                       Mantivemos o modelo e o estilo escolhidos na versão anterior no cálculo. Escolha uma direção abaixo para substituí-los.
@@ -403,9 +402,8 @@ export function Configurator({ state }: { state: ProjectState }) {
                       );
                     })}
                   </div>
-                </div>
-                <div className={s.block}>
-                  <span className={s.blockTitle}>Cores</span>
+                </Fold>
+                <Fold {...foldProps('cores')} title="Cores" value={p.custom ? 'Cor própria' : palettes.find((c) => c.id === p.palette)!.name}>
                   <div className={s.palettes}>
                     {palettes.map((c) => (
                       <button key={c.id} type="button" aria-pressed={p.palette === c.id && !p.custom} onClick={() => edit({ palette: c.id, custom: null })}>
@@ -431,12 +429,9 @@ export function Configurator({ state }: { state: ProjectState }) {
                       <p className={s.hint}>O texto dos botões se ajusta à cor para manter a leitura. O acréscimo cobre a adaptação fina das cores no site.</p>
                     </div>
                   </details>
-                </div>
+                </Fold>
 
-                <div className={s.block}>
-                  <span className={s.blockTitle}>
-                    Seções da página principal<small>Apresentação e contato já estão incluídas</small>
-                  </span>
+                <Fold {...foldProps('secoes')} title="Seções da página principal" short="Seções" note="Apresentação e contato já estão incluídas" value={`${selectedSections(p).length} seções`}>
                   <div className={s.options}>
                     {sections.map((x) => (
                       <Check
@@ -450,10 +445,12 @@ export function Configurator({ state }: { state: ProjectState }) {
                       />
                     ))}
                   </div>
-                </div>
+                </Fold>
 
+                <Fold {...foldProps('formulario')} title="Formulário de contato" short="Formulário" value={formLabel[form]}>
                 <Radios
                   label="Formulário de contato"
+                  hideLabel
                   value={form}
                   options={[
                     { id: 'nenhum', label: 'Sem formulário', hint: 'O botão de WhatsApp já está incluído.', aside: 'Incluído' },
@@ -472,16 +469,16 @@ export function Configurator({ state }: { state: ProjectState }) {
                     {p.emailVolume && <p style={{ marginTop: 8 }}>{volumeOptions.find((v) => v.id === p.emailVolume)!.answer}</p>}
                   </div>
                 )}
+                </Fold>
 
-                <div className={s.block}>
-                  <span className={s.blockTitle}>Outros recursos</span>
+                <Fold {...foldProps('recursos')} title="Outros recursos" value={extrasLabel}>
                   {p.objective === 'agenda' && <p className={s.infoBox} style={{ marginTop: 0, marginBottom: 8 }}>{scopeRules.agendaSolicitacao}</p>}
                   <div className={s.options}>
                     {optional.map((f) => (
                       <Check key={f.id} title={f.name} hint={featureNote[f.id] ?? f.pitch} aside={`+ ${brl(pricing.byFeature[f.id])}`} checked={p.features.includes(f.id)} onChange={(on) => toggle('features', f.id, on)} />
                     ))}
                   </div>
-                </div>
+                </Fold>
 
                 <details className={s.details}>
                   <summary>Categoria do projeto (avançado)</summary>
@@ -500,7 +497,9 @@ export function Configurator({ state }: { state: ProjectState }) {
                   </div>
                 </details>
 
-                <BudgetTool p={p} edit={edit} replace={replace} setNotice={setNotice} />
+                <Fold {...foldProps('orcamento')} title="Orçamento" value={budgetLabel} desktopTitle={false}>
+                  <BudgetTool p={p} edit={edit} replace={replace} setNotice={setNotice} />
+                </Fold>
               </>
             )}
 
