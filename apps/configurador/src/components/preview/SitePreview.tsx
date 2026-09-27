@@ -52,7 +52,7 @@ const segmentCopy: Record<string, { about: string; serviceDetails: string[]; dif
   },
   local: {
     about: 'Entenda quais serviços estão disponíveis, conte o que precisa ser feito e combine uma avaliação antes de definir os próximos passos.',
-    serviceDetails: ['Explique o que precisa e, se possível, envie detalhes para orientar a avaliação.', 'Combine a instalação considerando o local e as condições do serviço.', 'Planeje a manutenção conforme o equipamento ou ambiente atendido.'],
+    serviceDetails: ['Explique o que precisa e, se possível, envie fotos ou detalhes para orientar a avaliação.', 'Combine o serviço considerando o local, o acesso e as condições do ambiente.', 'Tire dúvidas sobre o que está incluído e os cuidados depois do serviço.'],
     differentials: ['Pedido organizado desde o primeiro contato', 'Escopo combinado antes da execução', 'Orientações claras sobre as etapas'],
     processSteps: ['Conte o que precisa', 'Combine a avaliação', 'Aprove o escopo do serviço'],
     faqQuestions: ['Quais detalhes ajudam a avaliar o serviço?', 'O atendimento cobre minha região?', 'Como recebo o orçamento?'],
@@ -136,7 +136,7 @@ export function SitePreview({
             ),
           )}
         </div>
-        <Tag>{c.previewCopy.serviceDetails.length ? 'Descrições sugeridas a partir da sua descrição' : 'Textos de exemplo · personalize antes de publicar'}</Tag>
+        <Tag>{c.previewCopy.serviceDetails.some(Boolean) ? 'Descrições sugeridas a partir da sua descrição' : 'Textos de exemplo · personalize antes de publicar'}</Tag>
       </div>
     ),
     sobre: () => (

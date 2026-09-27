@@ -543,6 +543,25 @@ export function withObjective(p: Project, id: string, { chosen = true } = {}): P
   });
 }
 
+/**
+ * Textos de apoio gerados pela IA descrevem o negócio e os serviços daquele
+ * momento. Quando a pessoa troca o segmento ou o serviço principal, todos
+ * saem (a prévia volta aos textos de exemplo do segmento); quando edita um
+ * serviço da lista, sai só a descrição daquele serviço.
+ */
+export function dropStaleCopy(prev: Project, next: Project): Project {
+  const copy = next.previewCopy;
+  const empty = !copy.about && ![copy.serviceDetails, copy.differentials, copy.processSteps, copy.faqQuestions].some((l) => l.length);
+  if (empty) return next;
+  const mainService = (x: Project) => (x.serviceLater ? '' : x.service.trim().toLowerCase());
+  if (next.segment !== prev.segment || mainService(next) !== mainService(prev)) {
+    return { ...next, previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] } };
+  }
+  const changed = (i: number) => (next.services[i] ?? '').trim() !== (prev.services[i] ?? '').trim();
+  if (!copy.serviceDetails.some((_, i) => changed(i))) return next;
+  return { ...next, previewCopy: { ...copy, serviceDetails: copy.serviceDetails.map((d, i) => (changed(i) ? '' : d)) } };
+}
+
 /** Nome da seção conforme o objetivo ("Serviços", "Produtos em destaque"...). */
 export function sectionName(p: Pick<Project, 'objective'>, id: string): string {
   if (id === 'servicos') return p.objective === 'produtos' ? 'Produtos em destaque' : p.objective === 'trabalhos' ? 'Trabalhos em destaque' : 'Serviços';

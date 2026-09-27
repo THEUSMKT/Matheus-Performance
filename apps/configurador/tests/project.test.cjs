@@ -591,4 +591,21 @@ test('IA: a página só considera sucesso com sugestão válida', async () => {
   assert(!JSON.stringify(events).includes('bolos'));
 });
 
+test('IA: textos de apoio desatualizados saem quando a pessoa edita serviço, serviços ou segmento', () => {
+  const base = ai.applySuggestion(model.normalizeProject({ ...model.initialProject(), name: 'Clima Sul' }), ai.sanitizeSuggestion(goodAnswer));
+  assert(base.previewCopy.about && base.previewCopy.serviceDetails.length === 3);
+  const same = model.dropStaleCopy(base, model.normalizeProject({ ...base, headline: 'Outro título', direction: 'escuro' }));
+  assert.deepEqual(same.previewCopy, base.previewCopy, 'estilo e título não mexem nos textos de apoio');
+  const oneService = model.dropStaleCopy(base, model.normalizeProject({ ...base, services: ['Instalação', 'PMOC', 'Limpeza'] }));
+  assert.deepEqual(oneService.previewCopy.serviceDetails, [goodAnswer.serviceDetails[0], '', goodAnswer.serviceDetails[2]]);
+  assert.equal(oneService.previewCopy.about, base.previewCopy.about);
+  for (const patch of [{ segment: 'beleza' }, { service: 'Pintura residencial' }, { serviceLater: true }]) {
+    const next = model.dropStaleCopy(base, model.normalizeProject({ ...base, ...patch }));
+    assert.deepEqual(next.previewCopy, { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] }, JSON.stringify(patch));
+  }
+  const src = fs.readFileSync(path.join(__dirname, '../src/components/preview/SitePreview.tsx'), 'utf8');
+  const local = src.slice(src.indexOf('  local: {'), src.indexOf('  alimentacao: {'));
+  assert(!/instala|manuten|equipamento/i.test(local), 'textos de serviços locais servem para qualquer serviço');
+});
+
 Promise.all(pending).then(() => console.log(`${count} testes passaram.`)).catch((e) => { console.error(e); process.exit(1); });

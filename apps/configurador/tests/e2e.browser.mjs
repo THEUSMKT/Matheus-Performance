@@ -519,6 +519,8 @@ await scenario('IA: descrição vira prévia nos layouts existentes; falha não 
     name: 'Clima Sul', segment: 'local', segmentOther: '', service: 'Instalação de ar-condicionado', objective: 'orcamento',
     headline: 'Ar-condicionado instalado do jeito certo', description: 'Peça seu orçamento pelo WhatsApp.', services: ['Instalação', 'Manutenção', 'Higienização'],
     sections: ['servicos', 'diferenciais', 'galeria', 'sobre'], direction: 'tecnologico', palette: 'azul', brandColor: null, needs: ['loja'],
+    about: 'Instalação e manutenção para casas e empresas, com visita combinada antes.',
+    serviceDetails: ['Detalhe um da IA', 'Detalhe dois da IA', 'Detalhe três da IA'],
   };
   await page.route('https://ia.test/preview', async (route) => {
     calls++; bodies.push(route.request().postData());
@@ -554,6 +556,11 @@ await scenario('IA: descrição vira prévia nos layouts existentes; falha não 
   const notice = await page.locator('[class*=notice]').innerText();
   for (const s of ['a partir da sua descrição', 'Galeria de fotos', 'loja virtual com carrinho']) assert(notice.includes(s), s);
   assert((await waMessage(page)).includes('Pacote: Essencial'));
+  assert(pv.includes('Detalhe dois da IA') && pv.includes('visita combinada antes'), 'textos de apoio da IA na prévia');
+  await personalize(page);
+  await page.getByLabel('Item 2').fill('PMOC');
+  const edited = await preview(page).innerText();
+  assert(!edited.includes('Detalhe dois da IA') && edited.includes('Detalhe um da IA'), 'descrição do serviço editado sai; as outras ficam');
   const ev = await allEvents(page);
   assert.deepEqual(ev.filter((e) => e.event === 'ai_generate').map((e) => e.result), ['erro', 'ok']);
   assert(!JSON.stringify(ev).match(/ar-condicionado|Clima/), 'eventos sem texto');

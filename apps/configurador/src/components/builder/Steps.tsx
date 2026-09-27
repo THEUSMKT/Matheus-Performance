@@ -11,6 +11,7 @@ import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import {
   directions,
+  dropStaleCopy,
   objectiveOf,
   objectives,
   recommendation,
@@ -61,7 +62,7 @@ export function StepBusiness({
     let project: Project = { ...p, segment: id };
     if (!p.objectiveSet) project = withObjective(project, next.objectives[0], { chosen: false });
     if (!p.identitySet) project = { ...project, direction: next.styles[0], palette: next.palette };
-    replace(project);
+    replace(dropStaleCopy(p, project));
   }
 
   return (

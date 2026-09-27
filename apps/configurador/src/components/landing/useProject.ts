@@ -6,7 +6,7 @@
    sem o visitante pedir ("Começar novamente").
    ========================================================================== */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { KEY, LEGACY_KEYS, fromShare, hasOwnChoices, initialProject, newProjectId, normalizeProject, readStored, type Project } from '@/lib/project';
+import { KEY, LEGACY_KEYS, dropStaleCopy, fromShare, hasOwnChoices, initialProject, newProjectId, normalizeProject, readStored, type Project } from '@/lib/project';
 import { captureOrigin, type Origin } from '@/lib/origin';
 import { setContext, variantFor } from '@/lib/analytics';
 import { clearLogo } from '@/lib/logo';
@@ -113,7 +113,8 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
   }, [project, ready, hasProgress]);
 
   const update = useCallback((patch: Partial<Project>) => {
-    setProject((old) => normalizeProject({ ...old, ...patch }));
+    // Edição feita pela pessoa: textos da IA que ficaram desatualizados saem.
+    setProject((old) => dropStaleCopy(old, normalizeProject({ ...old, ...patch })));
     setHasProgress(true);
   }, []);
 
