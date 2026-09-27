@@ -138,7 +138,7 @@ export const segments: Segment[] = [
  */
 export const keywordRules: { match: RegExp; image?: string; segment?: string; services: string[] }[] = [
   { match: /pet ?shop|banho e tosa|\btosa|veterin|cachorr|\bc[aã]es\b|\bgatos?\b|\bpets?\b|animais de estima/i, image: 'pet', services: ['Banho e tosa', 'Cuidados com o pet', 'Produtos para pets'] },
-  { match: /mec[aâ]nic|oficina(?! de (costura|arte))|autom[oó]v|\bcarros?\b|funilaria|troca de [oó]leo|\bfreios?\b|\bpneus?\b|auto ?el[eé]tric|alinhamento/i, image: 'auto', services: ['Revisão', 'Troca de óleo', 'Freios e suspensão'] },
+  { match: /mec[aâ]nic|oficina(?! de (costura|arte))|autom[oó]v|automotiv|ve[ií]cul|\bcarros?\b|funilaria|troca de [oó]leo|\bfreios?\b|\bpneus?\b|auto ?el[eé]tric|alinhamento/i, image: 'auto', services: ['Revisão', 'Troca de óleo', 'Freios e suspensão'] },
   { match: /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i, image: 'imoveis', segment: 'imoveis', services: ['Compra e venda de imóveis', 'Consultoria imobiliária', 'Avaliação de imóveis'] },
   { match: /ar[\s-]?condicionado|climatiza|refrigera/i, image: 'clima', segment: 'local', services: ['Instalação de ar-condicionado', 'Manutenção preventiva', 'Limpeza e higienização'] },
   { match: /el[eé]tric/i, image: 'reparos', segment: 'local', services: ['Instalações elétricas', 'Manutenção elétrica', 'Troca de disjuntores e tomadas'] },

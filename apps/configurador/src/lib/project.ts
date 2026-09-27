@@ -607,9 +607,14 @@ export function moveSection(p: Project, id: string, dir: -1 | 1): Project {
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
+/** Regra de palavra-chave: primeiro pelo serviço principal, depois pela lista de serviços. */
 function ruleFor(p: Project) {
-  const text = `${p.serviceLater ? '' : p.service} ${p.segment === 'outro' ? p.segmentOther : ''}`;
-  return text.trim() ? keywordRules.find((r) => r.match.test(text)) : undefined;
+  const texts = [`${p.serviceLater ? '' : p.service} ${p.segment === 'outro' ? p.segmentOther : ''}`, p.services.join(' ')];
+  for (const text of texts) {
+    const rule = text.trim() ? keywordRules.find((r) => r.match.test(text)) : undefined;
+    if (rule) return rule;
+  }
+  return undefined;
 }
 
 const titleTemplates: Record<string, (s: string) => string> = {

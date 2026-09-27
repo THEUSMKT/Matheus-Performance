@@ -207,6 +207,11 @@ test('Nome e imagem de exemplo só aparecem quando combinam com o serviço', () 
   assert.equal(at('alimentacao', 'Camisetas personalizadas').image, 'loja', '"personalizadas" não vira academia');
   assert.equal(at('consultoria', 'Oficina de costura').image, 'loja', 'oficina de costura não é mecânica');
   assert.equal(at('consultoria', 'Psicóloga').name, 'Seu Negócio');
+  assert.equal(at('local', 'Manutenção automotiva').image, 'auto');
+  assert.equal(at('local', 'Serviços para veículos').image, 'auto');
+  assert.equal(at('local', 'Atendimento', { services: ['Revisão', 'Troca de óleo', 'Freios'] }).image, 'auto', 'a lista de serviços também indica o ramo');
+  assert.equal(at('local', 'Pintura', { services: ['Banho e tosa'] }).image, 'reparos', 'o serviço principal tem prioridade');
+  assert(/NÃO é agenda/.test(ai.systemPrompt()) && /NÃO é loja/.test(ai.systemPrompt()), 'agendar pelo WhatsApp não vira agenda própria');
   for (const seg of model.segments) {
     for (const q of seg.quick) assert.equal(at(seg.id, q).name, seg.demo, `${seg.id}: "${q}" combina com o exemplo`);
   }
