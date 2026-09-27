@@ -131,12 +131,12 @@ await scenario('Vitrine do topo: exemplo fictício identificado, nada clicável'
 await scenario('Exemplos: composições diferentes, pacote indicado, abrir, alternar, fechar e usar o modelo', async (page) => {
   await page.goto(URL);
   const cards = page.locator('#exemplos button[class*=exampleCard]');
-  assert.equal(await cards.count(), 5);
+  assert.equal(await cards.count(), 6);
   const names = await page.locator('#exemplos [class*=exampleName]').allInnerTexts();
-  assert.deepEqual(names, ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo']);
+  assert.deepEqual(names, ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo', 'Imóveis e corretores']);
   assert(await page.getByRole('heading', { name: 'Outro segmento' }).isVisible());
-  const classes = await page.locator('#exemplos [aria-roledescription=prévia]').evaluateAll((els) => els.map((e) => e.className.split(' ')[1]));
-  assert.equal(new Set(classes).size, 5, 'cada exemplo com um estilo');
+  const classes = await page.locator('#exemplos [aria-roledescription=prévia]').evaluateAll((els) => els.map((e) => e.className));
+  assert.equal(new Set(classes).size, 6, 'cada exemplo com uma composição');
   await page.getByRole('button', { name: 'Abrir exemplo de Beleza e estética' }).click();
   const dialog = page.locator('dialog[open]');
   assert((await dialog.innerText()).includes('Exemplo fictício'));

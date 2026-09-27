@@ -454,6 +454,69 @@
   font-size: 11px;
 }
 
+/* Conteúdo com mais hierarquia e corpo, mesmo quando a pessoa começa só com
+   nome e segmento. Fica depois das regras-base (para valer sobre elas) e
+   antes dos estilos (que continuam podendo ajustar). O tratamento de imóveis evita parecer um tema genérico. */
+.hero {
+  position: relative;
+}
+.heroText {
+  max-width: 48ch;
+}
+.title {
+  max-width: 17ch;
+}
+.lead {
+  max-width: 52ch;
+  line-height: 1.75;
+}
+.section {
+  gap: 16px;
+}
+.card {
+  min-height: 142px;
+  padding: 18px;
+  box-shadow: 0 8px 24px rgb(24 35 54 / 0.045);
+}
+.cardText,
+.text {
+  line-height: 1.75;
+}
+.faq span {
+  min-height: 48px;
+  align-items: center;
+  padding: 12px 14px;
+}
+.realEstate .hero {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--acc) 9%, #fff), #fff 65%);
+}
+.realEstate .heroImg {
+  border: 1px solid rgb(20 42 57 / 0.08);
+  box-shadow: 0 24px 48px rgb(25 44 59 / 0.15);
+}
+.realEstate .eyebrow {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--acc) 18%, #fff);
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--acc) 7%, #fff);
+  letter-spacing: 0.08em;
+}
+.realEstate .card {
+  border-top: 2px solid color-mix(in srgb, var(--acc) 45%, #fff);
+}
+
+/* Topo escuro ou com foto: o selo de imóveis ganha fundo escuro translúcido
+   para manter o contraste do texto claro desses estilos. */
+.moderno.realEstate .eyebrow,
+.tecnologico.realEstate .eyebrow,
+.sofisticado.realEstate .eyebrow,
+.escuro.realEstate .eyebrow {
+  border-color: rgb(255 255 255 / 0.35);
+  background: rgb(0 0 0 / 0.32);
+}
+
 /* ── Moderno: topo na cor da marca, títulos pesados, cantos retos ──────── */
 .moderno .nav {
   border-bottom: 0;

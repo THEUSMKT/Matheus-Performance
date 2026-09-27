@@ -28,20 +28,56 @@ function Tag({ children }: { children: ReactNode }) {
   return <span className={s.tag}>{children}</span>;
 }
 
-const differentials: Record<string, string[]> = {
-  orcamento: ['Orçamento pelo WhatsApp', 'Atendimento direto', 'Tudo combinado antes de começar'],
-  default: ['Atendimento próximo', 'Explicação clara de cada etapa', 'Contato direto pelo WhatsApp'],
-};
-
-const processSteps: Record<string, string[]> = {
-  trabalhos: ['Conversa inicial', 'Proposta e ajustes', 'Desenvolvimento e entrega'],
-  default: ['Você entra em contato', 'Combinamos os detalhes', 'Execução e acompanhamento'],
-};
-
-const faqs: Record<string, string[]> = {
-  agendamento: ['Como peço um horário?', 'Posso remarcar?', 'Quais formas de contato?'],
-  produtos: ['Como faço um pedido?', 'Quais são as formas de entrega?', 'Vocês fazem encomendas?'],
-  default: ['Como funciona o atendimento?', 'Como peço um orçamento?', 'Quais regiões vocês atendem?'],
+const segmentCopy: Record<string, { about: string; serviceDetails: string[]; differentials: string[]; processSteps: string[]; faqQuestions: string[] }> = {
+  imoveis: {
+    about: 'Uma apresentação clara do seu trabalho como corretor, dos perfis de imóvel que atende e de como orienta cada pessoa durante a busca, a visita e a negociação.',
+    serviceDetails: ['Conversa inicial para entender localização, tipo de imóvel e prioridades da busca.', 'Apresentação do imóvel e organização de uma visita, conforme disponibilidade confirmada.', 'Orientação para comparar opções e entender os próximos passos da negociação.'],
+    differentials: ['Busca orientada pelo que você procura', 'Informações claras antes da visita', 'Acompanhamento em cada etapa da negociação'],
+    processSteps: ['Conte o que procura', 'Converse sobre opções e visita', 'Avalie os próximos passos'],
+    faqQuestions: ['Quais informações ajudam a começar a busca?', 'Como funciona uma visita ao imóvel?', 'Posso conversar antes de escolher um imóvel?'],
+  },
+  consultoria: {
+    about: 'Conheça as frentes de atuação, entenda como começa o atendimento e veja qual tipo de orientação pode fazer sentido para o seu momento.',
+    serviceDetails: ['Uma primeira conversa para entender o contexto e alinhar o que precisa ser resolvido.', 'Organização de prioridades e próximos passos a partir das informações compartilhadas.', 'Acompanhamento combinado conforme o escopo definido entre as partes.'],
+    differentials: ['Escopo alinhado antes do início', 'Etapas explicadas com clareza', 'Contato direto para tirar dúvidas'],
+    processSteps: ['Compartilhe seu contexto', 'Alinhe escopo e prioridades', 'Defina os próximos passos'],
+    faqQuestions: ['O que devo levar para a primeira conversa?', 'Como é definido o escopo do trabalho?', 'O atendimento pode ser feito online?'],
+  },
+  beleza: {
+    about: 'Veja os cuidados disponíveis, escolha o que combina com seu objetivo e consulte os detalhes antes de pedir um horário.',
+    serviceDetails: ['Converse sobre a rotina de cuidados e o serviço mais adequado ao que procura.', 'Entenda as opções de cuidado e os detalhes antes de marcar.', 'Escolha um horário para o atendimento e confirme os detalhes diretamente.'],
+    differentials: ['Escolha do cuidado com orientação', 'Detalhes explicados antes do horário', 'Atendimento organizado por agendamento'],
+    processSteps: ['Escolha o cuidado', 'Tire suas dúvidas', 'Peça um horário'],
+    faqQuestions: ['Como escolho o cuidado mais adequado?', 'Quanto tempo devo reservar para o atendimento?', 'Como remarco um horário?'],
+  },
+  local: {
+    about: 'Entenda quais serviços estão disponíveis, conte o que precisa ser feito e combine uma avaliação antes de definir os próximos passos.',
+    serviceDetails: ['Explique o que precisa e, se possível, envie detalhes para orientar a avaliação.', 'Combine a instalação considerando o local e as condições do serviço.', 'Planeje a manutenção conforme o equipamento ou ambiente atendido.'],
+    differentials: ['Pedido organizado desde o primeiro contato', 'Escopo combinado antes da execução', 'Orientações claras sobre as etapas'],
+    processSteps: ['Conte o que precisa', 'Combine a avaliação', 'Aprove o escopo do serviço'],
+    faqQuestions: ['Quais detalhes ajudam a avaliar o serviço?', 'O atendimento cobre minha região?', 'Como recebo o orçamento?'],
+  },
+  alimentacao: {
+    about: 'Conheça as opções do cardápio, veja os detalhes de cada pedido e converse para confirmar disponibilidade e retirada ou entrega.',
+    serviceDetails: ['Conheça as opções preparadas pela casa e consulte os detalhes do dia.', 'Veja tamanhos, sabores e possibilidades antes de fazer uma encomenda.', 'Informe a data e a quantidade para consultar disponibilidade.'],
+    differentials: ['Opções apresentadas de forma clara', 'Pedido confirmado diretamente', 'Detalhes da encomenda alinhados antes'],
+    processSteps: ['Escolha os itens', 'Consulte disponibilidade', 'Confirme os detalhes do pedido'],
+    faqQuestions: ['Como consulto os itens disponíveis?', 'Com quanta antecedência devo pedir?', 'Quais são as opções de retirada ou entrega?'],
+  },
+  criativo: {
+    about: 'Explore projetos, conheça as etapas de criação e compartilhe referências para iniciar uma conversa sobre o que você quer desenvolver.',
+    serviceDetails: ['Conheça projetos e etapas de trabalho relacionados ao espaço que imagina.', 'Organize referências, necessidades e prioridades para a criação do projeto.', 'Defina escopo e entregas em uma conversa antes de iniciar.'],
+    differentials: ['Processo apresentado por etapas', 'Referências consideradas no briefing', 'Escopo alinhado antes da criação'],
+    processSteps: ['Compartilhe referências', 'Alinhe escopo e direção', 'Acompanhe as etapas do projeto'],
+    faqQuestions: ['Que referências devo enviar?', 'Quais informações entram no briefing?', 'Como são combinadas as etapas do projeto?'],
+  },
+  default: {
+    about: 'Apresente o que sua empresa faz, para quem trabalha e como uma pessoa interessada pode dar o primeiro passo.',
+    serviceDetails: ['Entenda os detalhes do serviço e converse sobre o que precisa.', 'Veja as opções disponíveis e tire dúvidas antes de escolher.', 'Combine o atendimento e os próximos passos diretamente.'],
+    differentials: ['Informações organizadas para facilitar sua escolha', 'Etapas alinhadas antes de começar', 'Contato direto para esclarecer dúvidas'],
+    processSteps: ['Conte o que procura', 'Alinhe os detalhes', 'Combine os próximos passos'],
+    faqQuestions: ['Como funciona o primeiro contato?', 'Quais informações devo enviar?', 'Como são combinados os próximos passos?'],
+  },
 };
 
 export function SitePreview({
@@ -76,7 +112,9 @@ export function SitePreview({
   const middle = p.sections.filter((id) => id !== 'apresentacao' && id !== 'contato');
   const navLinks = middle.slice(0, 3).map((id) => sectionName(p, id).replace(/ em destaque$/, '').replace('Informações de atendimento', 'Atendimento'));
   const showcase = p.objective === 'produtos' || p.objective === 'trabalhos';
-  const pick = <T,>(map: Record<string, T>) => map[p.objective] ?? map.default;
+  const isRealEstate = p.segment === 'imoveis' || /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i.test(p.service);
+  const detail = isRealEstate ? segmentCopy.imoveis : segmentCopy[p.segment] ?? segmentCopy.default;
+  const serviceDetails = c.services.map((_, i) => c.previewCopy.serviceDetails[i] || detail.serviceDetails[i] || detail.serviceDetails[0]);
 
   const blocks: Record<string, () => ReactNode> = {
     servicos: () => (
@@ -93,30 +131,30 @@ export function SitePreview({
               <div key={`${sv}-${i}`} className={s.card}>
                 <span className={s.num}>0{i + 1}</span>
                 <span className={s.cardTitle}>{sv}</span>
-                <span className={s.cardText}>Descrição curta, escrita por você.</span>
+                <span className={s.cardText}>{serviceDetails[i]}</span>
               </div>
             ),
           )}
         </div>
-        {c.servicesSuggested && <Tag>Sugestões · confirme ou edite</Tag>}
+        <Tag>{c.previewCopy.serviceDetails.length ? 'Descrições sugeridas a partir da sua descrição' : 'Textos de exemplo · personalize antes de publicar'}</Tag>
       </div>
     ),
     sobre: () => (
       <div className={`${s.section} ${s.about}`} key="sobre">
         <span className={s.h}>Sobre {c.name}</span>
-        <span className={s.text}>Aqui entra a história da empresa e a forma de trabalhar, com as suas palavras.</span>
-        <Tag>Texto seu · revisado antes de publicar</Tag>
+        <span className={s.text}>{c.previewCopy.about || detail.about}</span>
+        <Tag>{c.previewCopy.about ? 'Sugestão baseada na sua descrição · revise antes de publicar' : 'Texto de exemplo · personalize antes de publicar'}</Tag>
       </div>
     ),
     diferenciais: () => (
       <div className={s.section} key="diferenciais">
         <span className={s.h}>Por que escolher {c.name}</span>
         <ul className={s.list}>
-          {pick(differentials).map((d) => (
+          {(c.previewCopy.differentials.length ? c.previewCopy.differentials : detail.differentials).map((d) => (
             <li key={d}>{d}</li>
           ))}
         </ul>
-        <Tag>Exemplos · troque pelos seus diferenciais reais</Tag>
+        <Tag>Confira se cada ponto corresponde ao seu atendimento</Tag>
       </div>
     ),
     atendimento: () => (
@@ -140,14 +178,14 @@ export function SitePreview({
       <div className={s.section} key="processo">
         <span className={s.h}>Como funciona</span>
         <ol className={s.steps}>
-          {pick(processSteps).map((t, i) => (
+          {(c.previewCopy.processSteps.length ? c.previewCopy.processSteps : detail.processSteps).map((t, i) => (
             <li key={t}>
               <b>{i + 1}</b>
               {t}
             </li>
           ))}
         </ol>
-        <Tag>Etapas de exemplo · editáveis</Tag>
+        <Tag>Etapas sugeridas · ajuste ao seu processo</Tag>
       </div>
     ),
     galeria: () => (
@@ -167,7 +205,7 @@ export function SitePreview({
       <div className={s.section} key="faq">
         <span className={s.h}>Perguntas frequentes</span>
         <div className={s.faq}>
-          {pick(faqs).map((q) => (
+          {(c.previewCopy.faqQuestions.length ? c.previewCopy.faqQuestions : detail.faqQuestions).map((q) => (
             <span key={q}>{q}</span>
           ))}
         </div>
@@ -206,7 +244,7 @@ export function SitePreview({
 
   return (
     <div
-      className={`${s.root} ${styleClass[p.direction] ?? s.minimal} ${mobile ? s.forceMobile : ''} ${bare ? s.bare : ''}`}
+      className={`${s.root} ${styleClass[p.direction] ?? s.minimal} ${isRealEstate ? s.realEstate : ''} ${mobile ? s.forceMobile : ''} ${bare ? s.bare : ''}`}
       style={vars}
       role="group"
       aria-roledescription="prévia"

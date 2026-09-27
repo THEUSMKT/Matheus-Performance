@@ -58,13 +58,18 @@ export const responseSchema = {
     headline: { type: 'STRING', description: 'Título do topo do site, até 70 caracteres.' },
     description: { type: 'STRING', description: 'Frase de apresentação, até 160 caracteres.' },
     services: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3 },
+    about: { type: 'STRING', description: 'Apresentação da empresa em 2 a 3 frases, até 420 caracteres, baseada apenas na descrição.' },
+    serviceDetails: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3, description: 'Uma descrição útil e específica para cada serviço, na mesma ordem de services, até 160 caracteres cada.' },
+    differentials: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3, description: 'Aspectos do atendimento ou método citados pelo usuário; sem alegações de superioridade.' },
+    processSteps: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3, description: 'Etapas transparentes e realistas de atendimento, sem prometer resultados.' },
+    faqQuestions: { type: 'ARRAY', items: { type: 'STRING' }, maxItems: 3, description: 'Perguntas que um potencial cliente daquele segmento realmente faria.' },
     sections: { type: 'ARRAY', items: { type: 'STRING', enum: optionalSections.map((s) => s.id) }, maxItems: 6 },
     direction: { type: 'STRING', enum: directions.map((d) => d.id) },
     palette: { type: 'STRING', enum: palettes.map((p) => p.id) },
     brandColor: { type: 'STRING', description: 'Cor da marca em hexadecimal (#RRGGBB) só se a pessoa citar uma cor; senão, vazio.' },
     needs: { type: 'ARRAY', items: { type: 'STRING', enum: customNeeds.map((n) => n.id) } },
   },
-  required: ['segment', 'objective', 'headline', 'description', 'services', 'sections', 'direction', 'palette'],
+  required: ['segment', 'objective', 'headline', 'description', 'services', 'about', 'serviceDetails', 'differentials', 'processSteps', 'faqQuestions', 'sections', 'direction', 'palette'],
 } as const;
 
 /** Instruções fixas do sistema. A descrição do visitante vai à parte, como dado. */
@@ -76,10 +81,17 @@ export function systemPrompt(): string {
     '',
     'Regras:',
     '- Escolha segment, objective, direction, palette e sections somente entre os ids listados abaixo.',
+    '- Crie conteúdo específico, concreto e pronto para uma prévia profissional, não frases genéricas como "atendimento de qualidade" ou "soluções sob medida".',
+    '- objective deve priorizar a ação de conversão pedida: se a pessoa quer marcar uma consulta ou horário, escolha agendamento; se quer receber propostas, escolha orcamento. Ver trabalhos ou conhecer a empresa são objetivos secundários e podem entrar como seções.',
     '- headline: título curto e natural (até 70 caracteres) que mencione o serviço principal quando houver.',
-    '- description: uma frase (até 160 caracteres) sobre o que o site oferece ao visitante.',
+    '- description: uma frase (até 160 caracteres) que explique para quem é e o que o visitante consegue fazer no site.',
     '- services: até 3 serviços ou produtos, com nomes curtos, tirados da descrição ou típicos do segmento.',
-    '- Não invente fatos sobre a empresa: nada de anos de mercado, número de clientes, avaliações, prêmios, certificações, garantias, preços, endereço ou resultados. Use só o que a descrição disser.',
+    '- about: 2 a 3 frases sobre a atuação, o público e a forma de atendimento, sem fingir que a pessoa contou uma história que não contou.',
+    '- serviceDetails: descrições úteis, diferentes entre si e na mesma ordem de services. Conecte cada serviço a uma necessidade real do cliente.',
+    '- differentials: use somente características informadas pelo usuário; se não houver, descreva benefícios práticos do próprio processo, sem dizer que a empresa é melhor que outras.',
+    '- processSteps: três etapas plausíveis de atendimento daquele segmento, sem inventar tempo, preço ou resultado.',
+    '- faqQuestions: dúvidas concretas de clientes daquele segmento, não perguntas genéricas.',
+    '- Não invente fatos sobre a empresa: nada de anos de mercado, número de clientes, avaliações, prêmios, certificações, garantias, preços, endereço, imóveis disponíveis ou resultados. Use só o que a descrição disser.',
     '- Não escreva depoimentos. Não prometa vendas ou resultados.',
     '- sections: de 3 a 6 seções que façam sentido para o objetivo, na ordem recomendada. Apresentação e contato já entram sempre; não os inclua.',
     '- needs: marque apenas o que a pessoa pedir explicitamente e que estiver fora dos pacotes.',
@@ -114,7 +126,7 @@ export function geminiRequest(description: string) {
       responseMimeType: 'application/json',
       responseSchema,
       temperature: 0.6,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 2048,
     },
   };
 }
@@ -149,6 +161,13 @@ export type Suggestion = {
   headline: string;
   description: string;
   services: string[];
+  previewCopy: {
+    about: string;
+    serviceDetails: string[];
+    differentials: string[];
+    processSteps: string[];
+    faqQuestions: string[];
+  };
   /** Seções que cabem no pacote atual, na ordem sugerida. */
   sections: string[];
   /** Seções sugeridas que pedem outro pacote — nunca aplicadas sozinhas. */
@@ -206,6 +225,13 @@ export function sanitizeSuggestion(raw: unknown, pkg: PackageId = 'essencial'): 
     headline: honest(text(x.headline, 90)),
     description: honest(text(x.description, 200)),
     services: [...new Set(strings(x.services).map((s) => honest(text(s, 60))).filter(Boolean))].slice(0, 3),
+    previewCopy: {
+      about: honest(text(x.about, 420)),
+      serviceDetails: strings(x.serviceDetails).map((s) => honest(text(s, 160))).filter(Boolean).slice(0, 3),
+      differentials: strings(x.differentials).map((s) => honest(text(s, 100))).filter(Boolean).slice(0, 3),
+      processSteps: strings(x.processSteps).map((s) => honest(text(s, 80))).filter(Boolean).slice(0, 3),
+      faqQuestions: strings(x.faqQuestions).map((s) => honest(text(s, 100))).filter(Boolean).slice(0, 3),
+    },
     sections: fit.length ? fit : objectives.find((o) => o.id === objective)!.structure.slice(1, -1),
     extraSections: extra,
     direction: oneOf(x.direction, directions.map((d) => d.id)) || segments.find((s) => s.id === segment)!.styles[0],
@@ -234,6 +260,7 @@ export function applySuggestion(p: Project, s: Suggestion): Project {
     headline: s.headline,
     description: s.description,
     services: s.services,
+    previewCopy: s.previewCopy,
     sections: ['apresentacao', ...s.sections, 'contato'],
     structureEdited: true,
     direction: s.direction,
