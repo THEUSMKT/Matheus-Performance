@@ -123,9 +123,61 @@ export const sections: Section[] = [
 ];
 
 /** Versão do fluxo apresentado — registrada no projeto e nos eventos. */
-export const FLOW_VERSION = 'etapas-4-v3';
-export const STEP_COUNT = 4;
-export const steps = ['Seu negócio', 'Seu objetivo', 'Sua identidade', 'Seu site'] as const;
+export const FLOW_VERSION = 'guiado-v1';
+/**
+ * Etapas do fluxo guiado. O negócio e o objetivo vêm antes da prévia; depois
+ * dela, uma escolha por vez (estilo, cores, títulos, conteúdo, seções) e a
+ * revisão com o pedido. Quem descreve o negócio para a IA pula o objetivo.
+ */
+export const steps = ['Seu negócio', 'Seu objetivo', 'Sua prévia', 'Estilo', 'Cores', 'Títulos', 'Conteúdo', 'Seções', 'Revisão'] as const;
+export const STEP_COUNT = steps.length;
+export const STEP = { negocio: 0, objetivo: 1, pronta: 2, estilo: 3, cores: 4, titulos: 5, conteudo: 6, secoes: 7, revisao: 8 } as const;
+/** Escolhas da personalização, na ordem. */
+export const CHOICE_STEPS: readonly number[] = [STEP.estilo, STEP.cores, STEP.titulos, STEP.conteudo, STEP.secoes];
+/** Pergunta de cada etapa, como aparece no título. */
+export const stepQuestions = [
+  'Conte sobre seu negócio',
+  'O que as pessoas devem fazer no seu site?',
+  'Sua prévia está pronta',
+  'Qual estilo combina com sua empresa?',
+  'Quais cores você prefere?',
+  'Como você quer os títulos do seu site?',
+  'O que você quer mostrar aos seus clientes?',
+  'Quais seções seu site vai ter?',
+  'Revise e solicite o desenvolvimento',
+] as const;
+/** Fases mostradas no topo: poucas, para o caminho parecer curto. */
+export const phases = [
+  { name: 'Seu negócio', steps: [STEP.negocio, STEP.objetivo] },
+  { name: 'Sua prévia', steps: [STEP.pronta] },
+  { name: 'Personalizar', steps: [...CHOICE_STEPS] },
+  { name: 'Solicitar', steps: [STEP.revisao] },
+] as const;
+export function phaseOf(step: number): number {
+  return Math.max(0, phases.findIndex((ph) => (ph.steps as readonly number[]).includes(step)));
+}
+/** Etapas do fluxo anterior (Seu negócio, Seu objetivo, Sua identidade, Seu site) para as atuais. */
+const FLOW4_STEP = [STEP.negocio, STEP.objetivo, STEP.estilo, STEP.revisao];
+
+/** Fontes dos títulos. "auto" segue o estilo escolhido. */
+export const fonts = [
+  { id: 'auto', name: 'Sugerida pelo estilo' },
+  { id: 'serif', name: 'Clássica' },
+  { id: 'sans', name: 'Moderna' },
+  { id: 'forte', name: 'Impactante' },
+] as const;
+
+/** Família da fonte dos títulos na prévia. */
+export function headFont(font: string, direction: string): string {
+  const serif = 'Georgia, "Times New Roman", serif';
+  const sans = '"Segoe UI", system-ui, Arial, sans-serif';
+  const strong = '"Arial Black", "Segoe UI", Arial, sans-serif';
+  if (font === 'serif') return serif;
+  if (font === 'sans') return sans;
+  if (font === 'forte') return strong;
+  if (direction === 'elegante' || direction === 'sofisticado') return serif;
+  return direction === 'marcante' ? strong : sans;
+}
 
 /** Chaves de armazenamento, da atual para as anteriores. */
 export const KEY = 'mb.configurador.v4';
@@ -304,7 +356,8 @@ export function normalizeProject(input: unknown): Project {
   const complex = [...new Set(strings(x.complex).filter((c) => customNeeds.some((n) => n.id === c)))];
   const p: Project = {
     ...d,
-    flow: typeof x.flow === 'string' ? cleanText(x.flow, 40) : FLOW_VERSION,
+    // Depois de lido (e convertido, se preciso), o projeto está no fluxo atual.
+    flow: FLOW_VERSION,
     id: typeof x.id === 'string' && /^bp-[a-z0-9]{8,16}$/.test(x.id) ? x.id : '',
     name: cleanText(x.name, 80),
     segment: pickOrEmpty(x.segment, segments.map((s) => s.id)),
@@ -338,9 +391,9 @@ export function normalizeProject(input: unknown): Project {
     direction: pick(x.direction, directions.map((s) => s.id), d.direction),
     palette: pick(x.palette, palettes.map((s) => s.id), d.palette),
     custom: typeof x.custom === 'string' && /^#[0-9a-f]{6}$/i.test(x.custom) ? x.custom.toLowerCase() : null,
-    font: pick(x.font, ['auto', 'sans', 'serif'], 'auto'),
+    font: pick(x.font, fonts.map((f) => f.id), 'auto'),
     notes: cleanText(x.notes, 500),
-    step: typeof x.step === 'number' && Number.isInteger(x.step) ? Math.max(0, Math.min(STEP_COUNT - 1, x.step)) : 0,
+    step: readStep(x),
     lead: normalizeLead(x.lead),
   };
   if (p.serviceLater) p.service = '';
@@ -348,10 +401,20 @@ export function normalizeProject(input: unknown): Project {
   return p;
 }
 
+/**
+ * Etapa salva. Projetos do fluxo anterior de 4 etapas (qualquer "flow"
+ * diferente do atual) têm a etapa convertida; o resto do projeto fica igual.
+ */
+function readStep(x: Record<string, unknown>): number {
+  if (typeof x.step !== 'number' || !Number.isInteger(x.step)) return 0;
+  if (typeof x.flow === 'string' && x.flow !== FLOW_VERSION) return FLOW4_STEP[Math.max(0, Math.min(3, x.step))];
+  return Math.max(0, Math.min(STEP_COUNT - 1, x.step));
+}
+
 /* ── Versões anteriores ──────────────────────────────────────────────────── */
 
 /** Etapas da v3 (Seu negócio, Aparência, Conteúdo, Sua prévia) para as atuais. */
-const V3_STEP = [0, 2, 3, 3];
+const V3_STEP = [STEP.negocio, STEP.estilo, STEP.revisao, STEP.revisao];
 /** Etapas da v2 (seis passos) para as da v3. */
 const V2_STEP = [0, 0, 2, 1, 2, 3];
 
@@ -370,6 +433,7 @@ export function fromV3(input: unknown): Project {
   return normalizeProject({
     ...x,
     version: 4,
+    flow: FLOW_VERSION,
     objective,
     objectiveSet: true,
     services: [],
@@ -795,7 +859,8 @@ export function fromShare(hash: string): Project | null {
   if (!hash.startsWith('#projeto=')) return null;
   if (hash.length > 6000) throw Error('Link muito longo');
   const data = record(JSON.parse(decodeURIComponent(hash.slice(9))));
-  if (data.version === 4) return normalizeProject({ ...data, ...privateless });
+  // Quem abre um link vai direto para a revisão, em qualquer versão.
+  if (data.version === 4) return normalizeProject({ ...data, ...privateless, flow: FLOW_VERSION, step: STEP.revisao });
   if (data.version === 3) return fromV3({ ...data, ...privateless });
   if (data.version === 2) return fromV2({ ...data, ...privateless });
   throw Error('Versão de link não reconhecida');

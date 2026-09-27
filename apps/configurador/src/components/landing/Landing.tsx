@@ -4,9 +4,15 @@
    exemplos navegáveis → como funciona → pacotes e o que está incluído →
    projetos reais (só com material autorizado) → quem cuida → perguntas →
    chamada final. O botão principal abre direto a criação (/criar/).
+
+   Acesso flutuante "Criar/Continuar minha prévia": aparece quando nenhum
+   botão principal (topo, pacotes, chamada final) está na tela — assim nunca
+   some junto com eles nem duplica o que já está visível. No celular é uma
+   barra inferior larga (respeita a área segura do iPhone); no computador,
+   uma pílula no canto. A página reserva espaço embaixo para ela.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, MessageCircle, Monitor, Smartphone, X } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, MessageCircle, Monitor, Smartphone, Sparkles, X } from 'lucide-react';
 import { contact } from '@/config/contact';
 import { brl, customNeeds, packageById, packages, priceNotes, priceRange } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
@@ -40,6 +46,7 @@ export default function Landing() {
   const hero = heroVariants[variants.hero as keyof typeof heroVariants] ?? heroVariants.a;
   const cta = ctaVariants[variants.cta as keyof typeof ctaVariants] ?? ctaVariants.a;
   const primaryLabel = resumable ? 'Continuar minha prévia' : cta.primary;
+  const floatLabel = resumable ? 'Continuar minha prévia' : 'Criar minha prévia';
   const start = (context: string) => () => track('start_click', { context });
 
   // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…).
@@ -50,7 +57,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className={s.page} id="topo">
+    <div className={`${s.page} ${s.withFloat}`} id="topo">
       <Header ctaLabel={primaryLabel} onStart={start('cabecalho')} />
       <main id="conteudo">
         <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
@@ -61,7 +68,7 @@ export default function Landing() {
             </p>
             <p className={s.priceNote}>{priceNotes.landing}</p>
             <div className={s.heroActions}>
-              <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')}>
+              <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')} data-main-cta="">
                 <span>{primaryLabel}</span>
               </a>
               <a className={s.secondary} href="#exemplos">
@@ -116,7 +123,7 @@ export default function Landing() {
             <h2 id="final-titulo">Veja o site da sua empresa antes de contratar.</h2>
             <p>Prévia grátis em até 5 minutos. Desenvolvimento de {priceRange}.</p>
             <div className={s.finalActions}>
-              <a className={s.primary} href={builderHref} onClick={start('final')}>
+              <a className={s.primary} href={builderHref} onClick={start('final')} data-main-cta="">
                 {primaryLabel}
               </a>
               <a className={s.quietLight} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'final' })}>
@@ -127,6 +134,48 @@ export default function Landing() {
         </section>
       </main>
       <Footer />
+      <FloatingStart label={floatLabel} onStart={start('flutuante')} />
+    </div>
+  );
+}
+
+/**
+ * Acesso persistente à criação. Fica escondido enquanto algum botão
+ * principal da página estiver visível; sem IntersectionObserver, fica
+ * sempre visível (nunca somem os dois ao mesmo tempo).
+ */
+function FloatingStart({ label, onStart }: { label: string; onStart: () => void }) {
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const targets = [...document.querySelectorAll<HTMLElement>('[data-main-cta]')];
+    if (!targets.length || typeof IntersectionObserver === 'undefined') {
+      setShown(true);
+      return;
+    }
+    const visible = new Set<Element>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.add(e.target);
+          else visible.delete(e.target);
+        }
+        setShown(visible.size === 0);
+      },
+      // O cabeçalho fixo cobre o topo: um botão escondido atrás dele não conta.
+      { rootMargin: '-64px 0px 0px 0px' },
+    );
+    targets.forEach((t) => io.observe(t));
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div className={s.floatStart} data-float="" data-shown={shown || undefined} aria-hidden={shown ? undefined : true}>
+      <a className={s.floatStartButton} href={builderHref} onClick={onStart} tabIndex={shown ? undefined : -1}>
+        <Sparkles aria-hidden="true" />
+        <span>{label}</span>
+        <ArrowRight aria-hidden="true" className={s.floatStartArrow} />
+      </a>
     </div>
   );
 }
@@ -365,7 +414,7 @@ function Investment() {
           </a>
         </div>
         <div className={s.investCta}>
-          <a className={s.primary} href={builderHref} onClick={() => track('start_click', { context: 'pacotes' })}>
+          <a className={s.primary} href={builderHref} onClick={() => track('start_click', { context: 'pacotes' })} data-main-cta="">
             Criar minha prévia grátis
           </a>
           <small>Você vê o pacote que combina com o seu site antes de pedir.</small>

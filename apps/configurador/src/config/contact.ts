@@ -45,7 +45,7 @@ export const contact = {
   whatsappProjetoPersonalizado:
     'Olá! Vi os pacotes de site da Beck Performance e preciso de um projeto personalizado. Posso explicar o que preciso?',
 
-  /** Pedido de um estilo fora dos disponíveis na etapa Sua identidade. */
+  /** Pedido de um estilo fora dos disponíveis na escolha de estilo. */
   whatsappEstilo: 'Olá! Gostaria de um estilo diferente dos disponíveis no configurador para o meu site.',
 
   /** Mensagem dos botões genéricos — rodapé e afins. */

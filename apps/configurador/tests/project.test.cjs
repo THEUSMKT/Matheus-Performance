@@ -282,7 +282,7 @@ test('Perguntas frequentes pedidas, com valores vindos dos pacotes', () => {
 test('Estado inválido é seguro e não cria preço desconhecido', () => {
   for (const input of [null, [], 42, 'bad', {}, { version: 999 }]) assert.deepEqual(model.normalizeProject(input), model.initialProject());
   const n = model.normalizeProject({ version: 4, name: {}, segment: 'x', direction: '__proto__', custom: 'url(javascript:bad)', sections: ['galeria', 'bad'], step: 999, pkg: '__proto__', gallery: 999, id: 'bp-../../x', complex: ['loja', 'loja', 'hack'], services: [1, 'ok', {}] });
-  assert.equal(n.step, 3); assert.equal(n.custom, null); assert.equal(n.segment, ''); assert.equal(n.direction, 'marcante');
+  assert.equal(n.step, model.STEP_COUNT - 1); assert.equal(n.custom, null); assert.equal(n.segment, ''); assert.equal(n.direction, 'marcante');
   assert.equal(n.id, ''); assert.deepEqual(n.complex, ['loja']); assert.equal(n.gallery, 8); assert.deepEqual(n.services, ['ok']);
   assert.equal(n.pkg, 'profissional', 'pacote nunca fica abaixo do escopo');
 });
@@ -296,13 +296,13 @@ test('Migra v3, v2 e v1 sem perder escolhas nem apagar o antigo', () => {
   assert.equal(p.version, 4); assert.equal(p.name, 'Oficina'); assert.equal(p.service, 'Reparos'); assert.equal(p.description, 'desc'); assert.equal(p.lead.name, 'Ana');
   assert.equal(p.objective, 'agendamento'); assert.equal(p.direction, 'elegante'); assert.equal(p.palette, 'verde');
   assert.deepEqual(p.sections, ['apresentacao', 'servicos', 'galeria', 'atendimento', 'contato']);
-  assert.equal(p.form, true); assert.equal(p.pkg, 'profissional'); assert.equal(p.step, 3); assert(p.structureEdited && p.identitySet);
+  assert.equal(p.form, true); assert.equal(p.pkg, 'profissional'); assert.equal(p.step, model.STEP.revisao); assert(p.structureEdited && p.identitySet);
   assert(!('budget' in p)); assert(storage[model.LEGACY_KEYS.v3], 'leitura não apaga a versão anterior');
   const cat = model.fromV3({ ...v3, features: ['catalogo', 'paginaExtra'], sections: ['apresentacao', 'contato'] });
   assert(cat.sections.includes('vitrine')); assert.equal(cat.pkg, 'completo'); assert.deepEqual(cat.complex, ['paginas']);
   const v2 = { version: 2, name: 'Salão', segment: 'beleza', objective: 'servicos', sections: ['apresentacao', 'servicos', 'contato'], features: ['whatsapp'], step: 4 };
   const r2 = model.readStored((k) => (k === model.LEGACY_KEYS.v2 ? JSON.stringify(v2) : null));
-  assert.equal(r2.source, 'v2'); assert.equal(r2.project.name, 'Salão'); assert.equal(r2.project.step, 3);
+  assert.equal(r2.source, 'v2'); assert.equal(r2.project.name, 'Salão'); assert.equal(r2.project.step, model.STEP.revisao);
   const v1 = model.migrateLegacy({ selection: { company: 'Empresa', features: ['galeria', 'mapa'], customColor: { accent: '#ffffff' } } });
   assert.equal(v1.name, 'Empresa'); assert(v1.sections.includes('galeria')); assert(v1.sections.includes('atendimento')); assert.equal(v1.custom, '#ffffff');
   assert.equal(model.readStored(() => null), null);
@@ -315,7 +315,7 @@ test('Link "opções de layout" v4/v3/v2 funciona e não leva dados pessoais', (
   for (const s of ['Privado', 'privado', 'privada', 'Fulano', 'fulano@', 'bp-abcdef1234', 'data:image']) assert(!link.includes(s), s);
   const back = model.fromShare(new globalThis.URL(model.shareLink(p)).hash);
   assert.equal(back.name, ''); assert.equal(back.notes, ''); assert.equal(back.lead.name, '');
-  assert.equal(back.pkg, 'profissional'); assert.equal(back.form, true); assert.equal(back.direction, p.direction); assert.equal(back.step, 3);
+  assert.equal(back.pkg, 'profissional'); assert.equal(back.form, true); assert.equal(back.direction, p.direction); assert.equal(back.step, model.STEP.revisao, 'link abre na revisão');
   const v3link = '#projeto=' + encodeURIComponent(JSON.stringify({ version: 3, segment: 'beleza', name: 'Vazou', features: ['whatsapp', 'faq'], sections: ['apresentacao', 'faq', 'contato'], step: 3 }));
   const f3 = model.fromShare(v3link);
   assert.equal(f3.name, ''); assert(f3.sections.includes('faq')); assert.equal(f3.pkg, 'profissional');
@@ -345,9 +345,29 @@ test('Contraste do texto dos botões com cor própria (WCAG AA)', () => {
   for (let i = 0; i < 0xffffff; i += 3571) { const hex = '#' + i.toString(16).padStart(6, '0'), a = lum(hex), b = lum(model.contrastInk(hex)); assert((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5); }
 });
 
-test('Quatro etapas com os nomes pedidos e estilos com nomes simples', () => {
-  assert.deepEqual([...model.steps], ['Seu negócio', 'Seu objetivo', 'Sua identidade', 'Seu site']);
-  assert.equal(model.STEP_COUNT, 4);
+test('Projetos do fluxo anterior de 4 etapas continuam de onde pararam; fontes dos títulos', () => {
+  const old = (step) => model.normalizeProject({ version: 4, flow: 'etapas-4-v3', name: 'Clima Sul', segment: 'local', direction: 'elegante', font: 'serif', step });
+  assert.deepEqual([0, 1, 2, 3].map((i) => old(i).step), [model.STEP.negocio, model.STEP.objetivo, model.STEP.estilo, model.STEP.revisao]);
+  assert.equal(old(3).flow, model.FLOW_VERSION); assert.equal(old(3).name, 'Clima Sul'); assert.equal(old(3).font, 'serif');
+  const again = model.normalizeProject(JSON.parse(JSON.stringify(old(3))));
+  assert.equal(again.step, model.STEP.revisao, 'convertido uma vez só');
+  assert.equal(model.normalizeProject({ ...again, step: model.STEP.cores }).step, model.STEP.cores, 'etapas novas ficam como estão');
+  const stored = model.readStored((k) => (k === model.KEY ? JSON.stringify({ ...old(2), flow: 'etapas-4-v3', step: 2 }) : null));
+  assert.equal(stored.project.step, model.STEP.estilo);
+  assert.deepEqual(model.fonts.map((f) => f.id), ['auto', 'serif', 'sans', 'forte']);
+  assert.equal(model.normalizeProject({ ...again, font: 'forte' }).font, 'forte'); assert.equal(model.normalizeProject({ ...again, font: 'comic' }).font, 'auto');
+  assert(/Georgia/.test(model.headFont('auto', 'elegante'))); assert(/Arial Black/.test(model.headFont('auto', 'marcante'))); assert(/Segoe/.test(model.headFont('auto', 'essencial')));
+  assert(/Georgia/.test(model.headFont('serif', 'marcante'))); assert(/Segoe/.test(model.headFont('sans', 'elegante'))); assert(/Arial Black/.test(model.headFont('forte', 'essencial')));
+  for (const f of model.fonts) assert(!/font|family/i.test(f.name), f.name);
+});
+
+test('Fluxo guiado: etapas, fases, uma escolha por vez e estilos com nomes simples', () => {
+  assert.deepEqual([...model.steps], ['Seu negócio', 'Seu objetivo', 'Sua prévia', 'Estilo', 'Cores', 'Títulos', 'Conteúdo', 'Seções', 'Revisão']);
+  assert.equal(model.STEP_COUNT, 9); assert.equal(model.stepQuestions.length, 9);
+  assert.deepEqual(model.phases.map((ph) => ph.name), ['Seu negócio', 'Sua prévia', 'Personalizar', 'Solicitar']);
+  assert.deepEqual([...model.CHOICE_STEPS], [3, 4, 5, 6, 7]);
+  assert.deepEqual([...Array(9).keys()].map(model.phaseOf), [0, 0, 1, 2, 2, 2, 2, 2, 3], 'toda etapa tem uma fase');
+  for (const q of model.stepQuestions) assert(!/font|token|layout engine/i.test(q), q);
   assert.deepEqual(model.directions.map((d) => d.name), ['Moderno', 'Elegante', 'Minimalista', 'Tecnológico', 'Sofisticado', 'Escuro']);
   for (const s of model.segments) { assert.equal(s.styles.length, 3); for (const id of s.styles) assert(model.directions.some((d) => d.id === id)); }
 });
@@ -597,10 +617,10 @@ test('IA: aplicar a sugestão preserva o que foi digitado e nunca muda pacote ne
   assert.deepEqual(p.sections, ['apresentacao', 'servicos', 'diferenciais', 'sobre', 'contato']);
   assert.equal(p.pkg, 'essencial'); assert.equal(model.priceOf(p), 500); assert.deepEqual(p.complex, []);
   assert.equal(p.notes, 'obs'); assert.equal(p.lead.name, 'Ana');
-  assert.equal(p.step, model.STEP_COUNT - 1, 'com nome e segmento, vai direto para "Seu site"');
+  assert.equal(p.step, model.STEP.pronta, 'abre direto "Sua prévia está pronta"');
   assert.equal(model.siteContent(p).title, goodAnswer.headline);
   const noName = ai.applySuggestion(model.initialProject(), { ...s, name: '' });
-  assert.equal(noName.step, 0, 'sem nome, fica na primeira etapa');
+  assert.equal(noName.step, model.STEP.pronta, 'sem nome também: o nome é pedido na própria tela da prévia');
   const chosen = ai.applySuggestion(model.normalizeProject({ ...model.initialProject(), segment: 'beleza' }), s);
   assert.equal(chosen.segment, 'beleza', 'segmento escolhido pela pessoa vale mais');
 });

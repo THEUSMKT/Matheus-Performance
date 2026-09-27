@@ -10,7 +10,7 @@ como ativar cada parte. Nenhum segredo aparece aqui nem no código da página.
 O site é estático (GitHub Pages) e não tem servidor. Por isso, sem receptor
 configurado:
 
-- O botão final, na etapa “Seu site”, é **“Solicitar desenvolvimento”**
+- O botão final, na etapa “Revise e solicite”, é **“Solicitar desenvolvimento”**
   (ou “Pedir orçamento personalizado”, quando o projeto sai dos pacotes). Ele
   abre o WhatsApp com o resumo pronto — empresa, segmento, objetivo, serviço,
   estilo e cores, pacote, valor, seções, recursos, prazo, observações e o
@@ -77,9 +77,9 @@ outra resposta é tratada como falha pela página.
   seções, galeria de 15 imagens e vitrine de 10 itens). Mudar um valor ou
   limite aqui muda a apresentação, o configurador, o PDF, a mensagem e o
   receptor.
-- **Projeto** (`src/lib/project.ts`, `version: 4`, `flow: etapas-4-v3`):
+- **Projeto** (`src/lib/project.ts`, `version: 4`, `flow: guiado-v1`):
   nome, segmento (e “Outro”), serviço principal ou “Definir depois”,
-  objetivo, título/frase/serviços próprios (vazio = sugestão), seções em
+  objetivo, fonte dos títulos, título/frase/serviços próprios (vazio = sugestão), seções em
   ordem, formulário, tamanho da galeria, pacote, necessidades de projeto
   personalizado, identidade, observações e dados de contato. O pacote nunca
   fica abaixo do que as escolhas exigem. Validado sempre que é lido. Projetos
@@ -131,18 +131,18 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 
 | Evento | Quando | Propriedades |
 |---|---|---|
-| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacotes`, `exemplo`) |
+| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacotes`, `exemplo`, `flutuante`) |
 | `configurator_start` | Abrir a página de criação (1× por sessão) | — |
-| `step_complete` | Avançar uma etapa (1× por etapa) | `step` |
+| `step_complete` | Avançar uma etapa (1× por etapa): 1 negócio, 2 objetivo, 3 prévia pronta, 4 estilo, 5 cores, 6 títulos, 7 conteúdo, 8 seções | `step` |
 | `example_opened` / `example_applied` | Abrir um exemplo / usar como ponto de partida | `segment` |
 | `example_view_mode` | Trocar Computador/Celular no exemplo | `segment`, `device` |
-| `preview_view` | Ver a prévia: chegar em “Seu site”, tocar em “Ver meu site” ou abrir a tela cheia | `source` (`etapa`, `alternancia`, `tela_cheia`), `step` |
+| `preview_view` | Ver a prévia: chegar em “Sua prévia está pronta” ou na revisão, prévia gerada pela IA, tocar em “Ver meu site” ou abrir a tela cheia | `source` (`etapa`, `ia`, `alternancia`, `tela_cheia`), `step` |
 | `package_selected` | Escolher um pacote (1× por pacote e origem) | `package`, `source` |
 | `package_changed` | Trocar de pacote, sempre depois da confirmação | `from`, `to`, `source` (`objetivo`, `seu_site`, `secoes`, `imagens`, `incluido`) |
 | `request_click` | Clique em “Solicitar desenvolvimento” (**intenção**) | `mode` (`whatsapp`, `formulario`), `package` (ou `personalizado`) |
 | `whatsapp_open` | Clique para abrir o WhatsApp (**intenção, não é pedido recebido**) | `context` (`pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `projeto_personalizado`, `final`, `rodape`) |
 | `ai_generate` | Resultado de “Gerar minha prévia” (só com a IA ligada) | `result` (`ok`, `erro`), `reason` |
-| `ai_audio` | Resultado de “Gravar áudio” (transcrição) | `result` (`ok`, `erro`), `reason` (`microfone`, `curto`, `sem-fala`…) |
+| `ai_audio` | Resultado de “Gravar minha ideia” (transcrição; cancelar não conta) | `result` (`ok`, `erro`), `reason` (`microfone`, `curto`, `sem-fala`…) |
 | `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |
@@ -177,7 +177,7 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
 |---|---|
 | Início do configurador | `configurator_start` ÷ visitas |
 | Conclusão por etapa | `step_complete(n)` ÷ `configurator_start` |
-| Chegada ao “Seu site” | `preview_view(source=etapa)` ÷ `configurator_start` |
+| Chegada à prévia pronta | `preview_view(source=etapa)` ÷ `configurator_start` |
 | Troca de pacote | `package_changed` ÷ `preview_view(source=etapa)` |
 | Pedido de desenvolvimento | `request_click` ÷ `preview_view(source=etapa)` |
 | Pedidos confirmados | `generate_lead` (modo receptor) ou cards criados no CRM (modo WhatsApp) |

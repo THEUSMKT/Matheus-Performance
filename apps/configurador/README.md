@@ -4,10 +4,12 @@ Prévia gratuita do site da empresa em até 5 minutos e desenvolvimento em
 três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). A apresentação (`/`)
 mostra os dois diferenciais, exemplos, como funciona, os pacotes e as
 perguntas; o botão principal abre direto a página de criação (`/criar/`),
-que monta a prévia em quatro etapas — Seu negócio → Seu objetivo → Sua
-identidade → Seu site — com a prévia ao lado (ou em “Ver meu site”, no
-celular). No fim, o valor do pacote, “Personalizar meu site” e o pedido de
-desenvolvimento pelo WhatsApp com o resumo pronto. Tudo fica salvo neste
+que monta a prévia contando sobre o negócio (por áudio, texto ou passo a
+passo) → “Sua prévia está pronta” → uma escolha por tela (estilo, cores,
+títulos, conteúdo, seções) → revisão, com a prévia ao lado (ou em “Ver meu
+site”, no celular). No fim, o valor do pacote e o pedido de desenvolvimento
+pelo WhatsApp com o resumo pronto. Um botão flutuante na apresentação leva
+à criação (“Criar minha prévia” / “Continuar minha prévia”). Tudo fica salvo neste
 dispositivo.
 
 Next.js 16 · React 19 · TypeScript · CSS Modules. Exporta HTML estático e é
@@ -59,7 +61,7 @@ Página, PDF, mensagem do WhatsApp e receptor usam as mesmas funções.
 | Caminho | Papel |
 |---|---|
 | `src/components/landing/` | Apresentação, cabeçalho/rodapé (`Chrome`), controles de escolha e estado salvo (`useProject`) |
-| `src/app/criar/` · `src/components/builder/` | Página de criação: as quatro etapas (`Steps`), “Seu site” e “Personalizar meu site” (`Site`), preço e pacotes (`Packages`) |
+| `src/app/criar/` · `src/components/builder/` | Página de criação: fluxo e barra do celular (`Builder`), descrição por áudio/texto (`Describe`), negócio e objetivo (`Steps`), prévia pronta e escolhas uma por tela (`Choices`, `Pickers`), revisão e pedido (`Site`), preço e pacotes (`Packages`) |
 | `src/components/preview/SitePreview.tsx` | Prévia do site: nome, logo, segmento, serviço, objetivo, estilo, cores e seções na ordem escolhida |
 | `public/demo/` | Ilustrações próprias por segmento (SVG, sem links externos) |
 | `src/lib/logo.ts` | Logo enviada para a prévia — fica só no navegador |

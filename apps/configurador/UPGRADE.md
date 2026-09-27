@@ -1,5 +1,45 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — criação guiada: gravar, gerar, ver e personalizar
+
+- **Botão flutuante de volta na apresentação.** Tinha saído de propósito na
+  reformulação do PR #16 (commit `89cf4c9`, “sem cartão flutuante”), e o
+  teste passou a exigir que ele não existisse. Agora: “Criar minha prévia”
+  (ou “Continuar minha prévia”, com projeto salvo), barra larga no celular
+  com a área segura do iPhone e pílula no computador. Some enquanto um botão
+  principal (topo, pacotes, final) está visível — nunca os dois ao mesmo
+  tempo — e o rodapé ganha espaço para ele não cobrir nada. Evento
+  `start_click` com `context: flutuante`.
+- **Gravação com estados claros:** “Gravar minha ideia” / “Prefiro digitar”
+  → “Gravando sua ideia…” com tempo, botão vermelho **Encerrar gravação** e
+  “Cancelar gravação” → “Transcrevendo seu áudio…” → texto editável com
+  “Confira o texto antes de gerar”. “Gerar” não aparece enquanto grava ou
+  transcreve; “Gravar novamente” soma ao texto, não apaga. Microfone
+  bloqueado, navegador sem gravação, áudio vazio e falha da transcrição
+  voltam para o texto com a mensagem certa — nunca fica preso em
+  “Gravando”. Sair da página cancela a gravação e libera o microfone.
+- **Depois de gerar:** “Montando sua prévia…” (sem clique duplo) e a tela
+  **Sua prévia está pronta** — no celular já abre no site, com
+  “Personalizar meu site” e “Editar minha descrição”. Se a pessoa saiu da
+  etapa enquanto gerava, nada muda sozinho: aparece o aviso com “Ver minha
+  prévia”.
+- **Uma escolha por tela:** Estilo → Cores → Títulos (fonte) → Conteúdo →
+  Seções → Revisão, cada uma com pergunta, opções visuais, escolha atual
+  marcada, Voltar/Continuar e “Escolha N de 5”. Nada avança sozinho. No
+  computador, opções à esquerda e prévia ao vivo à direita; no celular,
+  “Ver meu site” / “Voltar para “X”” volta na mesma escolha e na mesma
+  rolagem, com o aviso “Prévia atualizada” quando algo muda.
+- **Novo campo `font`** (`auto`, `serif`, `sans`, `forte`) — só visual, não
+  muda preço. Fluxo `guiado-v1`: projetos salvos no fluxo anterior de 4
+  etapas abrem na etapa equivalente; nenhum pacote ou preço muda sozinho.
+- Visual azul e branco, transições de 180–300 ms, respeita “reduzir
+  movimento”; alvos de toque com 44 px; campos com 16 px (sem zoom).
+- Testes: 52 unitários e 39 cenários de navegador (360, 390, 430, 768 e
+  1366 px; microfone simulado do Chromium). Áudio real no Safari/iPhone não
+  pôde ser testado aqui.
+- **Publicação:** só o site (merge na `main`). O Worker não mudou — não
+  precisa publicar de novo.
+
 ## Edição — descrição por áudio (etapa 2)
 
 - No card “Descreva o site que você quer” há o botão **Gravar áudio**

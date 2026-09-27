@@ -18,7 +18,7 @@ import {
   palettes,
   sections,
   segments,
-  STEP_COUNT,
+  STEP,
   type Project,
 } from './project';
 
@@ -306,8 +306,8 @@ export function applySuggestion(p: Project, s: Suggestion): Project {
   });
   // Nada de upgrade sozinho: se algo exigir outro pacote, mantém a estrutura atual.
   const kept = higher(next.pkg, p.pkg) === p.pkg ? next : normalizeProject({ ...next, pkg: p.pkg, sections: p.sections });
-  const ready = kept.name.trim().length >= 2 && Boolean(kept.segment) && (kept.segment !== 'outro' || kept.segmentOther.trim().length >= 2);
-  return { ...kept, step: ready ? STEP_COUNT - 1 : 0 };
+  // Sempre abre a prévia pronta; o nome, se faltar, é pedido ali mesmo.
+  return { ...kept, step: STEP.pronta };
 }
 
 /* ── Chamada da página ao servidor ───────────────────────────────────────── */
