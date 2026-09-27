@@ -518,9 +518,13 @@ await scenario('IA: descrição vira prévia nos layouts existentes; falha não 
   const answer = {
     name: 'Clima Sul', segment: 'local', segmentOther: '', service: 'Instalação de ar-condicionado', objective: 'orcamento',
     headline: 'Ar-condicionado instalado do jeito certo', description: 'Peça seu orçamento pelo WhatsApp.', services: ['Instalação', 'Manutenção', 'Higienização'],
-    sections: ['servicos', 'diferenciais', 'galeria', 'sobre'], direction: 'tecnologico', palette: 'azul', brandColor: null, needs: ['loja'],
-    about: 'Instalação e manutenção para casas e empresas, com visita combinada antes.',
-    serviceDetails: ['Detalhe um da IA', 'Detalhe dois da IA', 'Detalhe três da IA'],
+    // Mesmo formato que o servidor devolve depois de validar (previewCopy e extraSections).
+    sections: ['servicos', 'diferenciais', 'sobre'], extraSections: ['galeria'], direction: 'tecnologico', palette: 'azul', brandColor: null, needs: ['loja'],
+    previewCopy: {
+      about: 'Instalação e manutenção para casas e empresas, com visita combinada antes.',
+      serviceDetails: ['Detalhe um da IA', 'Detalhe dois da IA', 'Detalhe três da IA'],
+      differentials: [], processSteps: [], faqQuestions: [],
+    },
   };
   await page.route('https://ia.test/preview', async (route) => {
     calls++; bodies.push(route.request().postData());

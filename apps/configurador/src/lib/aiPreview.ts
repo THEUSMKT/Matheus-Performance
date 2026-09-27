@@ -126,7 +126,9 @@ export function geminiRequest(description: string) {
       responseMimeType: 'application/json',
       responseSchema,
       temperature: 0.6,
-      maxOutputTokens: 2048,
+      // O raciocínio interno do modelo também conta neste limite; com folga, o
+      // JSON não chega cortado.
+      maxOutputTokens: 8192,
     },
   };
 }
@@ -204,9 +206,14 @@ export function sanitizeSuggestion(raw: unknown, pkg: PackageId = 'essencial'): 
   const objective = oneOf(x.objective, objectives.map((o) => o.id));
   if (!segment || !objective) return null;
 
+  // A página valida de novo o que o servidor já validou: aceita tanto a
+  // resposta da IA (campos soltos) quanto a sugestão pronta (previewCopy e
+  // extraSections), sem perder nada no caminho.
+  const copy = x.previewCopy && typeof x.previewCopy === 'object' && !Array.isArray(x.previewCopy) ? (x.previewCopy as Record<string, unknown>) : x;
+
   const target = packageById(pkg);
   const room = target.maxSections - 2;
-  const wanted = [...new Set(strings(x.sections))].filter((id) => optionalSections.some((s) => s.id === id));
+  const wanted = [...new Set([...strings(x.sections), ...strings(x.extraSections)])].filter((id) => optionalSections.some((s) => s.id === id));
   const fit: string[] = [];
   const extra: string[] = [];
   for (const id of wanted) {
@@ -226,11 +233,11 @@ export function sanitizeSuggestion(raw: unknown, pkg: PackageId = 'essencial'): 
     description: honest(text(x.description, 200)),
     services: [...new Set(strings(x.services).map((s) => honest(text(s, 60))).filter(Boolean))].slice(0, 3),
     previewCopy: {
-      about: honest(text(x.about, 420)),
-      serviceDetails: strings(x.serviceDetails).map((s) => honest(text(s, 160))).filter(Boolean).slice(0, 3),
-      differentials: strings(x.differentials).map((s) => honest(text(s, 100))).filter(Boolean).slice(0, 3),
-      processSteps: strings(x.processSteps).map((s) => honest(text(s, 80))).filter(Boolean).slice(0, 3),
-      faqQuestions: strings(x.faqQuestions).map((s) => honest(text(s, 100))).filter(Boolean).slice(0, 3),
+      about: honest(text(copy.about, 420)),
+      serviceDetails: strings(copy.serviceDetails).map((s) => honest(text(s, 160))).filter(Boolean).slice(0, 3),
+      differentials: strings(copy.differentials).map((s) => honest(text(s, 100))).filter(Boolean).slice(0, 3),
+      processSteps: strings(copy.processSteps).map((s) => honest(text(s, 80))).filter(Boolean).slice(0, 3),
+      faqQuestions: strings(copy.faqQuestions).map((s) => honest(text(s, 100))).filter(Boolean).slice(0, 3),
     },
     sections: fit.length ? fit : objectives.find((o) => o.id === objective)!.structure.slice(1, -1),
     extraSections: extra,

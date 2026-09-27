@@ -513,6 +513,14 @@ test('IA: sugestão validada — ids fora da lista caem, alegações inventadas 
   for (const bad of ['Desde 2010 cuidando de você', 'Satisfação garantida', '98% de aprovação', 'A partir de R$ 99', 'Mais de 300 obras']) assert.equal(ai.sanitizeSuggestion({ ...goodAnswer, description: bad }).description, '', bad);
 });
 
+test('IA: a sugestão que o servidor devolve chega inteira à página', () => {
+  for (const pkg of ['essencial', 'profissional']) {
+    const fromWorker = JSON.parse(JSON.stringify(ai.sanitizeSuggestion(goodAnswer, pkg)));
+    assert.deepEqual(ai.sanitizeSuggestion(fromWorker, pkg), fromWorker, `validar de novo não perde textos nem seções (${pkg})`);
+  }
+  assert(ai.sanitizeSuggestion(ai.sanitizeSuggestion(goodAnswer)).previewCopy.about, 'o texto "sobre" sobrevive às duas validações');
+});
+
 test('IA: aplicar a sugestão preserva o que foi digitado e nunca muda pacote nem preço', () => {
   const mine = model.normalizeProject({ ...model.initialProject(), name: 'Minha Empresa', notes: 'obs', lead: { ...model.emptyLead, name: 'Ana' } });
   const s = ai.sanitizeSuggestion(goodAnswer, mine.pkg);
