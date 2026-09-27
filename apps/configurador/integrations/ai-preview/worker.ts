@@ -7,10 +7,13 @@
 
    O que ele faz: aceita só POST do site permitido, limita tamanho e
    frequência, remove e-mails e telefones da descrição, pede ao Gemini um JSON
-   no formato combinado e devolve apenas a sugestão validada. A descrição não
-   é gravada nem registrada em log. Ver README.md desta pasta.
+   no formato combinado e devolve apenas a sugestão validada. Em /transcricao
+   recebe um áudio WAV curto e devolve só o texto transcrito (sem contatos).
+   Descrição e áudio não são gravados nem registrados em log. Ver README.md
+   desta pasta.
    ========================================================================== */
 import { AI_SCHEMA_VERSION, DESCRIPTION_MAX, DESCRIPTION_MIN, geminiRequest, parseGeminiResponse, sanitizeSuggestion } from '../../src/lib/aiPreview';
+import { AUDIO_MAX_BASE64, AUDIO_MIME, cleanTranscript, transcriptionRequest } from '../../src/lib/aiAudio';
 import { packageOrder, type PackageId } from '../../src/config/packages';
 
 export interface Env {
@@ -29,6 +32,8 @@ type Log = (msg: string, data?: Record<string, unknown>) => void;
 
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MAX_BODY = 6000;
+/** Transcrição: até 90 s de WAV em base64 mais o envelope JSON. */
+const MAX_AUDIO_BODY = 4_300_000;
 /**
  * Até duas chamadas ao Gemini por pedido. 2 × 18 s + a pausa ficam abaixo dos
  * 45 s que a página espera (requestSuggestion).
@@ -63,22 +68,50 @@ export async function handle(request: Request, env: Env, fetchImpl: FetchLike = 
   if (!allowedOrigin) return reply(403, { ok: false, error: 'origem' }, null);
   if (request.method !== 'POST') return reply(405, { ok: false, error: 'metodo' }, allowedOrigin);
 
+  // /transcricao: áudio → texto. Qualquer outro caminho: descrição → prévia.
+  const audio = new URL(request.url).pathname.replace(/\/+$/, '').endsWith('/transcricao');
+  const limit = audio ? MAX_AUDIO_BODY : MAX_BODY;
+  if (Number(request.headers.get('Content-Length') ?? 0) > limit) return reply(413, { ok: false, error: 'tamanho' }, allowedOrigin);
   const raw = await request.text();
-  if (raw.length > MAX_BODY) return reply(413, { ok: false, error: 'tamanho' }, allowedOrigin);
-  let data: { schema?: unknown; description?: unknown; pkg?: unknown };
+  if (raw.length > limit) return reply(413, { ok: false, error: 'tamanho' }, allowedOrigin);
+  let data: { schema?: unknown; description?: unknown; pkg?: unknown; mime?: unknown; audio?: unknown };
   try {
     data = JSON.parse(raw);
   } catch {
     return reply(400, { ok: false, error: 'json' }, allowedOrigin);
   }
   if (data.schema !== AI_SCHEMA_VERSION) return reply(422, { ok: false, error: 'versao' }, allowedOrigin);
-  const description = typeof data.description === 'string' ? data.description.trim() : '';
-  if (description.length < DESCRIPTION_MIN || description.length > DESCRIPTION_MAX) return reply(422, { ok: false, error: 'descricao' }, allowedOrigin);
-  const pkg: PackageId = packageOrder.includes(data.pkg as PackageId) ? (data.pkg as PackageId) : 'essencial';
+
+  let body: unknown;
+  let accept: (value: unknown) => Attempt;
+  if (audio) {
+    const wav = typeof data.audio === 'string' ? data.audio : '';
+    if (data.mime !== AUDIO_MIME || wav.length < 1000 || wav.length > AUDIO_MAX_BASE64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(wav)) {
+      return reply(422, { ok: false, error: 'audio' }, allowedOrigin);
+    }
+    body = transcriptionRequest(wav);
+    // Sem fala não é falha passageira: repetir não ajuda.
+    accept = (value) => {
+      const text = cleanTranscript(value);
+      return text ? { ok: true, payload: { text } } : { ok: false, status: 422, error: 'sem-fala', retry: false };
+    };
+  } else {
+    const description = typeof data.description === 'string' ? data.description.trim() : '';
+    if (description.length < DESCRIPTION_MIN || description.length > DESCRIPTION_MAX) return reply(422, { ok: false, error: 'descricao' }, allowedOrigin);
+    const pkg: PackageId = packageOrder.includes(data.pkg as PackageId) ? (data.pkg as PackageId) : 'essencial';
+    body = geminiRequest(description);
+    accept = (value) => {
+      const suggestion = sanitizeSuggestion(value, pkg);
+      if (suggestion) return { ok: true, payload: { suggestion } };
+      log('resposta do Gemini recusada', { reason: 'formato' });
+      return { ok: false, status: 502, error: 'formato', retry: true };
+    };
+  }
 
   if (env.RATE_LIMITER) {
-    const key = request.headers.get('CF-Connecting-IP') ?? 'anonimo';
-    const { success } = await env.RATE_LIMITER.limit({ key });
+    // Transcrição e prévia contam separadamente: gravar e depois gerar não esgota o limite.
+    const ip = request.headers.get('CF-Connecting-IP') ?? 'anonimo';
+    const { success } = await env.RATE_LIMITER.limit({ key: audio ? `${ip}:audio` : ip });
     if (!success) return reply(429, { ok: false, error: 'limite' }, allowedOrigin);
   }
 
@@ -88,8 +121,9 @@ export async function handle(request: Request, env: Env, fetchImpl: FetchLike = 
   }
 
   for (let attempt = 1; ; attempt++) {
-    const result = await askGemini(description, pkg, env.GEMINI_API_KEY, env.GEMINI_MODEL, fetchImpl, log);
-    if (result.ok) return reply(200, { ok: true, suggestion: result.suggestion }, allowedOrigin);
+    const called = await callGemini(body, env.GEMINI_API_KEY, env.GEMINI_MODEL, fetchImpl, log);
+    const result = called.ok ? accept(called.value) : called;
+    if (result.ok) return reply(200, { ok: true, ...result.payload }, allowedOrigin);
     if (!result.retry || attempt >= ATTEMPTS) return reply(result.status, { ok: false, error: result.error }, allowedOrigin);
     // Falha passageira (sobrecarga, demora, resposta cortada): tenta mais uma vez.
     log('nova tentativa', { attempt: attempt + 1 });
@@ -97,25 +131,24 @@ export async function handle(request: Request, env: Env, fetchImpl: FetchLike = 
   }
 }
 
-type Attempt =
-  | { ok: true; suggestion: NonNullable<ReturnType<typeof sanitizeSuggestion>> }
-  | { ok: false; status: number; error: string; retry: boolean };
+type Failure = { ok: false; status: number; error: string; retry: boolean };
+type Attempt = { ok: true; payload: Record<string, unknown> } | Failure;
 
-/** Uma chamada ao Gemini. `retry` diz se vale tentar de novo. */
-async function askGemini(description: string, pkg: PackageId, key: string, model: string, fetchImpl: FetchLike, log: Log): Promise<Attempt> {
+/** Uma chamada ao Gemini: devolve o JSON da resposta ou a falha (`retry` diz se vale tentar de novo). */
+async function callGemini(body: unknown, key: string, model: string, fetchImpl: FetchLike, log: Log): Promise<{ ok: true; value: unknown } | Failure> {
   let res: Response;
   try {
     res = await fetchImpl(`${GEMINI_URL}/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify(geminiRequest(description)),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(ATTEMPT_TIMEOUT),
     });
   } catch (err) {
     log('falha ao chamar o Gemini', { error: (err as Error)?.name ?? 'erro' });
     return { ok: false, status: 502, error: 'ia', retry: true };
   }
-  // Só o código de status vai para o log — nunca a descrição nem a resposta.
+  // Só o código de status vai para o log — nunca a descrição, o áudio nem a resposta.
   if (res.status === 429) {
     log('Gemini: cota atingida', { status: 429 });
     return { ok: false, status: 429, error: 'cota', retry: false };
@@ -124,19 +157,13 @@ async function askGemini(description: string, pkg: PackageId, key: string, model
     log('Gemini respondeu com erro', { status: res.status });
     return { ok: false, status: 502, error: 'ia', retry: res.status >= 500 };
   }
-
   const parsed = parseGeminiResponse(await res.json().catch(() => null));
   if (!parsed.ok) {
     log('resposta do Gemini recusada', { reason: parsed.reason });
     if (parsed.reason === 'bloqueado') return { ok: false, status: 422, error: 'bloqueado', retry: false };
     return { ok: false, status: 502, error: parsed.reason, retry: true };
   }
-  const suggestion = sanitizeSuggestion(parsed.value, pkg);
-  if (!suggestion) {
-    log('resposta do Gemini recusada', { reason: 'formato' });
-    return { ok: false, status: 502, error: 'formato', retry: true };
-  }
-  return { ok: true, suggestion };
+  return { ok: true, value: parsed.value };
 }
 
 export default {

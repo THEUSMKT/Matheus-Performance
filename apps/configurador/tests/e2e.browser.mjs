@@ -9,7 +9,11 @@ const URL = process.env.BASE ?? 'http://localhost:4190/Matheus-Performance/confi
 const URL_R = process.env.BASE_R ?? 'http://localhost:4191/Matheus-Performance/configurador/';
 const URL_AI = process.env.BASE_AI ?? 'http://localhost:4192/Matheus-Performance/configurador/';
 const B = URL + 'criar/';
-const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
+// Microfone simulado (tom de teste) para a descrição por áudio.
+const browser = await chromium.launch({
+  ...(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {}),
+  args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+});
 let passed = 0;
 const errors = [];
 const timings = [];
@@ -508,6 +512,7 @@ await scenario('Sem servidor de IA configurado, a criação fica igual à public
   await page.goto(B);
   await ready(page);
   assert.equal(await page.locator('#descricao-ia').count(), 0);
+  assert.equal(await page.locator('#gravar-audio').count(), 0, 'sem servidor, sem gravação');
   await page.goto(URL + 'privacidade/');
   assert(!(await page.locator('main').innerText()).includes('Gemini'));
 });
@@ -570,6 +575,50 @@ await scenario('IA: descrição vira prévia nos layouts existentes; falha não 
   assert(!JSON.stringify(ev).match(/ar-condicionado|Clima/), 'eventos sem texto');
   await page.goto(URL_AI + 'privacidade/');
   assert((await page.locator('main').innerText()).includes('Google Gemini'));
+});
+
+await scenario('Áudio: a fala vira texto no campo para conferir antes de gerar; o áudio só vai para a transcrição', async (page) => {
+  const bodies = [];
+  const said = 'Faço instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento pelo WhatsApp.';
+  await page.route('https://ia.test/preview/transcricao', async (route) => {
+    bodies.push(route.request().postData());
+    await new Promise((r) => setTimeout(r, 200));
+    return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, text: said }) });
+  });
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  const mic = page.locator('#gravar-audio');
+  await mic.waitFor();
+  assert((await page.locator('#dica-descricao').innerText()).includes('áudio'), 'aviso de privacidade cita o áudio');
+
+  // Gravação curta demais: nada é enviado.
+  await mic.click();
+  await page.getByRole('button', { name: /Parar gravação/ }).click();
+  await page.locator('#erro-descricao').waitFor();
+  assert((await page.locator('#erro-descricao').innerText()).includes('pelo menos 2 segundos'));
+  assert.equal(bodies.length, 0);
+
+  const box = page.locator('#descricao-ia');
+  await box.fill('Empresa Clima Sul.');
+  await mic.click();
+  await page.getByRole('button', { name: /Parar gravação/ }).waitFor();
+  assert.equal(await mic.getAttribute('aria-pressed'), 'true');
+  assert(await box.isDisabled(), 'campo travado durante a gravação');
+  await page.waitForTimeout(2600);
+  assert(/0:0[2-3]/.test(await mic.innerText()), 'cronômetro');
+  await mic.click();
+  await page.waitForFunction(() => document.querySelector('#descricao-ia')?.value.includes('ar-condicionado'));
+  assert.equal(await box.inputValue(), `Empresa Clima Sul. ${said}`, 'transcrição entra depois do que já estava escrito');
+  assert((await page.locator('[role=status]').filter({ hasText: 'Pronto' }).innerText()).includes('Confira'));
+  assert.equal(bodies.length, 1);
+  const sent = JSON.parse(bodies[0]);
+  assert.deepEqual(Object.keys(sent).sort(), ['audio', 'mime', 'schema']);
+  assert.equal(sent.mime, 'audio/wav');
+  assert(sent.audio.startsWith('UklGR') && sent.audio.length > 50000, 'WAV de verdade, em base64');
+  const ev = await allEvents(page);
+  assert.deepEqual(ev.filter((e) => e.event === 'ai_audio').map((e) => e.result), ['erro', 'ok']);
+  assert(!JSON.stringify(ev).includes('ar-condicionado'), 'eventos sem texto');
+  assert.equal(await page.getByRole('button', { name: 'Gerar minha prévia' }).isEnabled(), true);
 });
 
 await scenario('IA: gerar de novo troca o segmento que a IA sugeriu, mas não o escolhido à mão', async (page) => {

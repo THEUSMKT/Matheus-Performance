@@ -83,11 +83,26 @@ página de criação. Para desligar, apague a variável e publique de novo.
 |---|---|
 | Chave só como segredo do Worker | `wrangler secret put` |
 | Só o site permitido chama o Worker (CORS + checagem de origem) | `ALLOWED_ORIGINS` |
-| 5 gerações/minuto por IP | `[[ratelimits]]` |
+| 5 gerações/minuto por IP (transcrições contam à parte, com o mesmo limite) | `[[ratelimits]]` |
 | Descrição de 20 a 1.200 caracteres, corpo até 6 KB | `worker.ts` |
 | E-mails e telefones removidos antes do Gemini | `redact()` em `src/lib/aiPreview.ts` |
 | Resposta validada: ids do catálogo, textos limitados, sem alegações inventadas, pacote nunca muda | `sanitizeSuggestion()` / `applySuggestion()` |
-| Nada do texto vai para log ou armazenamento | `worker.ts` registra só códigos de status |
+| Áudio: só WAV mono 16 kHz, até 90 s (~4 MB em base64); a transcrição volta sem e-mails e telefones | `worker.ts` + `src/lib/aiAudio.ts` |
+| Nada do texto nem do áudio vai para log ou armazenamento | `worker.ts` registra só códigos de status |
+
+## Descrição por áudio
+
+O mesmo Worker atende `POST /transcricao` (endereço do Worker + `/transcricao`).
+A página grava pelo microfone, converte para WAV mono de 16 kHz e envia; o
+Gemini devolve só a transcrição, que aparece no campo da descrição para a
+pessoa conferir antes de gerar a prévia. Não há configuração extra: mesma
+chave, mesmo modelo e mesma variável `AI_ENDPOINT`. O modelo precisa aceitar
+áudio (os Flash e Flash-Lite do Gemini são multimodais). Se aparecer "A
+transcrição não respondeu", veja o motivo com `wrangler tail` (abaixo): um
+`status: 400` indica modelo sem suporte a áudio.
+
+Teste rápido: grave pelo site. (Pelo `curl` seria preciso montar um WAV em
+base64; não é necessário.)
 
 A checagem de origem impede o uso por outros sites no navegador, mas não
 impede chamadas diretas de quem copiar o endereço — por isso o limite por IP

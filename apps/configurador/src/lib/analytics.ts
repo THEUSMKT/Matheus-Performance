@@ -37,6 +37,8 @@ export const EVENTS = {
   whatsapp_open: { once: false, props: ['context'] },
   /** Prévia por descrição: pedido e resultado. Nunca leva o texto digitado. */
   ai_generate: { once: false, props: ['result', 'reason'] },
+  /** Descrição por áudio: gravação transcrita ou falha. Nunca leva áudio nem texto. */
+  ai_audio: { once: false, props: ['result', 'reason'] },
   layout_share: { once: false, props: [] },
   pdf_save: { once: false, props: [] },
   help_open: { once: false, props: ['step'] },

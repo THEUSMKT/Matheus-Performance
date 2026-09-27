@@ -485,6 +485,62 @@
   font-size: 12px;
   text-align: right;
 }
+.audioRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+}
+.audioRow .counter {
+  margin: 0 0 0 auto;
+}
+.micButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.micButton svg {
+  width: 16px;
+  height: 16px;
+}
+.micButton[aria-pressed='true'] {
+  border-color: #b42318;
+  color: #b42318;
+}
+.recClock {
+  font-variant-numeric: tabular-nums;
+}
+.audioStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.audioStatus:empty {
+  display: none;
+}
+.recDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d92d20;
+  animation: recPulse 1.2s ease-in-out infinite;
+}
+@keyframes recPulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recDot {
+    animation: none;
+  }
+}
 .orSteps {
   display: flex;
   align-items: center;
