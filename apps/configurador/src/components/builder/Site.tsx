@@ -1,14 +1,14 @@
 'use client';
 /* ==========================================================================
-   Etapa 4 — Seu site. Ordem: prévia (no painel ao lado ou acima), nome do
-   projeto, investimento, resumo do que está incluído e a próxima ação.
-   "Personalizar meu site" abre os ajustes na mesma tela; "Solicitar
+   Revisão — o site, o pacote e o resumo antes do pedido. Ordem: nome do
+   projeto, investimento, o que está incluído, o pedido e o resumo com
+   "Editar" em cada linha (volta para a escolha certa). "Solicitar
    desenvolvimento" abre o WhatsApp com o resumo (ou, com receptor
    configurado, um formulário curto que só confirma depois de salvo).
    ========================================================================== */
 import { useMemo, useRef, useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, Check as CheckIcon, MessageCircle } from 'lucide-react';
-import { brl, customNeeds, packageById, packages, priceNotes, rank, revisionRounds } from '@/config/packages';
+import { MessageCircle } from 'lucide-react';
+import { brl, packageById, priceNotes, rank, revisionRounds } from '@/config/packages';
 import { integrations, leadMode } from '@/config/integrations';
 import {
   contactChannels,
@@ -19,12 +19,10 @@ import {
   desiredDeadlines,
   investmentLabel,
   isCustom,
-  moveSection,
   nextStepText,
+  STEP,
   objectiveOf,
   recommendation,
-  sectionName,
-  sections,
   segmentLabel,
   selectedResources,
   selectedSections,
@@ -32,7 +30,6 @@ import {
   shareLink,
   siteContent,
   styleLabel,
-  suggestedServices,
   type Lead,
   type Project,
 } from '@/lib/project';
@@ -40,7 +37,6 @@ import { buildPayload, createSubmitter, reasonText, submitLead, validateLead, ty
 import type { Origin } from '@/lib/origin';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
-import { Check } from '../landing/Controls';
 import { asset } from '../landing/Chrome';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
@@ -51,11 +47,11 @@ type Row = { label: string; value: string; step?: number };
 export function summaryRows(p: Project, { logo = false } = {}): Row[] {
   const pkg = currentPackage(p);
   return [
-    { label: 'Empresa', value: p.name.trim() || 'A informar', step: 0 },
-    { label: 'Segmento', value: segmentLabel(p), step: 0 },
-    { label: 'Serviço ou produto principal', value: serviceLabel(p), step: 0 },
-    { label: 'Objetivo', value: objectiveOf(p).name, step: 1 },
-    { label: 'Estilo e cores', value: `${styleLabel(p)}${logo ? ' · com logo' : ''}`, step: 2 },
+    { label: 'Empresa', value: p.name.trim() || 'A informar', step: STEP.conteudo },
+    { label: 'Segmento', value: segmentLabel(p), step: STEP.negocio },
+    { label: 'Serviço ou produto principal', value: serviceLabel(p), step: STEP.negocio },
+    { label: 'Objetivo', value: objectiveOf(p).name, step: STEP.objetivo },
+    { label: 'Estilo e cores', value: `${styleLabel(p)}${logo ? ' · com logo' : ''}`, step: STEP.estilo },
     { label: 'Pacote', value: isCustom(p) ? `Projeto personalizado (referência: ${pkg.name})` : pkg.name },
     { label: 'Valor do desenvolvimento', value: investmentLabel(p) },
     { label: `Seções (${p.sections.length} de até ${pkg.maxSections})`, value: selectedSections(p).join(', ') },
@@ -100,18 +96,13 @@ export function RequestButton({ p, message, onForm, className = '' }: { p: Proje
   );
 }
 
-export type Scope = (patch: Partial<Project>, anchor: string) => void;
-
 export function StepSite({
   p,
   update,
-  scope,
   gate,
   origin,
   message,
   logo,
-  personalize,
-  setPersonalize,
   formOpen,
   openForm,
   onIncluded,
@@ -120,14 +111,11 @@ export function StepSite({
 }: {
   p: Project;
   update: (patch: Partial<Project>) => void;
-  scope: Scope;
   /** Caixa de confirmação de pacote, se houver uma aberta neste ponto. */
   gate: (anchor: string) => ReactNode;
   origin: Origin;
   message: string;
   logo: boolean;
-  personalize: boolean;
-  setPersonalize: (open: boolean) => void;
   formOpen: boolean;
   openForm: () => void;
   onIncluded: () => void;
@@ -241,22 +229,15 @@ export function StepSite({
       </div>
 
       <div className={b.secondaryActions}>
-        <button
-          type="button"
-          className={`${s.secondary} ${s.small}`}
-          aria-expanded={personalize}
-          aria-controls="personalizar"
-          onClick={() => setPersonalize(!personalize)}
-        >
-          Personalizar meu site
+        <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => go(STEP.estilo)}>
+          Voltar a personalizar
         </button>
         <button type="button" className={`${s.secondary} ${s.small}`} onClick={onIncluded}>
           Ver o que está incluído
         </button>
       </div>
 
-      {personalize && <Personalize p={p} update={update} scope={scope} gate={gate} go={go} />}
-
+      <h2 className={b.rowsTitle}>Resumo do seu site</h2>
       <dl className={b.rows}>
         {summaryRows(p, { logo })
           .filter((r) => r.step !== undefined)
@@ -297,168 +278,6 @@ export function StepSite({
         {nextStepText} <a href={asset('/#perguntas')}>Ver dúvidas</a>
       </p>
     </>
-  );
-}
-
-/* ── Personalizar meu site ─────────────────────────────────────────────── */
-
-function Personalize({ p, update, scope, gate, go }: { p: Project; update: (patch: Partial<Project>) => void; scope: Scope; gate: (anchor: string) => ReactNode; go: (step: number) => void }) {
-  const heading = useRef<HTMLHeadingElement>(null);
-  const content = siteContent(p);
-  const suggested = suggestedServices(p);
-  const pkg = currentPackage(p);
-  const optional = sections.filter((x) => !x.fixed);
-  const middle = p.sections.slice(1, -1);
-  const services = [0, 1, 2].map((i) => p.services[i] ?? '');
-  const setService = (i: number, v: string) => {
-    const next = [...services];
-    next[i] = v;
-    update({ services: next });
-  };
-
-  return (
-    <section className={b.personalize} id="personalizar" aria-labelledby="personalizar-titulo">
-      <h2 id="personalizar-titulo" ref={heading} tabIndex={-1}>
-        Personalizar meu site
-      </h2>
-      <p className={b.muted}>Tudo aparece na prévia na hora. Campos vazios usam a sugestão.</p>
-
-      <fieldset className={b.group}>
-        <legend className={b.label}>Título e apresentação</legend>
-        <div className={s.fields}>
-          <label className={s.field}>
-            Título
-            <input maxLength={90} value={p.headline} placeholder={content.titleSuggested ? content.title : ''} onChange={(ev) => update({ headline: ev.target.value })} />
-          </label>
-          <label className={s.field}>
-            Frase de apresentação
-            <textarea rows={2} maxLength={200} value={p.description} placeholder={content.introSuggested ? content.intro : ''} onChange={(ev) => update({ description: ev.target.value })} />
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset className={b.group}>
-        <legend className={b.label}>{sectionName(p, 'servicos')}</legend>
-        <div className={s.fields}>
-          {services.map((v, i) => (
-            <label key={i} className={s.field}>
-              <span className={s.srOnly}>Item {i + 1}</span>
-              <input maxLength={60} value={v} placeholder={suggested[i] ?? `Item ${i + 1}`} onChange={(ev) => setService(i, ev.target.value)} />
-            </label>
-          ))}
-        </div>
-        {content.servicesSuggested && (
-          <button type="button" className={b.textButton} onClick={() => update({ services: suggested })}>
-            Confirmar as sugestões
-          </button>
-        )}
-      </fieldset>
-
-      <div className={b.group}>
-        <span className={b.label}>Estilo e cores</span>
-        <p className={b.muted}>
-          {styleLabel(p)}.{' '}
-          <button type="button" className={b.textButton} onClick={() => go(2)}>
-            Trocar estilo e cores
-          </button>
-        </p>
-      </div>
-
-      <div className={b.group}>
-        <span className={b.label}>Imagens</span>
-        <p className={b.muted}>A prévia usa ilustrações de exemplo. No site final entram as suas fotos e a sua logo.</p>
-        {p.sections.includes('galeria') && (
-          <div className={s.chips} role="radiogroup" aria-label="Imagens na galeria" style={{ marginTop: 8 }}>
-            {packages
-              .filter((x) => x.galleryImages)
-              .map((x) => (
-                <button
-                  key={x.id}
-                  type="button"
-                  role="radio"
-                  className={s.chip}
-                  aria-checked={p.gallery === x.galleryImages}
-                  onClick={() => scope({ gallery: x.galleryImages }, 'imagens')}
-                >
-                  Até {x.galleryImages} fotos
-                </button>
-              ))}
-          </div>
-        )}
-        {gate('imagens')}
-      </div>
-
-      <div className={b.group}>
-        <span className={b.label}>
-          Seções incluídas{' '}
-          <small>
-            {p.sections.length} de até {pkg.maxSections} no {pkg.name}
-          </small>
-        </span>
-        <div className={s.options}>
-          {optional.map((x) => {
-            const on = p.sections.includes(x.id);
-            const above = rank(x.min) > rank(p.pkg);
-            return (
-              <Check
-                key={x.id}
-                title={sectionName(p, x.id)}
-                checked={on}
-                hint={x.hint}
-                aside={above && !on ? `No ${packageById(x.min).name}` : undefined}
-                onChange={(checked) =>
-                  scope({ sections: checked ? [...p.sections.slice(0, -1), x.id, 'contato'] : p.sections.filter((id) => id !== x.id), structureEdited: true }, 'secoes')
-                }
-              />
-            );
-          })}
-          <Check
-            title="Formulário que encaminha o pedido ao WhatsApp"
-            checked={p.form}
-            hint="Organiza nome e pedido antes de abrir a conversa."
-            aside={!p.form && rank('profissional') > rank(p.pkg) ? 'No Profissional' : undefined}
-            onChange={(checked) => scope({ form: checked }, 'secoes')}
-          />
-        </div>
-        {gate('secoes')}
-      </div>
-
-      {middle.length > 1 && (
-        <div className={b.group}>
-          <span className={b.label} id="rotulo-ordem">
-            Ordem das seções
-          </span>
-          <ol className={b.order} aria-labelledby="rotulo-ordem">
-            {middle.map((id, i) => (
-              <li key={id}>
-                <span>{sectionName(p, id)}</span>
-                <button type="button" onClick={() => update(moveSection(p, id, -1))} disabled={i === 0} aria-label={`Subir ${sectionName(p, id)}`}>
-                  <ArrowUp aria-hidden="true" /> Subir
-                </button>
-                <button type="button" onClick={() => update(moveSection(p, id, 1))} disabled={i === middle.length - 1} aria-label={`Descer ${sectionName(p, id)}`}>
-                  <ArrowDown aria-hidden="true" /> Descer
-                </button>
-              </li>
-            ))}
-          </ol>
-          <p className={b.muted}>Apresentação fica sempre no topo e contato, no fim.</p>
-        </div>
-      )}
-
-      <details className={s.details} id="personalizado" open={p.complex.length > 0}>
-        <summary>Preciso de algo fora dos pacotes</summary>
-        <div className={s.detailsBody}>
-          <p className={b.muted}>Estes itens pedem orçamento personalizado. Sua prévia continua salva.</p>
-          {customNeeds.map((n) => (
-            <Check key={n.id} title={n.name} checked={p.complex.includes(n.id)} onChange={(on) => update({ complex: on ? [...p.complex, n.id] : p.complex.filter((c) => c !== n.id) })} />
-          ))}
-        </div>
-      </details>
-
-      <p className={b.saveNote}>
-        <CheckIcon aria-hidden="true" /> As mudanças aparecem na prévia e ficam salvas neste dispositivo.
-      </p>
-    </section>
   );
 }
 

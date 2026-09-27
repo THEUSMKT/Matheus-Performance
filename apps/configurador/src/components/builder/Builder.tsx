@@ -1,27 +1,39 @@
 'use client';
 /* ==========================================================================
-   Página dedicada à criação da prévia (/criar/).
-   Quatro etapas: Seu negócio → Seu objetivo → Sua identidade → Seu site.
+   Página de criação da prévia (/criar/). Caminho contínuo:
+   A. Conte sobre seu negócio (gravando ou digitando; ou passo a passo)
+   B/C. Revise o texto e gere a prévia
+   D. Sua prévia está pronta (no celular, a prévia abre sozinha)
+   E. Personalize — uma escolha por vez: estilo, cores, títulos, conteúdo,
+      seções — com a prévia ao vivo
+   F. Revise e solicite o desenvolvimento
    O preço do pacote fica sempre à vista; mudanças que pedem outro pacote só
-   são aplicadas depois que o visitante escolhe. Tudo fica salvo neste
-   dispositivo. No celular, "Editar" e "Ver meu site" alternam na mesma
-   etapa; na última, a prévia vem primeiro.
+   são aplicadas depois que a pessoa escolhe. Tudo fica salvo neste
+   dispositivo. No celular, "Personalizar" e "Ver meu site" alternam, e a
+   volta cai exatamente na escolha (e na rolagem) em que a pessoa estava.
    ========================================================================== */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Check, ChevronLeft, Eye, Maximize2, MessageCircle, Monitor, Pencil, Smartphone, X } from 'lucide-react';
-import { brl, packageById, type PackageId } from '@/config/packages';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { ArrowRight, Check, ChevronLeft, Eye, LoaderCircle, Maximize2, MessageCircle, Monitor, Pencil, Smartphone, X } from 'lucide-react';
+import { brl, customNeeds, packageById, type PackageId } from '@/config/packages';
+import { aiEnabled, integrations } from '@/config/integrations';
 import {
+  CHOICE_STEPS,
+  STEP,
   STEP_COUNT,
   checkChange,
   currentPackage,
   helpMessage,
   packageOffer,
+  phaseOf,
+  phases,
   projectMessage,
   sectionName,
+  stepQuestions,
   steps,
   switchPackage,
   type Project,
 } from '@/lib/project';
+import { aiReasonText, applySuggestion, requestSuggestion, type Suggestion } from '@/lib/aiPreview';
 import { track } from '@/lib/analytics';
 import { originTag } from '@/lib/origin';
 import { clearLogo, readLogo, saveLogo } from '@/lib/logo';
@@ -34,20 +46,15 @@ import { useNarrow, useProject } from '../landing/useProject';
 import { SitePreview } from '../preview/SitePreview';
 import { PackageDialog, PriceBar } from './Packages';
 import { PrintSummary, RequestButton, StepSite } from './Site';
-import { StepBusiness, StepIdentity, StepObjective, type StepErrors } from './Steps';
-import { Describe } from './Describe';
-import { aiEnabled } from '@/config/integrations';
-import { applySuggestion, type Suggestion } from '@/lib/aiPreview';
-import { customNeeds } from '@/config/packages';
+import { StepBusiness, StepObjective, type StepErrors } from './Steps';
+import { StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle } from './Choices';
+import { Describe, type DescribePhase } from './Describe';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
-const hints: (string | null)[] = [
-  'Nome e segmento bastam para começar.',
-  'Isso define o botão principal e a ordem das seções.',
-  'Tudo aqui está incluído no preço do pacote.',
-  null,
-];
+const hints: Partial<Record<number, string>> = {
+  [STEP.objetivo]: 'Isso define o botão principal e a ordem das seções.',
+};
 
 export default function Builder() {
   const state = useProject();
@@ -63,12 +70,27 @@ export default function Builder() {
   const [logo, setLogoState] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [included, setIncluded] = useState(false);
-  const [personalize, setPersonalize] = useState(false);
   const [full, setFull] = useState(false);
+  /** Caminho sem descrição (com a IA ligada): nome, segmento e serviço. */
+  const [manual, setManual] = useState(false);
+  const [describePhase, setDescribePhase] = useState<DescribePhase>('escolher');
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
+  /** Prévia gerada que chegou depois de a pessoa sair da etapa. */
+  const [late, setLate] = useState<Suggestion | null>(null);
+  const [aiNotes, setAiNotes] = useState<string[]>([]);
+  const [updated, setUpdated] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
+  const readyHeading = useRef<HTMLHeadingElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const fullRef = useRef<HTMLDialogElement>(null);
-  const focusHeading = useRef(false);
+  const focusAfter = useRef<'heading' | 'ready' | null>(null);
+  const editScroll = useRef(0);
+  const restoreScroll = useRef<number | null>(null);
+  const pNow = useRef(p);
+  pNow.current = p;
+  const prevP = useRef(p);
+  const updatedTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     setLogoState(readLogo());
@@ -82,11 +104,23 @@ export default function Builder() {
 
   // Ao trocar de etapa: topo da página e foco no título (teclado e leitor de tela).
   useEffect(() => {
-    if (!focusHeading.current) return;
-    focusHeading.current = false;
+    const target = focusAfter.current;
+    if (!target) return;
+    focusAfter.current = null;
     window.scrollTo({ top: 0, behavior: 'instant' });
-    heading.current?.focus({ preventScroll: true });
-  }, [p.step]);
+    (target === 'ready' ? readyHeading.current : heading.current)?.focus({ preventScroll: true });
+  }, [p.step, view]);
+
+  // "Prévia atualizada": retorno discreto no celular quando uma escolha muda o site.
+  useEffect(() => {
+    const before = prevP.current;
+    prevP.current = p;
+    if (!narrow || view !== 'edit' || before === p || before.step !== p.step || !CHOICE_STEPS.includes(p.step)) return;
+    setUpdated(true);
+    window.clearTimeout(updatedTimer.current);
+    updatedTimer.current = window.setTimeout(() => setUpdated(false), 1400);
+  }, [p, narrow, view]);
+  useEffect(() => () => window.clearTimeout(updatedTimer.current), []);
 
   useEffect(() => {
     const d = fullRef.current;
@@ -110,15 +144,22 @@ export default function Builder() {
     if (!saveLogo(dataUrl)) setNotice('A logo aparece na prévia, mas o navegador não conseguiu guardá-la: ela some se a página for recarregada. Você pode continuar normalmente.');
   }
 
-  function go(target: number) {
+  /** Passo a passo: nome e segmento antes de sair do negócio. */
+  function businessErrors(): StepErrors {
+    const found: StepErrors = {};
+    if (p.name.trim().length < 2) found.name = 'Informe o nome da empresa.';
+    if (!p.segment) found.segment = 'Escolha o segmento da empresa.';
+    else if (p.segment === 'outro' && p.segmentOther.trim().length < 2) found.segment = 'Conte qual é o segmento.';
+    return found;
+  }
+
+  function go(target: number, { validate = true } = {}) {
     const to = Math.max(0, Math.min(STEP_COUNT - 1, target));
-    if (to > p.step && p.step === 0) {
-      const found: StepErrors = {};
-      if (p.name.trim().length < 2) found.name = 'Informe o nome da empresa.';
-      if (!p.segment) found.segment = 'Escolha o segmento da empresa.';
-      else if (p.segment === 'outro' && p.segmentOther.trim().length < 2) found.segment = 'Conte qual é o segmento.';
+    if (validate && to > p.step && p.step === STEP.negocio) {
+      const found = businessErrors();
       if (found.name || found.segment) {
         setErrors(found);
+        setManual(true);
         setView('edit');
         requestAnimationFrame(() => {
           if (found.name) nameRef.current?.focus();
@@ -128,15 +169,24 @@ export default function Builder() {
       }
     }
     if (to > p.step) for (let i = p.step; i < to; i++) track('step_complete', { step: i + 1 });
-    if (to === STEP_COUNT - 1) track('preview_view', { source: 'etapa', step: to + 1 });
+    if (to === STEP.pronta || to === STEP.revisao) track('preview_view', { source: 'etapa', step: to + 1 });
     setErrors({});
     setPending(null);
     setNotice('');
-    setView('edit');
-    if (to !== STEP_COUNT - 1) setPersonalize(false);
-    focusHeading.current = true;
+    setUpdated(false);
+    // A prévia pronta abre direto no celular; nas escolhas, a pessoa decide quando ver.
+    const ready = narrow && to === STEP.pronta;
+    setView(ready ? 'preview' : 'edit');
+    focusAfter.current = ready ? 'ready' : 'heading';
     replace({ ...p, step: to });
   }
+
+  const back = () => {
+    if (p.step === STEP.pronta || p.step === STEP.estilo) return go(p.step === STEP.estilo ? STEP.pronta : backFromReady());
+    go(p.step - 1);
+  };
+  /** "Editar minha descrição" volta ao começo; no passo a passo, ao objetivo. */
+  const backFromReady = () => (aiEnabled && !manual ? STEP.negocio : STEP.objetivo);
 
   /** Troca de pacote escolhida pelo visitante. */
   function applyPackage(to: PackageId, next: Project, source: string) {
@@ -193,8 +243,7 @@ export default function Builder() {
   function openCustom() {
     setIncluded(false);
     setPending(null);
-    if (p.step !== STEP_COUNT - 1) go(STEP_COUNT - 1);
-    setPersonalize(true);
+    if (p.step !== STEP.secoes) go(STEP.secoes, { validate: false });
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         const el = document.getElementById('personalizado') as HTMLDetailsElement | null;
@@ -207,37 +256,68 @@ export default function Builder() {
     );
   }
 
-  /** Sugestão da IA: aplica nos layouts existentes e explica o que ficou de fora. */
+  /** Pede a prévia à IA. Continua mesmo se a pessoa trocar de etapa. */
+  async function generate(text: string) {
+    if (generating) return;
+    setGenerating(true);
+    setGenError('');
+    setLate(null);
+    const result = await requestSuggestion(text, pNow.current.pkg, integrations.aiEndpoint);
+    setGenerating(false);
+    if (!result.ok) {
+      track('ai_generate', { result: 'erro', reason: result.reason });
+      setGenError(aiReasonText[result.reason]);
+      return;
+    }
+    track('ai_generate', { result: 'ok' });
+    // Saiu da etapa enquanto gerava: não muda de tela sozinho; avisa com "Ver minha prévia".
+    if (pNow.current.step !== STEP.negocio) return setLate(result.suggestion);
+    applyAi(result.suggestion);
+  }
+
+  /** Sugestão da IA: aplica nos layouts existentes e abre a prévia pronta. */
   function applyAi(sug: Suggestion) {
-    const next = applySuggestion(p, sug);
-    const notes = ['Prévia montada a partir da sua descrição. Os textos são sugestões: revise tudo em “Personalizar meu site”.'];
+    const next = applySuggestion(pNow.current, sug);
+    const notes: string[] = [];
     if (sug.extraSections.length) {
       const names = sug.extraSections.map((id) => sectionName(next, id)).join(', ');
-      notes.push(`Também combinam com o seu site: ${names} — de outro pacote; você pode incluir em “Personalizar meu site”.`);
+      notes.push(`Também combinam com o seu site: ${names}. São de outro pacote — você decide em “Seções”.`);
     }
     if (sug.needs.length) {
       const names = customNeeds.filter((n) => sug.needs.includes(n.id)).map((n) => n.name.toLowerCase()).join(', ');
-      notes.push(`Sua descrição cita itens fora dos pacotes (${names}). Se precisar deles, marque em “Preciso de algo fora dos pacotes”.`);
+      notes.push(`Sua descrição cita itens fora dos pacotes (${names}). Se precisar deles, marque em “Seções”.`);
     }
-    if (next.step === 0) notes.push('Confira o nome da empresa e o segmento para continuar.');
+    setAiNotes(notes);
+    setLate(null);
     setErrors({});
     setPending(null);
-    setView('edit');
-    focusHeading.current = next.step !== p.step;
+    setNotice('');
+    setView(narrow ? 'preview' : 'edit');
+    // Foco no aviso "Sua prévia está pronta" (no celular, dentro da prévia), depois de renderizar.
+    focusAfter.current = narrow ? 'ready' : 'heading';
     replace(next);
-    setNotice(notes.join(' '));
     track('preview_view', { source: 'ia', step: next.step + 1 });
   }
 
-  function openPersonalize(open: boolean) {
-    setPersonalize(open);
-    if (open) requestAnimationFrame(() => document.getElementById('personalizar-titulo')?.focus());
-  }
-
   function showPreview() {
+    editScroll.current = window.scrollY;
     setView('preview');
+    window.scrollTo({ top: 0, behavior: 'instant' });
     track('preview_view', { source: 'alternancia', step: p.step + 1 });
   }
+
+  /** Volta à escolha em que a pessoa estava, na mesma rolagem. */
+  function backToEdit() {
+    restoreScroll.current = editScroll.current;
+    setView('edit');
+  }
+  // Antes de pintar: a volta já aparece na rolagem de antes (sem pulo para o topo).
+  useLayoutEffect(() => {
+    if (view !== 'edit' || restoreScroll.current === null) return;
+    window.scrollTo({ top: restoreScroll.current, behavior: 'instant' });
+    restoreScroll.current = null;
+    heading.current?.focus({ preventScroll: true });
+  }, [view]);
 
   function openFull() {
     setFull(true);
@@ -249,12 +329,21 @@ export default function Builder() {
     requestAnimationFrame(() => document.getElementById('pedido')?.scrollIntoView({ block: 'start' }));
   }
 
-  const gate = (anchor: string): ReactNode =>
-    pending?.anchor === anchor ? <ConfirmBox pending={pending} onCancel={() => setPending(null)} /> : null;
+  const gate = (anchor: string): ReactNode => (pending?.anchor === anchor ? <ConfirmBox pending={pending} onCancel={() => setPending(null)} /> : null);
 
   const message = projectMessage(p, originTag(origin), { logo: Boolean(logo) });
-  const last = p.step === STEP_COUNT - 1;
-  const nextLabel = p.step === STEP_COUNT - 2 ? 'Ver meu site' : 'Continuar';
+  const step = p.step;
+  const choiceIndex = CHOICE_STEPS.indexOf(step);
+  const phase = phaseOf(step);
+  const describing = step === STEP.negocio && aiEnabled && !manual;
+  /** Gravando ou transcrevendo: só a ação da gravação fica na tela. */
+  const capturing = describing && (describePhase === 'iniciando' || describePhase === 'gravando' || describePhase === 'transcrevendo');
+  /** Sem barras nem "Continuar" competindo com a gravação ou com "Montando sua prévia…". */
+  const busy = capturing || (describing && generating);
+  /** Já existe uma prévia montada para voltar (depois de gerar ou do passo a passo). */
+  const hasPreview = Boolean(p.segment) && (p.aiFilled.segment !== '' || p.objectiveSet || p.identitySet);
+  const nextLabel = step === STEP.objetivo ? 'Ver minha prévia' : step === STEP.secoes ? 'Revisar e solicitar' : 'Continuar';
+  const editLabel = backFromReady() === STEP.negocio ? 'Editar minha descrição' : 'Voltar ao objetivo';
 
   const preview = (mode: 'mobile' | 'desktop', inFull = false) =>
     mode === 'desktop' ? (
@@ -271,6 +360,181 @@ export default function Builder() {
       </PhoneFrame>
     );
 
+  /* Conteúdo da etapa atual */
+  let body: ReactNode = null;
+  if (step === STEP.negocio) {
+    body = (
+      <>
+        {describing && (
+          <>
+            <Describe generating={generating} error={genError} onGenerate={generate} onPhase={setDescribePhase} clearError={() => setGenError('')} />
+            {!capturing && (
+              <p className={b.orSteps}>
+                <button type="button" className={b.textButton} onClick={() => setManual(true)}>
+                  Prefiro escolher tudo passo a passo
+                </button>
+              </p>
+            )}
+          </>
+        )}
+        {!describing && (
+          <>
+            <p className={b.hint}>Nome e segmento bastam para começar.</p>
+            <StepBusiness p={p} edit={edit} replace={replace} errors={errors} nameRef={nameRef} />
+            {aiEnabled && (
+              <p className={b.orSteps}>
+                <button type="button" className={b.textButton} onClick={() => setManual(false)}>
+                  Prefiro descrever o negócio (gravando ou digitando)
+                </button>
+              </p>
+            )}
+          </>
+        )}
+      </>
+    );
+  } else if (step === STEP.objetivo) {
+    body = (
+      <>
+        <StepObjective p={p} replace={replace} onUpgrade={offerUpgrade} />
+        {gate('objetivo')}
+      </>
+    );
+  } else if (step === STEP.pronta) {
+    body = (
+      <StepReady
+        p={p}
+        edit={edit}
+        notes={aiNotes}
+        narrow={narrow}
+        onPersonalize={() => go(STEP.estilo)}
+        onEditDescription={() => go(backFromReady(), { validate: false })}
+        editLabel={editLabel}
+        onReview={() => go(STEP.revisao)}
+      />
+    );
+  } else if (step === STEP.estilo) body = <StepStyle p={p} edit={edit} />;
+  else if (step === STEP.cores) body = <StepColors p={p} edit={edit} />;
+  else if (step === STEP.titulos) body = <StepFonts p={p} edit={edit} />;
+  else if (step === STEP.conteudo) body = <StepContent p={p} edit={edit} logo={logo} setLogo={setLogo} />;
+  else if (step === STEP.secoes) body = <StepSections p={p} edit={edit} scope={scope} gate={gate} />;
+  else if (step === STEP.revisao)
+    body = (
+      <StepSite
+        p={p}
+        update={update}
+        gate={gate}
+        origin={origin}
+        message={message}
+        logo={Boolean(logo)}
+        formOpen={formOpen}
+        openForm={openForm}
+        onIncluded={() => setIncluded(true)}
+        onUpgrade={offerUpgrade}
+        go={(to) => go(to, { validate: false })}
+      />
+    );
+
+  /* Barra do celular: uma ação principal por vez, nunca durante gravação ou geração. */
+  let bar: ReactNode = null;
+  if (!busy) {
+    if (view === 'preview') {
+      if (step === STEP.pronta)
+        bar = (
+          <>
+            <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={() => go(backFromReady(), { validate: false })}>
+              {editLabel}
+            </button>
+            <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.estilo)}>
+              Personalizar meu site
+            </button>
+          </>
+        );
+      else if (step === STEP.revisao)
+        bar = (
+          <>
+            <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={backToEdit}>
+              <ChevronLeft aria-hidden="true" /> Voltar ao resumo
+            </button>
+            <RequestButton p={p} message={message} onForm={() => (backToEdit(), openForm())} className={b.next} />
+          </>
+        );
+      else
+        bar = (
+          <button type="button" className={`${s.primary} ${b.next}`} onClick={backToEdit}>
+            <Pencil aria-hidden="true" /> {step === STEP.negocio || step === STEP.objetivo ? 'Voltar a editar' : `Voltar para “${steps[step]}”`}
+          </button>
+        );
+    } else if (step === STEP.negocio) {
+      if (!describing)
+        bar = (
+          <button type="button" className={`${s.primary} ${b.next}`} disabled={!ready} onClick={() => go(STEP.objetivo)}>
+            Continuar
+          </button>
+        );
+      else if (hasPreview)
+        bar = (
+          <button type="button" className={`${b.backButton} ${b.next}`} onClick={() => go(STEP.pronta, { validate: false })}>
+            Voltar para minha prévia <ArrowRight aria-hidden="true" />
+          </button>
+        );
+    } else if (step === STEP.pronta)
+      bar = (
+        <>
+          <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={showPreview}>
+            <Eye aria-hidden="true" /> Ver meu site
+          </button>
+          <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.estilo)}>
+            Personalizar meu site
+          </button>
+        </>
+      );
+    else if (step === STEP.revisao)
+      bar = (
+        <>
+          <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={showPreview}>
+            <Eye aria-hidden="true" /> Ver meu site
+          </button>
+          <RequestButton p={p} message={message} onForm={openForm} className={b.next} />
+        </>
+      );
+    else
+      bar = (
+        <>
+          <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={showPreview}>
+            <Eye aria-hidden="true" /> Ver meu site
+          </button>
+          <button type="button" className={`${s.primary} ${b.next}`} disabled={!ready} onClick={() => go(step + 1)}>
+            {nextLabel} <ArrowRight aria-hidden="true" />
+          </button>
+        </>
+      );
+  }
+
+  /* Ações no fim da coluna (computador) */
+  let desk: ReactNode = null;
+  if (!busy && step !== STEP.pronta) {
+    const showNext = step !== STEP.revisao && !(step === STEP.negocio && describing);
+    desk = (
+      <>
+        {step > STEP.negocio && (
+          <button type="button" className={b.backButton} onClick={back}>
+            Voltar
+          </button>
+        )}
+        {step === STEP.negocio && describing && hasPreview && (
+          <button type="button" className={b.backButton} onClick={() => go(STEP.pronta, { validate: false })}>
+            Voltar para minha prévia
+          </button>
+        )}
+        {showNext && (
+          <button type="button" className={`${s.primary} ${b.next}`} disabled={!ready} onClick={() => go(step === STEP.negocio ? STEP.objetivo : step + 1)}>
+            {nextLabel} <ArrowRight aria-hidden="true" />
+          </button>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className={`${s.page} ${b.builder}`}>
       <header className={b.header}>
@@ -286,29 +550,48 @@ export default function Builder() {
         <div className={s.wrap}>
           <div className={b.top}>
             <div className={b.progress}>
-              <span>
-                Etapa {p.step + 1} de {STEP_COUNT}
-              </span>
-              <span className={b.progressBar} aria-hidden="true">
-                <i style={{ width: `${((p.step + 1) / STEP_COUNT) * 100}%` }} />
-              </span>
+              <ol className={b.phases} aria-label="Etapas">
+                {phases.map((ph, i) => (
+                  <li key={ph.name} aria-current={i === phase ? 'step' : undefined} data-done={i < phase || undefined}>
+                    <span className={b.phaseDot} aria-hidden="true">
+                      {i < phase ? <Check /> : i + 1}
+                    </span>
+                    <span className={b.phaseName}>{ph.name}</span>
+                  </li>
+                ))}
+              </ol>
               {saved && (
                 <span className={b.saved}>
-                  <Check aria-hidden="true" /> Salvo neste dispositivo
+                  <Check aria-hidden="true" /> Salvo<span className={b.savedLong}> neste dispositivo</span>
                 </span>
               )}
             </div>
-            <ol className={b.stepNames} aria-label="Etapas">
-              {steps.map((name, i) => (
-                <li key={name} aria-current={i === p.step ? 'step' : undefined} data-done={i < p.step || undefined}>
-                  {name}
-                </li>
-              ))}
-            </ol>
+            <p className={b.where} aria-live="polite">
+              {phases[phase].name}
+              {choiceIndex >= 0 && ` · Escolha ${choiceIndex + 1} de ${CHOICE_STEPS.length}: ${steps[step]}`}
+            </p>
             <PriceBar p={p} onIncluded={() => setIncluded(true)} />
             {notice && (
               <p className={b.notice} role="status">
                 {notice}
+              </p>
+            )}
+            {late && (
+              <div className={b.lateBox} role="status">
+                <p>A prévia da sua descrição ficou pronta.</p>
+                <div className={s.actionRow}>
+                  <button type="button" className={`${s.primary} ${s.small}`} onClick={() => applyAi(late)}>
+                    Ver minha prévia
+                  </button>
+                  <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => setLate(null)}>
+                    Agora não
+                  </button>
+                </div>
+              </div>
+            )}
+            {generating && step !== STEP.negocio && (
+              <p className={b.working} role="status">
+                <LoaderCircle aria-hidden="true" className={b.spin} /> Montando sua prévia…
               </p>
             )}
             {resetting && (
@@ -322,7 +605,8 @@ export default function Builder() {
                       reset();
                       setLogoState(null);
                       setResetting(false);
-                      setPersonalize(false);
+                      setManual(false);
+                      setAiNotes([]);
                       setView('edit');
                       window.scrollTo({ top: 0, behavior: 'instant' });
                       requestAnimationFrame(() => heading.current?.focus({ preventScroll: true }));
@@ -336,53 +620,25 @@ export default function Builder() {
                 </div>
               </div>
             )}
-            {!last && (
-              <div className={b.viewSwitch} role="group" aria-label="Alternar entre editar e ver o site">
-                <button type="button" aria-pressed={view === 'edit'} onClick={() => setView('edit')}>
-                  <Pencil aria-hidden="true" /> Editar
-                </button>
-                <button type="button" aria-pressed={view === 'preview'} onClick={showPreview}>
-                  <Eye aria-hidden="true" /> Ver meu site
-                </button>
-              </div>
-            )}
           </div>
 
-          <div className={b.grid} data-view={view} data-step={p.step}>
+          <div className={b.grid} data-view={view} data-step={step}>
             <section className={b.editor} aria-labelledby="etapa-titulo">
-              <h1 id="etapa-titulo" ref={heading} tabIndex={-1} className={b.stepTitle}>
-                {steps[p.step]}
+              {step > STEP.negocio && step !== STEP.pronta && (
+                <button type="button" className={b.backLink} onClick={back}>
+                  <ChevronLeft aria-hidden="true" /> Voltar
+                </button>
+              )}
+              <h1 id="etapa-titulo" ref={heading} tabIndex={-1} className={b.stepTitle} data-ready={step === STEP.pronta || undefined}>
+                {step === STEP.pronta && <Check aria-hidden="true" className={b.readyIcon} />}
+                {stepQuestions[step]}
               </h1>
-              {hints[p.step] && <p className={b.hint}>{hints[p.step]}</p>}
+              {hints[step] && <p className={b.hint}>{hints[step]}</p>}
               {pending && !pending.anchor && <ConfirmBox pending={pending} onCancel={() => setPending(null)} />}
 
-              {p.step === 0 && aiEnabled && <Describe p={p} onSuggestion={applyAi} />}
-              {p.step === 0 && <StepBusiness p={p} edit={edit} replace={replace} errors={errors} nameRef={nameRef} />}
-              {p.step === 1 && (
-                <>
-                  <StepObjective p={p} replace={replace} onUpgrade={offerUpgrade} />
-                  {gate('objetivo')}
-                </>
-              )}
-              {p.step === 2 && <StepIdentity p={p} edit={edit} logo={logo} setLogo={setLogo} />}
-              {last && (
-                <StepSite
-                  p={p}
-                  update={update}
-                  scope={scope}
-                  gate={gate}
-                  origin={origin}
-                  message={message}
-                  logo={Boolean(logo)}
-                  personalize={personalize}
-                  setPersonalize={openPersonalize}
-                  formOpen={formOpen}
-                  openForm={openForm}
-                  onIncluded={() => setIncluded(true)}
-                  onUpgrade={offerUpgrade}
-                  go={go}
-                />
-              )}
+              <div key={step} className={b.stepBody}>
+                {body}
+              </div>
 
               <div className={b.editorFoot}>
                 <a
@@ -391,36 +647,33 @@ export default function Builder() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {
-                    track('help_open', { step: p.step + 1 });
+                    track('help_open', { step: step + 1 });
                     track('whatsapp_open', { context: 'ajuda' });
                   }}
                 >
                   <MessageCircle aria-hidden="true" /> Dúvidas? Fale no WhatsApp
                 </a>
-                {hasProgress && !resetting && (
+                {hasProgress && !resetting && !busy && (
                   <button type="button" className={b.restart} onClick={() => setResetting(true)}>
                     Começar novamente
                   </button>
                 )}
               </div>
 
-              <div className={b.desktopActions}>
-                {p.step > 0 && (
-                  <button type="button" className={b.backButton} onClick={() => go(p.step - 1)}>
-                    Voltar
-                  </button>
-                )}
-                {!last && (
-                  <button type="button" className={`${s.primary} ${b.next}`} disabled={!ready} onClick={() => go(p.step + 1)}>
-                    {nextLabel}
-                  </button>
-                )}
-              </div>
+              {desk && <div className={b.desktopActions}>{desk}</div>}
             </section>
 
             <aside className={b.previewPane} aria-label="Prévia do seu site">
+              {step === STEP.pronta && (
+                <div className={b.readyBanner}>
+                  <h2 ref={readyHeading} tabIndex={-1} id="pronta-titulo">
+                    <Check aria-hidden="true" /> Sua prévia está pronta
+                  </h2>
+                  <p>Role para ver o site inteiro. Depois, personalize.</p>
+                </div>
+              )}
               <div className={b.previewTop}>
-                <span className={b.previewLabel}>Prévia</span>
+                <span className={b.previewLabel}>{view === 'preview' ? 'Seu site' : 'Prévia'}</span>
                 <span className={b.device} role="group" aria-label="Ver a prévia no">
                   <button type="button" aria-pressed={device === 'mobile'} onClick={() => setDevice('mobile')} aria-label="Celular">
                     <Smartphone aria-hidden="true" />
@@ -441,27 +694,15 @@ export default function Builder() {
         </div>
       </main>
 
-      {!typing && (
-        <div className={b.bottomBar} data-bar="configurador">
-          {last ? (
-            <>
-              <button type="button" className={`${b.backButton} ${b.iconButton}`} onClick={() => openPersonalize(!personalize)} aria-expanded={personalize} aria-label="Personalizar meu site">
-                <Pencil aria-hidden="true" />
-              </button>
-              <RequestButton p={p} message={message} onForm={openForm} className={b.next} />
-            </>
-          ) : (
-            <>
-              {p.step > 0 && (
-                <button type="button" className={b.backButton} onClick={() => go(p.step - 1)}>
-                  Voltar
-                </button>
-              )}
-              <button type="button" className={`${s.primary} ${b.next}`} disabled={!ready} onClick={() => go(p.step + 1)}>
-                {nextLabel}
-              </button>
-            </>
-          )}
+      {updated && view === 'edit' && CHOICE_STEPS.includes(step) && (
+        <p className={b.updated} role="status">
+          <Check aria-hidden="true" /> Prévia atualizada
+        </p>
+      )}
+
+      {!typing && bar && (
+        <div className={b.bottomBar} data-bar="configurador" data-view={view}>
+          {bar}
         </div>
       )}
 
@@ -498,4 +739,3 @@ export default function Builder() {
     </div>
   );
 }
-

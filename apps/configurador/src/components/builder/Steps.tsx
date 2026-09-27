@@ -1,16 +1,12 @@
 'use client';
 /* ==========================================================================
-   Etapas 1 a 3 do configurador: Seu negócio, Seu objetivo e Sua identidade.
+   Caminho passo a passo (sem descrição): Seu negócio e Seu objetivo.
    Só nome e segmento são obrigatórios; o resto tem sugestão pronta.
    ========================================================================== */
-import { useState, type RefObject } from 'react';
-import { Building2, CalendarClock, Images, LayoutGrid, MessageCircle, ReceiptText, ShoppingBag, Sparkles } from 'lucide-react';
-import { contact } from '@/config/contact';
+import type { RefObject } from 'react';
+import { Building2, CalendarClock, Images, LayoutGrid, ReceiptText, ShoppingBag, Sparkles } from 'lucide-react';
 import { brl, packageById, rank } from '@/config/packages';
-import { track } from '@/lib/analytics';
-import { whatsappLink } from '@/lib/whatsapp';
 import {
-  directions,
   dropStaleCopy,
   objectiveOf,
   objectives,
@@ -22,7 +18,6 @@ import {
   type Project,
 } from '@/lib/project';
 import { Radios } from '../landing/Controls';
-import { LogoField, StylePicker, SwatchPicker } from './Pickers';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
@@ -190,7 +185,7 @@ export function StepObjective({ p, replace, onUpgrade }: { p: Project; replace: 
         {p.objective === 'agendamento' && (
           <p className={b.muted}>Não é uma agenda com horários em tempo real: esse tipo de agenda é um projeto personalizado.</p>
         )}
-        <p className={b.muted}>Você ajusta seções e textos no fim, em “Personalizar meu site”.</p>
+        <p className={b.muted}>Depois da prévia, você ajusta estilo, cores, textos e seções — uma escolha por vez.</p>
       </div>
 
       {rank(rec.pkg) > rank(p.pkg) && (
@@ -205,73 +200,6 @@ export function StepObjective({ p, replace, onUpgrade }: { p: Project; replace: 
           </div>
         </div>
       )}
-    </>
-  );
-}
-
-/* ── Etapa 3 — Sua identidade ──────────────────────────────────────────── */
-
-export function StepIdentity({ p, edit, logo, setLogo }: { p: Project; edit: Edit; logo: string | null; setLogo: (v: string | null) => void }) {
-  const seg = segmentOf(p);
-  const suggested = seg.styles;
-  const others: string[] = directions.map((d) => d.id).filter((id) => !suggested.includes(id));
-  const [more, setMore] = useState(others.includes(p.direction));
-  const choose = (patch: Partial<Project>) => edit({ ...patch, identitySet: true });
-
-  return (
-    <>
-      <div className={b.group}>
-        <div className={b.labelRow}>
-          <span className={b.label} id="rotulo-estilo">
-            Estilo
-          </span>
-          <button
-            type="button"
-            className={b.textButton}
-            onClick={() => {
-              setMore(false);
-              choose({ direction: suggested[0], palette: seg.palette, custom: null, font: 'auto' });
-            }}
-          >
-            Escolher por mim
-          </button>
-        </div>
-        <StylePicker p={p} ids={suggested} labelledBy="rotulo-estilo" onChange={(id) => choose({ direction: id, font: 'auto' })} />
-        <details className={s.details} open={more} onToggle={(ev) => setMore((ev.target as HTMLDetailsElement).open)}>
-          <summary>Ver outros estilos</summary>
-          <div className={s.detailsBody}>
-            <span className={s.srOnly} id="rotulo-outros-estilos">
-              Outros estilos
-            </span>
-            <StylePicker p={p} ids={others} labelledBy="rotulo-outros-estilos" onChange={(id) => choose({ direction: id, font: 'auto' })} />
-            <a
-              className={b.otherStyle}
-              href={whatsappLink(contact.whatsappEstilo)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => track('whatsapp_open', { context: 'estilo_diferente' })}
-            >
-              <MessageCircle aria-hidden="true" /> Quer um estilo fora da lista? Fale no WhatsApp
-            </a>
-          </div>
-        </details>
-      </div>
-
-      <div className={b.group}>
-        <span className={b.label} id="rotulo-cores">
-          Cores
-        </span>
-        <SwatchPicker p={p} onPalette={(id) => choose({ palette: id, custom: null })} onCustom={(hex) => choose({ custom: hex })} />
-      </div>
-
-      <div className={b.group}>
-        <span className={b.label}>
-          Logo <small>Opcional</small>
-        </span>
-        <LogoField logo={logo} onChange={setLogo} />
-      </div>
-
-      <p className={b.included}>Estilos, cores da marca e aplicação da logo estão incluídos em todos os pacotes.</p>
     </>
   );
 }

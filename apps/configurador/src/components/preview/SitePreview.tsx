@@ -10,7 +10,7 @@
    ========================================================================== */
 import type { CSSProperties, ReactNode } from 'react';
 import { Clock, HelpCircle, ImageIcon, MapPin, MessageCircle, Quote } from 'lucide-react';
-import { contrastInk, objectiveOf, palettes, sectionName, siteContent, type Project } from '@/lib/project';
+import { contrastInk, headFont, objectiveOf, palettes, sectionName, siteContent, type Project } from '@/lib/project';
 import { asset } from '../landing/Chrome';
 import s from './Preview.module.css';
 
@@ -101,12 +101,12 @@ export function SitePreview({
   const palette = palettes.find((x) => x.id === p.palette) ?? palettes[0];
   const accent = p.custom ?? palette.accent;
   const image = asset(`/demo/${c.image}.svg`);
-  const serif = p.font === 'serif' || (p.font === 'auto' && (p.direction === 'elegante' || p.direction === 'sofisticado'));
+  const head = headFont(p.font, p.direction);
   const vars = {
     '--acc': accent,
     '--on': contrastInk(accent),
     '--soft': p.custom ? `color-mix(in srgb, ${accent} 8%, #fff)` : palette.bg,
-    '--head': serif ? 'Georgia, "Times New Roman", serif' : p.direction === 'marcante' ? '"Arial Black", "Segoe UI", Arial, sans-serif' : '"Segoe UI", system-ui, Arial, sans-serif',
+    '--head': head,
   } as CSSProperties;
 
   const middle = p.sections.filter((id) => id !== 'apresentacao' && id !== 'contato');
