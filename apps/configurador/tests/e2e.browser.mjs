@@ -572,6 +572,36 @@ await scenario('IA: descrição vira prévia nos layouts existentes; falha não 
   assert((await page.locator('main').innerText()).includes('Google Gemini'));
 });
 
+await scenario('IA: gerar de novo troca o segmento que a IA sugeriu, mas não o escolhido à mão', async (page) => {
+  const base = {
+    name: '', segmentOther: '', service: '', objective: 'orcamento', headline: '', description: '', services: [],
+    sections: [], extraSections: [], direction: 'essencial', palette: 'azul', brandColor: null, needs: [],
+    previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] },
+  };
+  const replies = [{ ...base, segment: 'consultoria' }, { ...base, segment: 'imoveis' }, { ...base, segment: 'consultoria' }];
+  await page.route('https://ia.test/preview', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, suggestion: replies.shift() }) }));
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  const checked = () => page.locator('[role=radio][aria-checked=true]').first().innerText();
+  const generate = async (label) => {
+    await page.locator('#descricao-ia').fill('Sou corretora de imóveis e quero mostrar imóveis e agendar visitas.');
+    await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+    await page.waitForFunction((t) => document.querySelector('[role=radio][aria-checked=true]')?.textContent?.includes(t), label);
+  };
+  await generate('Consultoria');
+  await generate('Imóveis e corretores');
+  assert.equal((await checked()).trim(), 'Imóveis e corretores', 'a segunda geração troca o segmento que a primeira sugeriu');
+  await page.getByRole('radio', { name: 'Alimentação' }).click();
+  await page.locator('#descricao-ia').fill('Sou corretora de imóveis e quero mostrar imóveis e agendar visitas.');
+  const answered = page.waitForResponse('https://ia.test/preview');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await answered;
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).waitFor();
+  assert.equal(replies.length, 0, 'a terceira resposta chegou');
+  assert.equal((await checked()).trim(), 'Alimentação', 'segmento escolhido à mão continua');
+});
+
 /* ── Com receptor de pedidos ────────────────────────────────────────────── */
 
 await scenario('Receptor: contato só ao avançar, falha sem perder dados, confirmação só com resposta real', async (page) => {

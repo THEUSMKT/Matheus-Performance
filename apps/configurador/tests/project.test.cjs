@@ -540,6 +540,30 @@ test('IA: aplicar a sugestão preserva o que foi digitado e nunca muda pacote ne
   assert.equal(chosen.segment, 'beleza', 'segmento escolhido pela pessoa vale mais');
 });
 
+test('IA: gerar de novo troca o que a IA sugeriu, nunca o que a pessoa digitou ou escolheu', () => {
+  const first = ai.sanitizeSuggestion({ ...goodAnswer, name: 'Clara Consultoria', segment: 'consultoria' });
+  const second = ai.sanitizeSuggestion({ ...goodAnswer, name: 'Clara Imóveis', segment: 'imoveis', service: 'Compra e venda de imóveis' });
+  const a = ai.applySuggestion(model.initialProject(), first);
+  assert.deepEqual(a.aiFilled, { name: 'Clara Consultoria', segment: 'consultoria', segmentOther: '' });
+  const b = ai.applySuggestion(model.normalizeProject({ ...a, step: 0 }), second);
+  assert.equal(b.segment, 'imoveis', 'segmento que veio da IA pode mudar');
+  assert.equal(b.name, 'Clara Imóveis', 'nome que veio da IA pode mudar');
+  const typed = ai.applySuggestion(model.normalizeProject({ ...a, name: 'Minha Imobiliária', step: 0 }), second);
+  assert.equal(typed.name, 'Minha Imobiliária', 'nome digitado depois da IA vale mais');
+  assert.equal(typed.aiFilled.name, '');
+  assert.equal(ai.applySuggestion(typed, first).name, 'Minha Imobiliária', 'e continua valendo nas próximas');
+  const picked = ai.applySuggestion(model.normalizeProject({ ...a, segment: 'imoveis', aiFilled: { ...a.aiFilled, segment: '' } }), first);
+  assert.equal(picked.segment, 'imoveis', 'segmento escolhido à mão depois da IA vale mais');
+  const other = ai.applySuggestion(model.initialProject(), ai.sanitizeSuggestion({ ...goodAnswer, segment: 'outro', segmentOther: 'Escola de idiomas' }));
+  assert.equal(other.aiFilled.segmentOther, 'Escola de idiomas');
+  const again = ai.applySuggestion(other, ai.sanitizeSuggestion({ ...goodAnswer, segment: 'outro', segmentOther: 'Escola de música' }));
+  assert.equal(again.segmentOther, 'Escola de música');
+  const saved = model.normalizeProject(JSON.parse(JSON.stringify(b)));
+  assert.deepEqual(saved.aiFilled, b.aiFilled, 'fica salvo no dispositivo');
+  assert.deepEqual(model.normalizeProject({ ...b, aiFilled: { name: 1, segment: 'x', segmentOther: null } }).aiFilled, { name: '', segment: '', segmentOther: '' });
+  assert.deepEqual(model.normalizeProject({ ...b, aiFilled: undefined }).aiFilled, { name: '', segment: '', segmentOther: '' }, 'projetos antigos: tudo conta como escolha da pessoa');
+});
+
 test('IA: resposta do Gemini — bloqueio, vazio e JSON inválido viram falha', () => {
   assert.equal(ai.parseGeminiResponse(geminiBody(goodAnswer)).ok, true);
   assert.deepEqual(ai.parseGeminiResponse({ promptFeedback: { blockReason: 'SAFETY' } }), { ok: false, reason: 'bloqueado' });

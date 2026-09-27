@@ -254,12 +254,25 @@ export function sanitizeSuggestion(raw: unknown, pkg: PackageId = 'essencial'): 
  * contato nunca mudam. Os textos da IA ficam como textos editáveis.
  */
 export function applySuggestion(p: Project, s: Suggestion): Project {
-  const segment = p.segment || s.segment;
+  // O que a prévia anterior preencheu pode ser trocado; o que o visitante
+  // digitou ou escolheu, não.
+  const prev = p.aiFilled;
+  const ownName = Boolean(p.name.trim()) && p.name !== prev.name;
+  const ownSegment = Boolean(p.segment) && p.segment !== prev.segment;
+  const segment = ownSegment ? p.segment : s.segment;
+  const ownOther = segment === 'outro' && Boolean(p.segmentOther.trim()) && p.segmentOther !== prev.segmentOther;
+  const name = ownName ? p.name : s.name;
+  const segmentOther = segment === 'outro' ? (ownOther ? p.segmentOther : s.segmentOther) : p.segmentOther;
   const next = normalizeProject({
     ...p,
-    name: p.name.trim() ? p.name : s.name,
+    name,
     segment,
-    segmentOther: segment === 'outro' ? p.segmentOther.trim() || s.segmentOther : p.segmentOther,
+    segmentOther,
+    aiFilled: {
+      name: ownName ? '' : name,
+      segment: ownSegment ? '' : segment,
+      segmentOther: segment === 'outro' && !ownOther ? segmentOther : '',
+    },
     service: s.service || p.service,
     serviceLater: s.service ? false : p.serviceLater,
     objective: s.objective,
