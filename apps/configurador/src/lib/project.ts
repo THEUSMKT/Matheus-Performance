@@ -691,7 +691,7 @@ export function siteContent(p: Project): SiteContent {
     cta: obj.cta,
     services: own.length ? own : suggestedServices(p),
     servicesSuggested: !own.length,
-    image: rule?.image ?? (fits ? seg.image : NEUTRAL_IMAGE),
+    image: rule?.image ?? (fits ? seg.image : seg.neutral ?? NEUTRAL_IMAGE),
     previewCopy: p.previewCopy,
   };
 }

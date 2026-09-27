@@ -206,7 +206,10 @@ test('Nome e imagem de exemplo só aparecem quando combinam com o serviço', () 
   assert.equal(at('local', 'Banho e tosa', { name: 'Pet Feliz' }).name, 'Pet Feliz', 'nome informado sempre vale');
   assert.equal(at('beleza', 'Pilates').image, 'loja'); assert(at('beleza', 'Pilates').services.includes('Treinos personalizados'));
   assert.equal(at('alimentacao', 'Camisetas personalizadas').image, 'loja', '"personalizadas" não vira academia');
-  assert.equal(at('consultoria', 'Oficina de costura').image, 'loja', 'oficina de costura não é mecânica');
+  assert.equal(at('consultoria', 'Oficina de costura').image, 'consultoria', 'oficina de costura não é mecânica: imagem genérica da consultoria');
+  assert.equal(at('criativo', 'Portfólio profissional').image, 'criativo', 'portfólio sem regra: ilustração criativa, não loja');
+  assert.equal(at('criativo', 'Portfólio profissional').name, 'Seu Negócio');
+  assert.equal(at('local', 'Aluguel de brinquedos').image, 'loja', 'sem imagem genérica própria: loja');
   assert.equal(at('consultoria', 'Psicóloga').name, 'Seu Negócio');
   assert.equal(at('local', 'Manutenção automotiva').image, 'auto');
   assert.equal(at('local', 'Serviços para veículos').image, 'auto');
@@ -544,6 +547,15 @@ test('IA: sugestão validada — ids fora da lista caem, alegações inventadas 
   const long = ai.sanitizeSuggestion({ ...goodAnswer, headline: 'x'.repeat(300), description: '<script>alert(1)</script>' });
   assert.equal(long.headline.length, 90); assert(!long.description.includes('<'));
   for (const bad of ['Desde 2010 cuidando de você', 'Satisfação garantida', '98% de aprovação', 'A partir de R$ 99', 'Mais de 300 obras']) assert.equal(ai.sanitizeSuggestion({ ...goodAnswer, description: bad }).description, '', bad);
+});
+
+test('IA: serviços são o que o cliente contrata, não seções do site', () => {
+  const s = ai.sanitizeSuggestion({ ...goodAnswer, services: ['Projetos Realizados', 'História e Trajetória', 'Provas Reais', 'Ensaios de família', 'Depoimentos'] });
+  assert.deepEqual(s.services, ['Ensaios de família']);
+  assert.equal(ai.sanitizeSuggestion({ ...goodAnswer, description: 'Conheça meu trabalho e veja provas reais dos projetos realizados.' }).description, '');
+  assert.equal(ai.sanitizeSuggestion({ ...goodAnswer, description: 'Resultados comprovados em cada entrega.' }).description, '');
+  for (const ok of ['Projetos residenciais', 'Sobrancelhas', 'Contabilidade mensal', 'Galeria de arte contemporânea']) assert.deepEqual(ai.sanitizeSuggestion({ ...goodAnswer, services: [ok] }).services, [ok], ok);
+  assert(/Nunca use nomes de seções do site/.test(ai.systemPrompt()));
 });
 
 test('IA: a prévia não promete recursos fora dos pacotes', () => {
