@@ -545,6 +545,26 @@ test('IA: sugestão validada — ids fora da lista caem, alegações inventadas 
   for (const bad of ['Desde 2010 cuidando de você', 'Satisfação garantida', '98% de aprovação', 'A partir de R$ 99', 'Mais de 300 obras']) assert.equal(ai.sanitizeSuggestion({ ...goodAnswer, description: bad }).description, '', bad);
 });
 
+test('IA: a prévia não promete recursos fora dos pacotes', () => {
+  const store = ai.sanitizeSuggestion({
+    ...goodAnswer,
+    headline: 'Moda feminina com novidades e loja virtual',
+    description: 'Encontre roupas e compre online com carrinho de compras e pagamento seguro.',
+    about: 'Agende online e escolha horários em tempo real.',
+    serviceDetails: ['Acesse a área do cliente para acompanhar.', 'Veja as novidades e peça pelo WhatsApp.', 'Faça login para rastrear seu pedido.'],
+    faqQuestions: ['Como funciona o checkout?', 'Quais formas de contato vocês atendem?'],
+    needs: ['loja', 'agenda'],
+  });
+  assert.equal(store.headline, ''); assert.equal(store.description, ''); assert.equal(store.previewCopy.about, '');
+  assert.deepEqual(store.previewCopy.serviceDetails, ['Veja as novidades e peça pelo WhatsApp.']);
+  assert.deepEqual(store.previewCopy.faqQuestions, ['Quais formas de contato vocês atendem?']);
+  assert.deepEqual(store.needs, ['loja', 'agenda'], 'o pedido continua registrado como fora dos pacotes');
+  for (const ok of ['Agende seu horário pelo WhatsApp.', 'Peça seu orçamento pelo formulário.', 'Loja de roupas femininas no centro', 'Compra e venda de imóveis']) {
+    assert.equal(ai.sanitizeSuggestion({ ...goodAnswer, description: ok }).description, ok, ok);
+  }
+  assert(/não prometa nem cite loja virtual/.test(ai.systemPrompt()));
+});
+
 test('IA: a sugestão que o servidor devolve chega inteira à página', () => {
   for (const pkg of ['essencial', 'profissional']) {
     const fromWorker = JSON.parse(JSON.stringify(ai.sanitizeSuggestion(goodAnswer, pkg)));
