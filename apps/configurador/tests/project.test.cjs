@@ -608,6 +608,36 @@ test('IA: servidor intermediário — origem, tamanho, limite, chave só no serv
   assert(!logs.join().includes('ar-condicionado') && !logs.join().includes('chave-secreta'), 'log sem texto nem chave');
 });
 
+test('IA: servidor tenta o Gemini mais uma vez só em falha passageira', async () => {
+  const env = { GEMINI_API_KEY: 'chave-secreta', GEMINI_MODEL: 'modelo-x', ALLOWED_ORIGINS: 'https://theusmkt.github.io' };
+  const desc = 'Sou corretora de imóveis e quero mostrar imóveis e agendar visitas pelo WhatsApp.';
+  const req = () => new Request('https://ia.example/preview', { method: 'POST', headers: { Origin: 'https://theusmkt.github.io' }, body: JSON.stringify({ schema: ai.AI_SCHEMA_VERSION, description: desc }) });
+  const good = () => new Response(JSON.stringify(geminiBody(goodAnswer)), { status: 200 });
+  const json = (status, body) => () => new Response(JSON.stringify(body), { status });
+  const timeout = () => { throw Object.assign(new Error('x'), { name: 'TimeoutError' }); };
+  const pauses = [];
+  const run = async (...answers) => {
+    let calls = 0; const logs = [];
+    const res = await worker.handle(req(), env, async () => answers[Math.min(calls++, answers.length - 1)](), (m, d) => logs.push(JSON.stringify([m, d])), async (ms) => { pauses.push(ms); });
+    return { status: res.status, body: await res.json(), calls, logs: logs.join() };
+  };
+
+  for (const first of [json(503, {}), json(500, {}), timeout, json(200, { candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: '{"segment":' }] } }] }), json(200, { candidates: [{ content: { parts: [{ text: '{}' }] } }] })]) {
+    const r = await run(first, good);
+    assert.equal(r.status, 200, 'a segunda tentativa salva o pedido');
+    assert.equal(r.calls, 2); assert.equal(r.body.ok, true);
+    assert(r.logs.includes('nova tentativa'));
+  }
+  const twice = await run(json(503, {}));
+  assert.equal(twice.status, 502); assert.equal(twice.calls, 2, 'no máximo duas chamadas');
+  for (const [answer, status] of [[json(429, {}), 429], [json(400, {}), 502], [json(403, {}), 502], [json(200, { promptFeedback: { blockReason: 'SAFETY' } }), 422]]) {
+    const r = await run(answer, good);
+    assert.equal(r.status, status); assert.equal(r.calls, 1, `sem nova tentativa para ${status}`);
+  }
+  assert(pauses.every((ms) => ms > 0 && ms < 2000), 'pausa curta entre as tentativas');
+  assert(!JSON.stringify(pauses).includes('corretora'));
+});
+
 test('IA: a página só considera sucesso com sugestão válida', async () => {
   const res = (status, body) => async () => ({ ok: status < 300, status, json: async () => body });
   assert.deepEqual(await ai.requestSuggestion('x'.repeat(30), 'essencial', ''), { ok: false, reason: 'sem-servidor' });
