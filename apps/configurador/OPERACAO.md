@@ -142,6 +142,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 | `request_click` | Clique em “Solicitar desenvolvimento” (**intenção**) | `mode` (`whatsapp`, `formulario`), `package` (ou `personalizado`) |
 | `whatsapp_open` | Clique para abrir o WhatsApp (**intenção, não é pedido recebido**) | `context` (`pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `projeto_personalizado`, `final`, `rodape`) |
 | `ai_generate` | Resultado de “Gerar minha prévia” (só com a IA ligada) | `result` (`ok`, `erro`), `reason` |
+| `ai_audio` | Resultado de “Gravar áudio” (transcrição) | `result` (`ok`, `erro`), `reason` (`microfone`, `curto`, `sem-fala`…) |
 | `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |
@@ -206,6 +207,13 @@ A IA só escolhe entre os layouts, estilos, cores e seções existentes e
 sugere textos; não troca pacote nem marca itens de projeto personalizado.
 A descrição não é guardada em servidor; no navegador, o rascunho fica só
 na aba (`sessionStorage`, chave `bp.descricao.v1`).
+
+**Por áudio:** o botão “Gravar áudio” aparece quando o navegador permite
+gravar (Chrome, Edge, Firefox e Safari atuais, em HTTPS). A gravação tem de
+2 a 90 segundos, vira texto no próprio campo e a pessoa confere antes de
+gerar. O áudio não é guardado em lugar nenhum e o microfone é liberado assim
+que a gravação para. Sem permissão de microfone, a mensagem orienta a
+escrever.
 
 ## 7. Decisões e dependências em aberto
 

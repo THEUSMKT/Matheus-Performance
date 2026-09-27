@@ -46,6 +46,11 @@ export default function Privacidade() {
             registra o texto; o resultado volta para o seu navegador e fica salvo apenas nele.
           </p>
           <p>
+            Se você usar “Gravar áudio”, o microfone só é acionado depois da sua permissão e é liberado assim que a gravação para. O áudio é
+            enviado pelo mesmo caminho ao Google Gemini apenas para virar texto, que aparece no campo para você conferir; o áudio não é
+            guardado nem registrado, e e-mails e números longos são removidos da transcrição.
+          </p>
+          <p>
             O processamento pelo Google segue os termos da API do Gemini. No uso gratuito da API, o Google pode usar o conteúdo enviado para
             melhorar os próprios produtos, inclusive com revisão humana. Por isso, não inclua dados pessoais ou confidenciais na descrição.
           </p>

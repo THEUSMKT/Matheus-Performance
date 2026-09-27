@@ -1,5 +1,27 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — descrição por áudio (etapa 2)
+
+- No card “Descreva o site que você quer” há o botão **Gravar áudio**
+  (quando o navegador permite gravar). A pessoa fala por até 90 segundos, o
+  áudio vira texto no próprio campo — somado ao que já estava escrito — e
+  ela confere e ajusta antes de “Gerar minha prévia”. O resto do fluxo é o
+  mesmo da descrição por texto.
+- Como funciona: o navegador grava no formato que souber e converte para
+  WAV mono de 16 kHz (`src/lib/aiAudio.ts`); o mesmo Worker recebe em
+  `/transcricao`, pede só a transcrição ao Gemini e devolve o texto sem
+  e-mails e telefones. Mesmas proteções (origem, tamanho, limite por IP à
+  parte, nova tentativa em falha passageira, log só com status).
+- Privacidade: o áudio não é guardado; o microfone é liberado ao parar. A
+  política de privacidade e o aviso do card citam o áudio.
+- Mensagens claras para microfone bloqueado, gravação curta, fala não
+  entendida, limite e cota. Evento `ai_audio` (sem conteúdo).
+- Testes: 50 unitários (3 novos: WAV/base64, rota de transcrição do Worker,
+  cliente) e 28 cenários de navegador (1 novo, com microfone simulado do
+  Chromium e transcrição simulada).
+- Ativação: publicar o Worker de novo (`npx wrangler deploy`). Nada muda na
+  chave nem na variável `AI_ENDPOINT`.
+
 ## Edição — prévia por descrição com o Gemini (etapa 1: texto)
 
 - Na página de criação, quando o servidor da IA estiver configurado, aparece
