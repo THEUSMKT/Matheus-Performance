@@ -93,3 +93,21 @@ A checagem de origem impede o uso por outros sites no navegador, mas não
 impede chamadas diretas de quem copiar o endereço — por isso o limite por IP
 e a cota diária do próprio Gemini. Se houver abuso, ative também o
 Turnstile (anti-robô gratuito da Cloudflare) numa próxima etapa.
+
+## Falhas passageiras e diagnóstico
+
+Se o Gemini responder 500/503, demorar mais de 18 s ou devolver um JSON
+cortado ou fora do formato, o Worker tenta **mais uma vez** (no máximo duas
+chamadas por pedido; cada uma conta na cota do Gemini). Cota esgotada (429),
+conteúdo bloqueado e erros de configuração (400/403) não são repetidos. A
+página espera até 45 s.
+
+Para ver o motivo de um erro, na pasta deste Worker:
+
+```bash
+npx wrangler tail --format pretty
+```
+
+e gere uma prévia no site. O log mostra só status e motivo (`status: 503`,
+`reason: formato`, `TimeoutError`, `nova tentativa`) — nunca o texto nem a
+chave. `Ctrl + C` encerra.

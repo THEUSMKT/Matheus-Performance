@@ -317,7 +317,8 @@ export async function requestSuggestion(
   pkg: PackageId,
   endpoint: string,
   fetchImpl: FetchLike = fetch as unknown as FetchLike,
-  timeoutMs = 30000,
+  // O servidor pode tentar o Gemini duas vezes (até ~37 s).
+  timeoutMs = 45000,
 ): Promise<AiResult> {
   if (!endpoint) return { ok: false, reason: 'sem-servidor' };
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : undefined;

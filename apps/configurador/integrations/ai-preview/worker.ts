@@ -25,9 +25,18 @@ export interface Env {
 }
 
 type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
+type Log = (msg: string, data?: Record<string, unknown>) => void;
 
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const MAX_BODY = 6000;
+/**
+ * Até duas chamadas ao Gemini por pedido. 2 × 18 s + a pausa ficam abaixo dos
+ * 45 s que a página espera (requestSuggestion).
+ */
+const ATTEMPTS = 2;
+const ATTEMPT_TIMEOUT = 18000;
+const RETRY_DELAY = 800;
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function reply(status: number, body: unknown, origin: string | null): Response {
   const headers: Record<string, string> = {
@@ -45,7 +54,7 @@ function reply(status: number, body: unknown, origin: string | null): Response {
   return new Response(status === 204 ? null : JSON.stringify(body), { status, headers });
 }
 
-export async function handle(request: Request, env: Env, fetchImpl: FetchLike = fetch, log: (msg: string, data?: Record<string, unknown>) => void = () => {}): Promise<Response> {
+export async function handle(request: Request, env: Env, fetchImpl: FetchLike = fetch, log: Log = () => {}, pause: (ms: number) => Promise<void> = wait): Promise<Response> {
   const allowed = (env.ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const origin = request.headers.get('Origin');
   const allowedOrigin = origin && allowed.includes(origin) ? origin : null;
@@ -78,36 +87,56 @@ export async function handle(request: Request, env: Env, fetchImpl: FetchLike = 
     return reply(503, { ok: false, error: 'configuracao' }, allowedOrigin);
   }
 
+  for (let attempt = 1; ; attempt++) {
+    const result = await askGemini(description, pkg, env.GEMINI_API_KEY, env.GEMINI_MODEL, fetchImpl, log);
+    if (result.ok) return reply(200, { ok: true, suggestion: result.suggestion }, allowedOrigin);
+    if (!result.retry || attempt >= ATTEMPTS) return reply(result.status, { ok: false, error: result.error }, allowedOrigin);
+    // Falha passageira (sobrecarga, demora, resposta cortada): tenta mais uma vez.
+    log('nova tentativa', { attempt: attempt + 1 });
+    await pause(RETRY_DELAY);
+  }
+}
+
+type Attempt =
+  | { ok: true; suggestion: NonNullable<ReturnType<typeof sanitizeSuggestion>> }
+  | { ok: false; status: number; error: string; retry: boolean };
+
+/** Uma chamada ao Gemini. `retry` diz se vale tentar de novo. */
+async function askGemini(description: string, pkg: PackageId, key: string, model: string, fetchImpl: FetchLike, log: Log): Promise<Attempt> {
   let res: Response;
   try {
-    res = await fetchImpl(`${GEMINI_URL}/${encodeURIComponent(env.GEMINI_MODEL)}:generateContent`, {
+    res = await fetchImpl(`${GEMINI_URL}/${encodeURIComponent(model)}:generateContent`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify(geminiRequest(description)),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(ATTEMPT_TIMEOUT),
     });
   } catch (err) {
     log('falha ao chamar o Gemini', { error: (err as Error)?.name ?? 'erro' });
-    return reply(502, { ok: false, error: 'ia' }, allowedOrigin);
+    return { ok: false, status: 502, error: 'ia', retry: true };
   }
   // Só o código de status vai para o log — nunca a descrição nem a resposta.
   if (res.status === 429) {
     log('Gemini: cota atingida', { status: 429 });
-    return reply(429, { ok: false, error: 'cota' }, allowedOrigin);
+    return { ok: false, status: 429, error: 'cota', retry: false };
   }
   if (!res.ok) {
     log('Gemini respondeu com erro', { status: res.status });
-    return reply(502, { ok: false, error: 'ia' }, allowedOrigin);
+    return { ok: false, status: 502, error: 'ia', retry: res.status >= 500 };
   }
 
   const parsed = parseGeminiResponse(await res.json().catch(() => null));
   if (!parsed.ok) {
     log('resposta do Gemini recusada', { reason: parsed.reason });
-    return reply(parsed.reason === 'bloqueado' ? 422 : 502, { ok: false, error: parsed.reason }, allowedOrigin);
+    if (parsed.reason === 'bloqueado') return { ok: false, status: 422, error: 'bloqueado', retry: false };
+    return { ok: false, status: 502, error: parsed.reason, retry: true };
   }
   const suggestion = sanitizeSuggestion(parsed.value, pkg);
-  if (!suggestion) return reply(502, { ok: false, error: 'formato' }, allowedOrigin);
-  return reply(200, { ok: true, suggestion }, allowedOrigin);
+  if (!suggestion) {
+    log('resposta do Gemini recusada', { reason: 'formato' });
+    return { ok: false, status: 502, error: 'formato', retry: true };
+  }
+  return { ok: true, suggestion };
 }
 
 export default {
