@@ -189,6 +189,33 @@ test('Segmento de imóveis tem classificação, serviços e prévia específicos
   assert.equal(model.exampleProject('imoveis').pkg, 'profissional');
 });
 
+test('Nome e imagem de exemplo só aparecem quando combinam com o serviço', () => {
+  const { keywordRules } = require('../src/config/segments.ts');
+  const at = (segment, service, extra = {}) => model.siteContent(model.normalizeProject({ ...model.initialProject(), segment, service, ...extra }));
+  const pet = at('local', 'Banho e tosa');
+  assert.equal(pet.name, 'Seu Negócio', 'pet shop não vira "Oficina do Lar"'); assert.equal(pet.image, 'pet');
+  assert.deepEqual(pet.services, ['Banho e tosa', 'Cuidados com o pet', 'Produtos para pets']);
+  const car = at('local', 'Revisão e troca de óleo');
+  assert.equal(car.name, 'Seu Negócio'); assert.equal(car.image, 'auto');
+  const unknown = at('local', 'Aluguel de brinquedos');
+  assert.equal(unknown.name, 'Seu Negócio'); assert.equal(unknown.image, 'loja', 'serviço desconhecido: imagem neutra');
+  assert.equal(at('local', 'Pintura').name, 'Oficina do Lar', 'serviço do próprio segmento mantém o exemplo');
+  assert.equal(at('local', 'Reforma de banheiro').image, 'reparos');
+  assert.equal(at('local', '').name, 'Oficina do Lar'); assert.equal(at('local', '').image, 'reparos');
+  assert.equal(at('local', 'Banho e tosa', { name: 'Pet Feliz' }).name, 'Pet Feliz', 'nome informado sempre vale');
+  assert.equal(at('beleza', 'Pilates').image, 'loja'); assert(at('beleza', 'Pilates').services.includes('Treinos personalizados'));
+  assert.equal(at('alimentacao', 'Camisetas personalizadas').image, 'loja', '"personalizadas" não vira academia');
+  assert.equal(at('consultoria', 'Oficina de costura').image, 'loja', 'oficina de costura não é mecânica');
+  assert.equal(at('consultoria', 'Psicóloga').name, 'Seu Negócio');
+  for (const seg of model.segments) {
+    for (const q of seg.quick) assert.equal(at(seg.id, q).name, seg.demo, `${seg.id}: "${q}" combina com o exemplo`);
+  }
+  for (const r of keywordRules) {
+    if (r.image) assert(fs.existsSync(path.join(__dirname, `../public/demo/${r.image}.svg`)), r.image);
+    if (r.segment) assert(model.segments.some((s) => s.id === r.segment), r.segment);
+  }
+});
+
 test('Textos sugeridos não inventam fatos sobre a empresa', () => {
   const texts = JSON.stringify(model.segments) + JSON.stringify(require('../src/config/segments.ts').keywordRules.map((r) => r.services));
   for (const bad of [/\d+ anos/i, /clientes satisfeitos/i, /certificad/i, /melhor d[ae]/i, /líder/i, /garant/i, /\d+%/, /premiad/i]) assert(!bad.test(texts), bad);

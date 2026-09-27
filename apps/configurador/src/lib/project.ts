@@ -637,6 +637,22 @@ export function suggestedServices(p: Project): string[] {
   return [...new Map(list.map((s) => [s.toLowerCase(), s])).values()].slice(0, 3);
 }
 
+const NEUTRAL_NAME = 'Seu Negócio';
+const NEUTRAL_IMAGE = 'loja';
+const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/**
+ * O nome e a imagem de exemplo do segmento só aparecem quando combinam com o
+ * serviço informado — um pet shop em "Serviços locais" não vira "Oficina do
+ * Lar" com caixa de ferramentas.
+ */
+function fitsSegment(p: Project, seg: Segment, rule: ReturnType<typeof ruleFor>): boolean {
+  if (rule) return rule.segment === seg.id;
+  const main = p.serviceLater ? '' : p.service.trim();
+  if (!main) return true;
+  return [...seg.quick, ...seg.services].some((s) => same(s, main));
+}
+
 export type SiteContent = {
   name: string;
   segmentName: string;
@@ -658,8 +674,10 @@ export function siteContent(p: Project): SiteContent {
   const obj = objectiveOf(p);
   const main = p.serviceLater ? '' : p.service.trim();
   const own = p.services.map((s) => s.trim()).filter(Boolean);
+  const rule = ruleFor(p);
+  const fits = fitsSegment(p, seg, rule);
   return {
-    name: p.name.trim() || seg.demo,
+    name: p.name.trim() || (fits ? seg.demo : NEUTRAL_NAME),
     segmentName: p.segment === 'outro' && p.segmentOther.trim() ? cap(p.segmentOther.trim()) : seg.name,
     title: p.headline.trim() || (main ? titleTemplates[obj.id](cap(main)) : seg.title),
     titleSuggested: !p.headline.trim(),
@@ -668,7 +686,7 @@ export function siteContent(p: Project): SiteContent {
     cta: obj.cta,
     services: own.length ? own : suggestedServices(p),
     servicesSuggested: !own.length,
-    image: ruleFor(p)?.image ?? seg.image,
+    image: rule?.image ?? (fits ? seg.image : NEUTRAL_IMAGE),
     previewCopy: p.previewCopy,
   };
 }

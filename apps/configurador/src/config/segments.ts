@@ -132,25 +132,33 @@ export const segments: Segment[] = [
  * Regras por palavra-chave: quando o serviço principal (ou o segmento
  * digitado em "Outro") combina, a prévia usa uma imagem e serviços mais
  * próximos. São sugestões — o visitante confirma ou edita.
+ * `segment` diz em qual segmento o nome de exemplo (demo) combina com o
+ * serviço; sem ele, a prévia usa um nome neutro ("Seu Negócio").
+ * A ordem importa: vale a primeira regra que combinar.
  */
-export const keywordRules: { match: RegExp; image?: string; services: string[] }[] = [
-  { match: /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i, image: 'imoveis', services: ['Compra e venda de imóveis', 'Consultoria imobiliária', 'Avaliação de imóveis'] },
-  { match: /ar[\s-]?condicionado|climatiza|refrigera/i, image: 'clima', services: ['Instalação de ar-condicionado', 'Manutenção preventiva', 'Limpeza e higienização'] },
-  { match: /el[eé]tric/i, image: 'reparos', services: ['Instalações elétricas', 'Manutenção elétrica', 'Troca de disjuntores e tomadas'] },
-  { match: /hidr[aá]ulic|encana/i, image: 'reparos', services: ['Reparos hidráulicos', 'Instalações', 'Troca de torneiras e registros'] },
-  { match: /pintur/i, image: 'reparos', services: ['Pintura residencial', 'Pintura comercial', 'Textura e acabamento'] },
-  { match: /limpez|faxin|diarista/i, image: 'reparos', services: ['Limpeza residencial', 'Limpeza pós-obra', 'Limpeza comercial'] },
-  { match: /cabel|sal[aã]o|barb|corte|colora/i, image: 'beleza', services: ['Corte', 'Coloração', 'Tratamentos capilares'] },
-  { match: /unha|manicure|pedicure/i, image: 'beleza', services: ['Manicure', 'Pedicure', 'Alongamento de unhas'] },
-  { match: /est[eé]tic|facial|pele|sobrancelh|c[ií]lio/i, image: 'beleza', services: ['Limpeza de pele', 'Design de sobrancelhas', 'Tratamentos faciais'] },
-  { match: /arquitet|interior/i, image: 'interiores', services: ['Projetos residenciais', 'Projetos comerciais', 'Design de interiores'] },
-  { match: /contab|cont[aá]bil/i, image: 'consultoria', services: ['Abertura de empresa', 'Contabilidade mensal', 'Imposto de renda'] },
-  { match: /advoca|advoga|jur[ií]dic/i, image: 'consultoria', services: ['Consultoria jurídica', 'Contratos', 'Acompanhamento de processos'] },
+export const keywordRules: { match: RegExp; image?: string; segment?: string; services: string[] }[] = [
+  { match: /pet ?shop|banho e tosa|\btosa|veterin|cachorr|\bc[aã]es\b|\bgatos?\b|\bpets?\b|animais de estima/i, image: 'pet', services: ['Banho e tosa', 'Cuidados com o pet', 'Produtos para pets'] },
+  { match: /mec[aâ]nic|oficina(?! de (costura|arte))|autom[oó]v|\bcarros?\b|funilaria|troca de [oó]leo|\bfreios?\b|\bpneus?\b|auto ?el[eé]tric|alinhamento/i, image: 'auto', services: ['Revisão', 'Troca de óleo', 'Freios e suspensão'] },
+  { match: /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i, image: 'imoveis', segment: 'imoveis', services: ['Compra e venda de imóveis', 'Consultoria imobiliária', 'Avaliação de imóveis'] },
+  { match: /ar[\s-]?condicionado|climatiza|refrigera/i, image: 'clima', segment: 'local', services: ['Instalação de ar-condicionado', 'Manutenção preventiva', 'Limpeza e higienização'] },
+  { match: /el[eé]tric/i, image: 'reparos', segment: 'local', services: ['Instalações elétricas', 'Manutenção elétrica', 'Troca de disjuntores e tomadas'] },
+  { match: /hidr[aá]ulic|encana/i, image: 'reparos', segment: 'local', services: ['Reparos hidráulicos', 'Instalações', 'Troca de torneiras e registros'] },
+  { match: /pintur/i, image: 'reparos', segment: 'local', services: ['Pintura residencial', 'Pintura comercial', 'Textura e acabamento'] },
+  { match: /reforma|pedreir|marido de aluguel|montagem de m[oó]veis|gesso|marcenar|serralh/i, image: 'reparos', segment: 'local', services: ['Pequenas reformas', 'Reparos', 'Montagem e instalação'] },
+  { match: /limpez|faxin|diarista/i, image: 'reparos', segment: 'local', services: ['Limpeza residencial', 'Limpeza pós-obra', 'Limpeza comercial'] },
+  { match: /cabel|sal[aã]o|barb|corte|colora/i, image: 'beleza', segment: 'beleza', services: ['Corte', 'Coloração', 'Tratamentos capilares'] },
+  { match: /unha|manicure|pedicure/i, image: 'beleza', segment: 'beleza', services: ['Manicure', 'Pedicure', 'Alongamento de unhas'] },
+  { match: /est[eé]tic|facial|pele|sobrancelh|c[ií]lio/i, image: 'beleza', segment: 'beleza', services: ['Limpeza de pele', 'Design de sobrancelhas', 'Tratamentos faciais'] },
+  { match: /arquitet|interior/i, image: 'interiores', segment: 'criativo', services: ['Projetos residenciais', 'Projetos comerciais', 'Design de interiores'] },
+  { match: /contab|cont[aá]bil/i, image: 'consultoria', segment: 'consultoria', services: ['Abertura de empresa', 'Contabilidade mensal', 'Imposto de renda'] },
+  { match: /advoca|advoga|jur[ií]dic/i, image: 'consultoria', segment: 'consultoria', services: ['Consultoria jurídica', 'Contratos', 'Acompanhamento de processos'] },
+  { match: /academia|personal trainer|\btreinos?\b|pilates|yoga|ioga|crossfit/i, services: ['Treinos personalizados', 'Aulas em grupo', 'Avaliação física'] },
   { match: /idioma|ingl[eê]s|espanhol|aula|curso|escola/i, image: 'consultoria', services: ['Aulas individuais', 'Turmas', 'Aulas online'] },
-  { match: /bolo|doce|confeit/i, image: 'alimentacao', services: ['Bolos', 'Doces', 'Encomendas para festas'] },
-  { match: /pizza|lanche|hamb[uú]rg/i, image: 'alimentacao', services: ['Cardápio da casa', 'Combos', 'Pedidos para retirada'] },
-  { match: /marmit|refei[cç]/i, image: 'alimentacao', services: ['Marmitas da semana', 'Refeições congeladas', 'Pedidos para empresas'] },
-  { match: /fotogra/i, image: 'criativo', services: ['Ensaios', 'Eventos', 'Fotos para empresas'] },
-  { match: /design|identidade visual|logotipo/i, image: 'criativo', services: ['Identidade visual', 'Materiais gráficos', 'Direção de arte'] },
+  { match: /bolo|doce|confeit/i, image: 'alimentacao', segment: 'alimentacao', services: ['Bolos', 'Doces', 'Encomendas para festas'] },
+  { match: /pizza|lanche|hamb[uú]rg/i, image: 'alimentacao', segment: 'alimentacao', services: ['Cardápio da casa', 'Combos', 'Pedidos para retirada'] },
+  { match: /marmit|refei[cç]/i, image: 'alimentacao', segment: 'alimentacao', services: ['Marmitas da semana', 'Refeições congeladas', 'Pedidos para empresas'] },
+  { match: /fotogra/i, image: 'criativo', segment: 'criativo', services: ['Ensaios', 'Eventos', 'Fotos para empresas'] },
+  { match: /design|identidade visual|logotipo/i, image: 'criativo', segment: 'criativo', services: ['Identidade visual', 'Materiais gráficos', 'Direção de arte'] },
   { match: /roupa|moda|boutique|loja/i, image: 'loja', services: ['Novidades', 'Mais vendidos', 'Peças sob encomenda'] },
+  { match: /psic[oó]log|terapia|fisioterap|nutricion|dentist|odonto|fonoaudi/i, image: 'consultoria', services: ['Consultas', 'Avaliação inicial', 'Acompanhamento'] },
 ];
