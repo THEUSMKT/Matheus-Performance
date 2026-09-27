@@ -195,6 +195,12 @@ export type Project = {
     processSteps: string[];
     faqQuestions: string[];
   };
+  /**
+   * Nome e segmento que a última prévia por descrição preencheu ('' = não foi
+   * a IA). Ao gerar de novo, a IA pode trocar o que ela mesma sugeriu, mas
+   * nunca o que o visitante digitou ou escolheu.
+   */
+  aiFilled: { name: string; segment: string; segmentOther: string };
   /** Seções na ordem da página. Apresentação sempre primeiro, contato sempre por último. */
   sections: string[];
   /** O visitante mexeu nas seções: trocar o objetivo não reorganiza mais sozinho. */
@@ -236,6 +242,7 @@ export function initialProject(): Project {
     description: '',
     services: [],
     previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] },
+    aiFilled: { name: '', segment: '', segmentOther: '' },
     sections: [...objectives[0].structure],
     structureEdited: false,
     form: false,
@@ -315,6 +322,11 @@ export function normalizeProject(input: unknown): Project {
       differentials: strings(record(x.previewCopy).differentials).slice(0, 3).map((s) => cleanText(s, 100)),
       processSteps: strings(record(x.previewCopy).processSteps).slice(0, 3).map((s) => cleanText(s, 80)),
       faqQuestions: strings(record(x.previewCopy).faqQuestions).slice(0, 3).map((s) => cleanText(s, 100)),
+    },
+    aiFilled: {
+      name: cleanText(record(x.aiFilled).name, 80),
+      segment: pickOrEmpty(record(x.aiFilled).segment, segments.map((s) => s.id)),
+      segmentOther: cleanText(record(x.aiFilled).segmentOther, 60),
     },
     sections: orderSections(Array.isArray(x.sections) ? strings(x.sections) : d.sections),
     structureEdited: x.structureEdited === true,

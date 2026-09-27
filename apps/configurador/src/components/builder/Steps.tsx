@@ -59,7 +59,8 @@ export function StepBusiness({
 
   function chooseSegment(id: string) {
     const next = segments.find((x) => x.id === id)!;
-    let project: Project = { ...p, segment: id };
+    // Segmento escolhido à mão: a próxima prévia por descrição não troca mais.
+    let project: Project = { ...p, segment: id, aiFilled: { ...p.aiFilled, segment: '' } };
     if (!p.objectiveSet) project = withObjective(project, next.objectives[0], { chosen: false });
     if (!p.identitySet) project = { ...project, direction: next.styles[0], palette: next.palette };
     replace(dropStaleCopy(p, project));
