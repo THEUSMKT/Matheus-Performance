@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Climatização: ar-condicionado split numa sala clara (ilustração própria) -->
+  <defs>
+    <linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef3f7"/><stop offset="1" stop-color="#dfe8ef"/></linearGradient>
+    <linearGradient id="u" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e4eaf0"/></linearGradient>
+    <linearGradient id="air" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fc3ea" stop-opacity=".75"/><stop offset="1" stop-color="#8fc3ea" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="480" height="360" fill="url(#w)"/>
+  <rect y="276" width="480" height="84" fill="#c9d3dc"/>
+  <rect y="270" width="480" height="8" fill="#f7f9fb"/>
+  <!-- aparelho -->
+  <rect x="120" y="64" width="240" height="70" rx="16" fill="url(#u)" stroke="#c3cfda" stroke-width="3"/>
+  <rect x="136" y="112" width="208" height="10" rx="5" fill="#cfd9e3"/>
+  <circle cx="336" cy="84" r="4" fill="#3fb37f"/>
+  <!-- fluxo de ar -->
+  <path d="M150 130c20 50 20 90 0 140h180c-20-50-20-90 0-140z" fill="url(#air)"/>
+  <g fill="none" stroke="#7db4df" stroke-width="4" stroke-linecap="round" opacity=".8">
+    <path d="M180 148c-10 20 10 30 0 50"/><path d="M240 148c-10 20 10 30 0 50"/><path d="M300 148c-10 20 10 30 0 50"/>
+  </g>
+  <!-- termômetro -->
+  <rect x="396" y="150" width="46" height="74" rx="10" fill="#fff" stroke="#c3cfda" stroke-width="3"/>
+  <text x="419" y="196" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#2f6f9f" text-anchor="middle">22°</text>
+  <!-- planta e poltrona -->
+  <path d="M40 330h34l-5-40h-24z" fill="#9aa9b6"/>
+  <g fill="#6f9a7a"><path d="M57 292c-24-18-30-42-20-64 14 14 20 36 20 64z"/><path d="M57 292c18-22 34-32 50-34-6 18-24 32-50 34z"/></g>
+  <rect x="300" y="236" width="130" height="50" rx="16" fill="#5d7f9c"/>
+  <rect x="290" y="258" width="150" height="40" rx="14" fill="#4f7190"/>
+</svg>

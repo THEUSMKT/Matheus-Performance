@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Alimentação: mesa posta com prato e pães (ilustração própria) -->
+  <defs>
+    <linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9c3a3"/><stop offset="1" stop-color="#c8ad88"/></linearGradient>
+    <radialGradient id="p" cx=".5" cy=".45" r=".55"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#ece6dc"/></radialGradient>
+  </defs>
+  <rect width="480" height="360" fill="url(#t)"/>
+  <path d="M0 60h480M0 150h480M0 240h480M0 330h480" stroke="#bfa27c" stroke-width="2" opacity=".5"/>
+  <!-- toalha -->
+  <rect x="60" y="40" width="360" height="280" rx="10" fill="#f3ede2"/>
+  <path d="M60 110h360M60 250h360M130 40v280M350 40v280" stroke="#e4d9c6" stroke-width="10"/>
+  <!-- prato -->
+  <circle cx="240" cy="180" r="100" fill="url(#p)" stroke="#e2dacd" stroke-width="3"/>
+  <circle cx="240" cy="180" r="70" fill="#fbf8f2"/>
+  <!-- comida -->
+  <ellipse cx="240" cy="186" rx="52" ry="30" fill="#e7b75c"/>
+  <g fill="#6f9a5a"><ellipse cx="214" cy="168" rx="14" ry="8" transform="rotate(-20 214 168)"/><ellipse cx="262" cy="164" rx="14" ry="8" transform="rotate(25 262 164)"/><ellipse cx="248" cy="198" rx="12" ry="7"/></g>
+  <g fill="#c8553d"><circle cx="228" cy="186" r="9"/><circle cx="258" cy="182" r="8"/><circle cx="240" cy="172" r="7"/></g>
+  <!-- talheres -->
+  <rect x="112" y="110" width="8" height="140" rx="4" fill="#9aa2a8"/><path d="M104 110v34a12 12 0 0 0 24 0v-34" fill="none" stroke="#9aa2a8" stroke-width="5"/>
+  <rect x="362" y="110" width="8" height="140" rx="4" fill="#9aa2a8"/><path d="M366 110c14 10 14 40 0 50z" fill="#9aa2a8"/>
+  <!-- pães -->
+  <ellipse cx="96" cy="296" rx="40" ry="20" fill="#b9793f"/><path d="M76 290c10-6 30-6 40 0" stroke="#e3b27a" stroke-width="4" fill="none"/>
+  <ellipse cx="384" cy="70" rx="30" ry="18" fill="#c98b4b"/>
+  <!-- copo -->
+  <path d="M396 250h36l-6 56h-24z" fill="#d6e6ea" opacity=".9"/><path d="M400 272h28" stroke="#b9d3da" stroke-width="3"/>
+</svg>

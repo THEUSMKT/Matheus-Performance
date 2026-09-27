@@ -1,64 +1,38 @@
 'use client';
 /* ==========================================================================
-   Página de apresentação. Ordem: abertura curta → exemplos (carrossel) →
-   benefícios → como funciona → investimento → quem cuida → perguntas →
-   chamada final. A construção da prévia fica numa página própria (/criar/).
+   Página de apresentação. Ordem: os dois diferenciais e o botão principal →
+   exemplos navegáveis → como funciona → pacotes e o que está incluído →
+   projetos reais (só com material autorizado) → quem cuida → perguntas →
+   chamada final. O botão principal abre direto a criação (/criar/).
    ========================================================================== */
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
-import { ArrowRight, ChevronLeft, ChevronRight, Inbox, LayoutTemplate, ListChecks, Megaphone, MessageCircle, Monitor, Pointer, Smartphone, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, MessageCircle, Monitor, Smartphone, X } from 'lucide-react';
 import { contact } from '@/config/contact';
-import { pricing, brl } from '@/config/pricing';
-import { plans } from '@/config/offer';
+import { brl, customNeeds, packageById, packages, priceNotes, priceRange } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
+import { realProjects, testimonials } from '@/config/proof';
 import { ctaVariants, heroVariants } from '@/config/experiments';
-import {
-  applyPlan,
-  choiceChanges,
-  customStructure,
-  exampleProject,
-  hasOwnChoices,
-  initialProject,
-  mergeStartingPoint,
-  projectEstimate,
-  segments,
-  type Project,
-} from '@/lib/project';
+import { choiceChanges, exampleProject, hasOwnChoices, mergeStartingPoint, segments } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
-import { InspirationPreview } from '../InspirationPreview';
 import { SitePreview } from '../preview/SitePreview';
 import { Carousel, type CarouselApi } from './Carousel';
-import { Footer, Header, asset, builderHref, mainSiteUrl } from './Chrome';
+import { Footer, Header, asset, builderHref } from './Chrome';
 import { ConfirmBox, type Pending } from './Controls';
 import { DesktopFrame, PhoneFrame } from './DemoFrames';
-import { prefersReducedMotion } from './hooks';
 import { HeroShowcase } from './HeroShowcase';
 import { useProject, type ProjectState } from './useProject';
 import s from './Landing.module.css';
 
 const demoSegments = segments.filter((x) => x.id !== 'outro');
 
-const benefits = [
-  { icon: LayoutTemplate, title: 'Apresenta seus serviços', text: 'O que você faz, para quem e como contratar, em uma página clara.' },
-  { icon: Inbox, title: 'Facilita pedidos de orçamento', text: 'Botão de WhatsApp e, se quiser, um formulário que já chega organizado.' },
-  { icon: ListChecks, title: 'Organiza as informações', text: 'Serviços, perguntas frequentes, localização e contato em um endereço só.' },
-  { icon: Megaphone, title: 'Apoia a sua divulgação', text: 'Um link profissional para redes sociais, cartões e anúncios.' },
-] as const;
-
 const processSteps = [
-  ['Prévia', 'Você monta a prévia e vê a estimativa, sem cadastro.'],
-  ['Escopo', 'Escopo, valor e prazo confirmados por escrito.'],
-  ['Desenvolvimento', 'Feito depois de receber textos, imagens e logo.'],
-  ['Aprovação', 'Você revisa; duas rodadas de ajustes incluídas.'],
-  ['Publicação', 'O site vai ao ar no seu domínio.'],
+  ['Conte sobre sua empresa.', 'Nome, segmento e o que você quer que as pessoas façam no site.'],
+  ['Personalize e veja seu investimento.', 'Escolha estilo e cores e veja o valor do pacote na hora.'],
+  ['Solicite o desenvolvimento.', 'O resumo vai pronto para o WhatsApp. Nada é contratado sem você aprovar.'],
 ] as const;
 
 const FAQ_PREVIEW = 5;
-
-/** Vai para a página de criação (o projeto já foi gravado antes). */
-function openBuilder() {
-  location.href = builderHref;
-}
 
 export default function Landing() {
   const state = useProject({ readHash: false });
@@ -66,52 +40,7 @@ export default function Landing() {
   const hero = heroVariants[variants.hero as keyof typeof heroVariants] ?? heroVariants.a;
   const cta = ctaVariants[variants.cta as keyof typeof ctaVariants] ?? ctaVariants.a;
   const primaryLabel = resumable ? 'Continuar minha prévia' : cta.primary;
-  const start = () => track('configurator_start');
-
-  // Os botões principais não abrem a criação direto: levam ao cartão
-  // flutuante "Estruturar meu site profissional", que é quem abre.
-  // O cartão só aparece depois que o botão principal do topo sai da tela
-  // (ou quando um botão principal leva o visitante até ele).
-  const card = useRef<HTMLAnchorElement>(null);
-  const heroCta = useRef<HTMLAnchorElement>(null);
-  const [spot, setSpot] = useState(0);
-  const [ctaOut, setCtaOut] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  const cardShown = ctaOut || pinned;
-
-  useEffect(() => {
-    const el = heroCta.current;
-    if (!el || typeof IntersectionObserver === 'undefined') {
-      setCtaOut(true);
-      return;
-    }
-    let wasOut = false;
-    const io = new IntersectionObserver(([entry]) => {
-      const out = !entry.isIntersecting;
-      setCtaOut(out);
-      // O botão voltou à tela depois de ter saído: o cartão some de novo.
-      if (!out && wasOut) setPinned(false);
-      wasOut = out;
-    });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
-  function toCard(ev: MouseEvent<HTMLAnchorElement>) {
-    ev.preventDefault();
-    const smooth = !prefersReducedMotion();
-    const target = document.getElementById('exemplos');
-    const cta = heroCta.current;
-    if (target && cta) {
-      // Rola até os exemplos, e no mínimo até o botão do topo sair da tela.
-      const header = 64;
-      const top = Math.max(target.getBoundingClientRect().top, cta.getBoundingClientRect().bottom - header + 8) + window.scrollY;
-      if (top > window.scrollY + 8) window.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
-    }
-    setPinned(true);
-    setSpot((n) => n + 1);
-    requestAnimationFrame(() => card.current?.focus({ preventScroll: true }));
-  }
+  const start = (context: string) => () => track('start_click', { context });
 
   // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…).
   useEffect(() => {
@@ -120,48 +49,41 @@ export default function Landing() {
     else if (h === '#configurador') location.replace(builderHref);
   }, []);
 
-
   return (
     <div className={s.page} id="topo">
-      <Header ctaLabel={primaryLabel} ctaHref="#exemplos" onStart={toCard} />
+      <Header ctaLabel={primaryLabel} onStart={start('cabecalho')} />
       <main id="conteudo">
         <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
           <div className={s.heroCopy}>
-            <p className={s.audience}>{hero.eyebrow}</p>
             <h1 id="hero-titulo">{hero.title}</h1>
-            <p className={s.heroLead}>{hero.description}</p>
-            <a ref={heroCta} className={`${s.primary} ${s.shine}`} href="#exemplos" onClick={toCard}>
-              <span>{primaryLabel}</span>
-            </a>
-            <p className={s.micro}>Sem cadastro.</p>
-            <a className={s.quiet} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'hero' })}>
-              <MessageCircle aria-hidden="true" /> Tirar uma dúvida no WhatsApp
-            </a>
+            <p className={s.heroLead}>
+              Crie sua prévia gratuitamente. Desenvolvimento profissional de <strong>{priceRange}</strong>.
+            </p>
+            <p className={s.priceNote}>{priceNotes.landing}</p>
+            <div className={s.heroActions}>
+              <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')}>
+                <span>{primaryLabel}</span>
+              </a>
+              <a className={s.secondary} href="#exemplos">
+                Ver exemplos de sites
+              </a>
+            </div>
+            <p className={s.micro}>Sem cadastro. Sem compromisso.</p>
+            {resumable && (
+              <a className={s.quiet} href={`${builderHref}#novo`}>
+                Começar uma nova prévia
+              </a>
+            )}
           </div>
           <HeroShowcase />
         </section>
 
         <Examples state={state} />
 
-        <div className={s.wrap}>
-          <ul className={s.benefits} aria-label="O que o site faz pela sua empresa">
-            {benefits.map(({ icon: Icon, title, text }) => (
-              <li key={title}>
-                <span className={s.benefitIcon} aria-hidden="true">
-                  <Icon />
-                </span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-
         <section className={`${s.section} ${s.band}`} id="como-funciona" aria-labelledby="processo-titulo">
           <div className={s.wrap}>
             <div className={s.sectionHead}>
               <h2 id="processo-titulo">Como funciona</h2>
-              <p>Nada é contratado ou publicado sem a sua aprovação.</p>
             </div>
             <ol className={s.process}>
               {processSteps.map(([title, text]) => (
@@ -171,19 +93,30 @@ export default function Landing() {
                 </li>
               ))}
             </ol>
+            <p className={s.processNote}>O site final é desenvolvido depois que o escopo é confirmado e os materiais da empresa são recebidos.</p>
+            <div className={s.materials}>
+              <h3>Para o site final, você envia</h3>
+              <ul className={s.checkList}>
+                <li>A logo, se tiver</li>
+                <li>Fotos da empresa, dos produtos ou dos trabalhos</li>
+                <li>Serviços, horários e formas de contato</li>
+              </ul>
+              <p>Os textos sugeridos na prévia são revisados com você antes de entrar no site.</p>
+            </div>
           </div>
         </section>
 
-        <Investment state={state} />
+        <Investment />
+        <RealWork />
         <About />
         <Faq />
 
         <section className={s.final} aria-labelledby="final-titulo">
           <div className={s.wrap}>
-            <h2 id="final-titulo">Veja como o site da sua empresa pode ficar.</h2>
-            <p>Monte a prévia e receba a estimativa na hora.</p>
+            <h2 id="final-titulo">Veja o site da sua empresa antes de contratar.</h2>
+            <p>Prévia grátis em até 5 minutos. Desenvolvimento de {priceRange}.</p>
             <div className={s.finalActions}>
-              <a className={s.primary} href="#exemplos" onClick={toCard}>
+              <a className={s.primary} href={builderHref} onClick={start('final')}>
                 {primaryLabel}
               </a>
               <a className={s.quietLight} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'final' })}>
@@ -194,20 +127,6 @@ export default function Landing() {
         </section>
       </main>
       <Footer />
-      <a
-        ref={card}
-        className={s.floatCta}
-        href={builderHref}
-        onClick={start}
-        data-shown={cardShown || undefined}
-        aria-hidden={cardShown ? undefined : true}
-        tabIndex={cardShown ? undefined : -1}
-        data-spot={spot ? (spot % 2 ? 'a' : 'b') : undefined}
-      >
-        <LayoutTemplate aria-hidden="true" />
-        <span>Estruturar meu site profissional</span>
-        <ArrowRight aria-hidden="true" className={s.floatArrow} />
-      </a>
     </div>
   );
 }
@@ -219,11 +138,16 @@ function startingPoint(state: ProjectState, id: string) {
   const run = () => {
     state.commit({ ...next, step: 0 });
     track('example_applied', { segment: id });
-    track('configurator_start');
-    openBuilder();
+    track('start_click', { context: 'exemplo' });
+    location.href = builderHref;
   };
   const changes = choiceChanges(p, next);
   return { needs: state.hasProgress && hasOwnChoices(p) && changes.length > 0, changes, run };
+}
+
+function packageNote(id: string) {
+  const pkg = packageById(exampleProject(id).pkg);
+  return `Pacote ${pkg.name} · ${brl(pkg.price)}`;
 }
 
 function Examples({ state }: { state: ProjectState }) {
@@ -238,7 +162,7 @@ function Examples({ state }: { state: ProjectState }) {
 
   // Campanha de um segmento: o carrossel começa no exemplo dele.
   const campaign = state.origin.segment;
-  const start = !campaign ? 0 : campaign === 'outro' ? demoSegments.length : Math.max(0, demoSegments.findIndex((x) => x.id === campaign));
+  const startAt = !campaign ? 0 : campaign === 'outro' ? demoSegments.length : Math.max(0, demoSegments.findIndex((x) => x.id === campaign));
 
   function show(index: number) {
     setOpen(index);
@@ -294,12 +218,12 @@ function Examples({ state }: { state: ProjectState }) {
     <section className={s.section} id="exemplos" aria-labelledby="exemplos-titulo">
       <div className={s.wrap}>
         <div className={s.sectionHead}>
-          <h2 id="exemplos-titulo">Veja exemplos de sites</h2>
-          <p>Arraste para o lado e clique para ver no computador e no celular.</p>
+          <h2 id="exemplos-titulo">Exemplos de sites</h2>
+          <p>Toque em um exemplo para ver no computador e no celular.</p>
           <small className={s.sectionNote}>Exemplos demonstrativos, com nomes fictícios.</small>
         </div>
       </div>
-      <Carousel id="carrossel-exemplos" label="Exemplos de sites" itemLabel={(i, n) => `Exemplo ${i + 1} de ${n}`} start={start} apiRef={carousel}>
+      <Carousel id="carrossel-exemplos" label="Exemplos de sites" itemLabel={(i, n) => `Exemplo ${i + 1} de ${n}`} start={startAt} apiRef={carousel}>
         {[
           ...demoSegments.map((x, i) => (
             <button
@@ -312,19 +236,22 @@ function Examples({ state }: { state: ProjectState }) {
               onClick={() => openAt(i)}
               aria-label={`Abrir exemplo de ${x.name}`}
             >
-              <span className={s.clickBadge} aria-hidden="true">
-                <Pointer />
-                <span className={s.clickText}>Clique aqui</span>
-              </span>
-              <span className={s.exampleThumb}>
-                <InspirationPreview index={i} />
+              <span className={s.exampleThumb} aria-hidden="true">
+                <DesktopFrame width={900}>
+                  <SitePreview project={exampleProject(x.id)} compact />
+                </DesktopFrame>
               </span>
               <span className={s.exampleName}>{x.name}</span>
-              <span className={s.exampleDemo}>{x.demo}</span>
+              <span className={s.exampleDemo}>
+                {x.demo} · {packageNote(x.id)}
+              </span>
+              <span className={s.exampleOpen}>
+                Ver exemplo <ChevronRight aria-hidden="true" />
+              </span>
             </button>
           )),
           <div key="outro" className={`${s.exampleCard} ${s.otherCard}`}>
-            <h3>Seu segmento não está aqui?</h3>
+            <h3>Outro segmento</h3>
             <p>Comece por um modelo neutro e conte qual é o seu negócio.</p>
             {otherPending && <ConfirmBox pending={otherPending} onCancel={() => setOtherPending(null)} />}
             <button type="button" className={`${s.primary} ${s.small}`} onClick={applyOther}>
@@ -340,13 +267,13 @@ function Examples({ state }: { state: ProjectState }) {
             <div className={s.demoHead}>
               <div>
                 <h3 id="exemplo-titulo">{opened.name}</h3>
-                <p>{opened.demo} · nome e textos fictícios</p>
+                <p>Exemplo fictício · {opened.demo}</p>
               </div>
-              <button type="button" className={s.closeButton} onClick={() => dialog.current?.close()} aria-label="Fechar demonstração" autoFocus>
+              <button type="button" className={s.closeButton} onClick={() => dialog.current?.close()} aria-label="Fechar exemplo" autoFocus>
                 <X aria-hidden="true" />
               </button>
             </div>
-            <div className={s.viewSwitch} role="group" aria-label="Ver a demonstração no">
+            <div className={s.viewSwitch} role="group" aria-label="Ver o exemplo no">
               <button type="button" aria-pressed={device === 'desktop'} onClick={() => changeDevice('desktop')}>
                 <Monitor aria-hidden="true" /> Computador
               </button>
@@ -378,9 +305,12 @@ function Examples({ state }: { state: ProjectState }) {
                   Próximo <ChevronRight aria-hidden="true" />
                 </button>
               </div>
-              <button type="button" className={s.primary} onClick={applyOpened}>
-                Usar este modelo como ponto de partida
-              </button>
+              <div className={s.demoUse}>
+                <button type="button" className={s.primary} onClick={applyOpened}>
+                  Usar este modelo
+                </button>
+                <small>Leva o estilo e o segmento. Começa no {packageNote(opened.id)}; você pode mudar no final.</small>
+              </div>
             </div>
           </>
         )}
@@ -389,56 +319,116 @@ function Examples({ state }: { state: ProjectState }) {
   );
 }
 
-/** Área compacta de investimento: preço inicial e os três caminhos. */
-function Investment({ state }: { state: ProjectState }) {
-  const [pending, setPending] = useState<Pending | null>(null);
-
-  function choose(id: Project['plan'] & string) {
-    const p = state.project;
-    const next = { ...applyPlan(p, id), step: p.name.trim() ? 2 : 0 };
-    const run = () => {
-      state.commit(next);
-      track('plan_selected', { plan: id, source: 'investimento' });
-      track('configurator_start');
-      openBuilder();
-    };
-    const changes = choiceChanges(p, next).filter((c) => c !== 'caminho de contratação');
-    if (customStructure(p).length && changes.length) setPending({ title: 'Este caminho muda a estrutura que você ajustou.', changes, confirmLabel: 'Aplicar mesmo assim', apply: run });
-    else run();
-  }
-
+/** Pacotes: valor total, o que cada um inclui e o caminho para projetos fora deles. */
+function Investment() {
   return (
     <section className={s.section} id="investimento" aria-labelledby="investimento-titulo">
       <div className={s.wrap}>
         <div className={s.sectionHead}>
-          <h2 id="investimento-titulo">Investimento</h2>
-          <p>Estimativa na prévia; valor confirmado por escrito antes da contratação.</p>
+          <h2 id="investimento-titulo">O que está incluído</h2>
+          <p>Três pacotes de valor fixo. O preço é o total do desenvolvimento — sem cobrança por estilo ou cor.</p>
         </div>
-        <div className={s.invest}>
-          <div className={s.investMain}>
-            <span>Projetos a partir de</span>
-            <strong>{brl(pricing.base)}</strong>
-            <small>Pagamento único pelo desenvolvimento.</small>
-          </div>
-          <ul className={s.investList}>
-            {plans.map((plan) => {
-              const e = projectEstimate(applyPlan(initialProject(), plan.id));
-              return (
-                <li key={plan.id}>
-                  <button type="button" onClick={() => choose(plan.id)} aria-label={`Começar a prévia com ${plan.name}`}>
-                    <span className={s.investName}>{plan.name}</span>
-                    <span className={s.investPrice}>{plan.needsAssessment ? 'Após levantamento' : `a partir de ${brl(e.min)}`}</span>
-                    <ChevronRight aria-hidden="true" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          {pending && <ConfirmBox pending={pending} onCancel={() => setPending(null)} />}
-          <p className={s.hint}>
-            Domínio, hospedagem e plataformas externas são contratados à parte. <a href="#perguntas">Ver dúvidas</a>
+        <ul className={s.packages}>
+          {packages.map((pkg) => (
+            <li key={pkg.id} className={s.package}>
+              <h3>{pkg.name}</h3>
+              <strong className={s.packagePrice}>{brl(pkg.price)}</strong>
+              <p className={s.packageFor}>{pkg.forWhom}</p>
+              <ul className={s.checkList}>
+                {pkg.includes.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+        <p className={s.packagesNote}>
+          {priceNotes.payment} <a href="#perguntas">Ver o que é pago à parte</a>
+        </p>
+        <div className={s.customBox}>
+          <h3>Precisa de algo fora dos pacotes?</h3>
+          <p>
+            {customNeeds
+              .slice(0, 6)
+              .map((n) => n.name)
+              .join(' · ')}
+            . Esses projetos têm orçamento separado.
           </p>
+          <a
+            className={`${s.secondary} ${s.small}`}
+            href={whatsappLink(contact.whatsappProjetoPersonalizado)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => track('whatsapp_open', { context: 'projeto_personalizado' })}
+          >
+            Preciso de um projeto personalizado
+          </a>
         </div>
+        <div className={s.investCta}>
+          <a className={s.primary} href={builderHref} onClick={() => track('start_click', { context: 'pacotes' })}>
+            Criar minha prévia grátis
+          </a>
+          <small>Você vê o pacote que combina com o seu site antes de pedir.</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Projetos reais e depoimentos. Só aparece com material autorizado em
+ * config/proof.ts — sem ele, a seção não é publicada.
+ */
+function RealWork() {
+  if (!realProjects.length && !testimonials.length) return null;
+  return (
+    <section className={`${s.section} ${s.band}`} id="projetos" aria-labelledby="projetos-titulo">
+      <div className={s.wrap}>
+        <div className={s.sectionHead}>
+          <h2 id="projetos-titulo">Projetos reais</h2>
+          <p>Sites entregues, publicados com autorização dos clientes.</p>
+        </div>
+        {realProjects.length > 0 && (
+          <ul className={s.realList}>
+            {realProjects.map((r) => (
+              <li key={r.client} className={s.realCard}>
+                <span className={s.realTag}>Projeto real</span>
+                <div className={r.previewImage ? s.compare : undefined}>
+                  {r.previewImage && (
+                    <figure>
+                      <img src={asset(r.previewImage)} alt={`Prévia escolhida por ${r.client}`} loading="lazy" width={640} height={400} />
+                      <figcaption>Prévia escolhida</figcaption>
+                    </figure>
+                  )}
+                  <figure>
+                    <img src={asset(r.image)} alt={`Site entregue para ${r.client}`} loading="lazy" width={640} height={400} />
+                    <figcaption>Site entregue</figcaption>
+                  </figure>
+                </div>
+                <h3>{r.client}</h3>
+                <p>{r.segment}</p>
+                {r.url && (
+                  <a href={r.url} target="_blank" rel="noopener noreferrer">
+                    Ver o site
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        {testimonials.length > 0 && (
+          <ul className={s.quotes}>
+            {testimonials.map((t) => (
+              <li key={t.name}>
+                <blockquote>{t.text}</blockquote>
+                <p>
+                  {t.name}
+                  {t.company ? ` · ${t.company}` : ''}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );
@@ -451,17 +441,12 @@ function About() {
         <img className={s.aboutPhoto} src={asset('/brand/matheus-beck.webp')} alt={`Foto de ${contact.owner}`} width={280} height={334} loading="lazy" />
         <div>
           <h2 id="sobre-titulo">Quem cuida do seu projeto</h2>
-          <p>Sou {contact.owner}, da Beck Performance. Conduzo seu projeto do escopo à publicação.</p>
+          <p>Sou {contact.owner}, da Beck Performance. Conduzo seu site do escopo à publicação, com atendimento direto.</p>
           <ul className={`${s.checkList} ${s.aboutFacts}`}>
-            <li>Atendimento direto, sem intermediários</li>
-            <li>Escopo, investimento e prazo por escrito antes do início</li>
+            <li>Escopo, valor e prazo por escrito antes do início</li>
+            <li>Orientação para reunir logo, fotos e informações</li>
             <li>WhatsApp {contact.whatsappDisplay}</li>
           </ul>
-          <div className={s.actionRow} style={{ marginTop: 18 }}>
-            <a className={`${s.secondary} ${s.small}`} href={mainSiteUrl}>
-              Conhecer a gestão de tráfego pago
-            </a>
-          </div>
         </div>
       </div>
     </section>
@@ -482,7 +467,6 @@ function Faq() {
       <div className={s.wrap}>
         <div className={s.sectionHead}>
           <h2 id="faq-titulo">Perguntas frequentes</h2>
-          <p>O que está incluído, o que fica à parte e os próximos passos.</p>
         </div>
         <div className={s.faq} id="lista-perguntas">
           {shown.map(([q, a], i) => (

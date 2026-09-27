@@ -1,33 +1,69 @@
 'use client';
 /* ==========================================================================
-   Etapas 1 a 3 do configurador: Seu negócio, Aparência e Conteúdo.
-   Só o nome da empresa é obrigatório; o resto são escolhas com um toque.
+   Etapas 1 a 3 do configurador: Seu negócio, Seu objetivo e Sua identidade.
+   Só nome e segmento são obrigatórios; o resto tem sugestão pronta.
    ========================================================================== */
-import type { RefObject } from 'react';
-import { Building2, Inbox, LayoutGrid, MessageCircle, ShoppingBag } from 'lucide-react';
-import { pricing, brl } from '@/config/pricing';
-import { features } from '@/config/features';
-import { siteTypes } from '@/config/siteTypes';
-import { FORM_EMAIL, FORM_WHATSAPP, emailFormNotice, volumeOptions, volumeQuestion } from '@/config/forms';
-import { complexNeeds, plans, scopeRules } from '@/config/offer';
-import { introSuggestions } from '@/config/copy';
+import { useState, type RefObject } from 'react';
+import { Building2, CalendarClock, Images, LayoutGrid, MessageCircle, ReceiptText, ShoppingBag, Sparkles } from 'lucide-react';
 import { contact } from '@/config/contact';
+import { brl, packageById, rank } from '@/config/packages';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
-import { applyPlan, needsDiagnosis, objectives, projectEstimate, recommendedPlan, sections, segments, type Project } from '@/lib/project';
-import { Check, Radios } from '../landing/Controls';
+import {
+  directions,
+  objectiveOf,
+  objectives,
+  recommendation,
+  segmentOf,
+  segments,
+  selectedSections,
+  withObjective,
+  type Project,
+} from '@/lib/project';
+import { Radios } from '../landing/Controls';
 import { LogoField, StylePicker, SwatchPicker } from './Pickers';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
 type Edit = (patch: Partial<Project>) => void;
+type Replace = (next: Project) => void;
 
-const objectiveIcon: Record<string, typeof Inbox> = { orcamento: Inbox, empresa: Building2, servicos: LayoutGrid, produtos: ShoppingBag };
+const objectiveIcon: Record<string, typeof ReceiptText> = {
+  orcamento: ReceiptText,
+  agendamento: CalendarClock,
+  empresa: Building2,
+  servicos: LayoutGrid,
+  produtos: ShoppingBag,
+  trabalhos: Images,
+};
+
+export type StepErrors = { name?: string; segment?: string };
 
 /* ── Etapa 1 — Seu negócio ─────────────────────────────────────────────── */
 
-export function StepBusiness({ p, edit, nameError, nameRef }: { p: Project; edit: Edit; nameError?: string; nameRef: RefObject<HTMLInputElement | null> }) {
-  const visible = objectives.filter((o) => o.visible || o.id === p.objective);
+export function StepBusiness({
+  p,
+  edit,
+  replace,
+  errors,
+  nameRef,
+}: {
+  p: Project;
+  edit: Edit;
+  replace: Replace;
+  errors: StepErrors;
+  nameRef: RefObject<HTMLInputElement | null>;
+}) {
+  const seg = p.segment ? segmentOf(p) : null;
+
+  function chooseSegment(id: string) {
+    const next = segments.find((x) => x.id === id)!;
+    let project: Project = { ...p, segment: id };
+    if (!p.objectiveSet) project = withObjective(project, next.objectives[0], { chosen: false });
+    if (!p.identitySet) project = { ...project, direction: next.styles[0], palette: next.palette };
+    replace(project);
+  }
+
   return (
     <>
       <div className={b.group}>
@@ -38,217 +74,202 @@ export function StepBusiness({ p, edit, nameError, nameRef }: { p: Project; edit
             id="nome-empresa"
             maxLength={80}
             value={p.name}
-            placeholder="Ex.: Studio Aurora"
+            placeholder="Ex.: Clima Sul Refrigeração"
             autoComplete="organization"
-            aria-invalid={Boolean(nameError)}
-            aria-describedby={nameError ? 'erro-nome-empresa' : undefined}
+            aria-invalid={Boolean(errors.name)}
+            aria-describedby={errors.name ? 'erro-nome-empresa' : undefined}
             onChange={(ev) => edit({ name: ev.target.value })}
           />
-          {nameError && (
+          {errors.name && (
             <span className={s.fieldError} id="erro-nome-empresa">
-              {nameError}
+              {errors.name}
             </span>
           )}
         </label>
       </div>
 
-      <Radios label="Segmento" variant="chip" value={p.segment} options={segments.map((x) => ({ id: x.id, label: x.id === 'outro' ? 'Outro' : x.name }))} onChange={(id) => edit({ segment: id })} />
+      <Radios
+        label="Segmento"
+        variant="chip"
+        value={p.segment}
+        options={segments.map((x) => ({ id: x.id, label: x.short }))}
+        onChange={chooseSegment}
+      />
+      {errors.segment && !p.segment && (
+        <p className={s.fieldError} id="erro-segmento" role="alert" style={{ marginTop: 6 }}>
+          {errors.segment}
+        </p>
+      )}
       {p.segment === 'outro' && (
         <label className={`${s.field} ${b.group}`} style={{ marginTop: 12 }}>
-          Qual é o segmento? <small>Opcional</small>
-          <input id="segmento-outro" maxLength={60} value={p.segmentOther} placeholder="Ex.: escola de idiomas" onChange={(ev) => edit({ segmentOther: ev.target.value })} />
+          Qual é o segmento?
+          <input
+            id="segmento-outro"
+            maxLength={60}
+            value={p.segmentOther}
+            placeholder="Ex.: escola de idiomas"
+            aria-invalid={Boolean(errors.segment)}
+            aria-describedby={errors.segment ? 'erro-segmento-outro' : undefined}
+            onChange={(ev) => edit({ segmentOther: ev.target.value })}
+          />
+          {errors.segment && (
+            <span className={s.fieldError} id="erro-segmento-outro">
+              {errors.segment}
+            </span>
+          )}
         </label>
       )}
 
-      <Radios
-        label="Objetivo principal do site"
-        variant="tile"
-        value={p.guidance ? '' : p.objective}
-        options={visible.map((o) => {
-          const Icon = objectiveIcon[o.id] ?? LayoutGrid;
-          return { id: o.id, label: o.name, lead: <Icon aria-hidden="true" /> };
-        })}
-        onChange={(id) => edit({ objective: id, guidance: false })}
-      />
+      <div className={b.group}>
+        <label className={s.field}>
+          Principal serviço ou produto
+          <input
+            id="servico-principal"
+            maxLength={80}
+            value={p.service}
+            disabled={p.serviceLater}
+            placeholder={seg?.quick[0] ? `Ex.: ${seg.quick[0].toLowerCase()}` : 'Ex.: instalação de ar-condicionado'}
+            onChange={(ev) => edit({ service: ev.target.value })}
+          />
+        </label>
+        <div className={b.quick}>
+          {!p.serviceLater &&
+            (seg?.quick ?? []).map((q) => (
+              <button key={q} type="button" aria-pressed={p.service === q} onClick={() => edit({ service: q })}>
+                {q}
+              </button>
+            ))}
+          <button type="button" aria-pressed={p.serviceLater} onClick={() => edit({ serviceLater: !p.serviceLater, service: '' })}>
+            {p.serviceLater ? 'Informar agora' : 'Definir depois'}
+          </button>
+        </div>
+      </div>
     </>
   );
 }
 
-/* ── Etapa 2 — Aparência ───────────────────────────────────────────────── */
+/* ── Etapa 2 — Seu objetivo ────────────────────────────────────────────── */
 
-export function StepLook({ p, edit, logo, setLogo }: { p: Project; edit: Edit; logo: string | null; setLogo: (v: string | null) => void }) {
+export function StepObjective({ p, replace, onUpgrade }: { p: Project; replace: Replace; onUpgrade: (to: Project['pkg'], source: string) => void }) {
+  const seg = p.segment ? segmentOf(p) : null;
+  const obj = objectiveOf(p);
+  const rec = recommendation(p);
+  const pkg = packageById(rec.pkg);
+
+  return (
+    <>
+      <Radios
+        label="O que você quer que as pessoas façam no seu site?"
+        variant="tile"
+        value={p.objectiveSet ? p.objective : ''}
+        options={objectives.map((o) => {
+          const Icon = objectiveIcon[o.id] ?? LayoutGrid;
+          return { id: o.id, label: o.name, lead: <Icon aria-hidden="true" />, badge: seg?.objectives.includes(o.id) ? 'Comum no seu segmento' : undefined };
+        })}
+        onChange={(id) => replace(withObjective(p, id))}
+      />
+
+      <div className={b.outcome} aria-live="polite">
+        <p className={b.outcomeTitle}>{p.objectiveSet ? 'Com essa escolha, seu site terá' : 'Sugestão para começar'}</p>
+        <dl>
+          <div>
+            <dt>Botão principal</dt>
+            <dd>“{obj.cta}”</dd>
+          </div>
+          <div>
+            <dt>Contato</dt>
+            <dd>{obj.contactPath}</dd>
+          </div>
+          <div>
+            <dt>Seções</dt>
+            <dd>{selectedSections(p).join(' · ')}</dd>
+          </div>
+        </dl>
+        {p.objective === 'agendamento' && (
+          <p className={b.muted}>Não é uma agenda com horários em tempo real: esse tipo de agenda é um projeto personalizado.</p>
+        )}
+        <p className={b.muted}>Você ajusta seções e textos no fim, em “Personalizar meu site”.</p>
+      </div>
+
+      {rank(rec.pkg) > rank(p.pkg) && (
+        <div className={b.suggestion}>
+          <p>
+            <Sparkles aria-hidden="true" /> {rec.reason}
+          </p>
+          <div className={s.actionRow}>
+            <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => onUpgrade(rec.pkg, 'objetivo')}>
+              Ver o {pkg.name} — {brl(pkg.price)} no total
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ── Etapa 3 — Sua identidade ──────────────────────────────────────────── */
+
+export function StepIdentity({ p, edit, logo, setLogo }: { p: Project; edit: Edit; logo: string | null; setLogo: (v: string | null) => void }) {
+  const seg = segmentOf(p);
+  const suggested = seg.styles;
+  const others: string[] = directions.map((d) => d.id).filter((id) => !suggested.includes(id));
+  const [more, setMore] = useState(others.includes(p.direction));
+  const choose = (patch: Partial<Project>) => edit({ ...patch, identitySet: true });
+
   return (
     <>
       <div className={b.group}>
-        <span className={b.label} id="rotulo-estilo">
-          Estilo
-        </span>
-        <StylePicker p={p} onChange={(id) => edit({ direction: id, font: 'auto', legacyTemplate: undefined, legacyStyle: undefined })} />
-        <a
-          className={b.otherStyle}
-          href={whatsappLink(contact.whatsappEstilo)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => track('whatsapp_open', { context: 'estilo_diferente' })}
-        >
-          <MessageCircle aria-hidden="true" /> Escolher um estilo diferente (entrar em contato no WhatsApp)
-        </a>
+        <div className={b.labelRow}>
+          <span className={b.label} id="rotulo-estilo">
+            Estilo
+          </span>
+          <button
+            type="button"
+            className={b.textButton}
+            onClick={() => {
+              setMore(false);
+              choose({ direction: suggested[0], palette: seg.palette, custom: null, font: 'auto' });
+            }}
+          >
+            Escolher por mim
+          </button>
+        </div>
+        <StylePicker p={p} ids={suggested} labelledBy="rotulo-estilo" onChange={(id) => choose({ direction: id, font: 'auto' })} />
+        <details className={s.details} open={more} onToggle={(ev) => setMore((ev.target as HTMLDetailsElement).open)}>
+          <summary>Ver outros estilos</summary>
+          <div className={s.detailsBody}>
+            <span className={s.srOnly} id="rotulo-outros-estilos">
+              Outros estilos
+            </span>
+            <StylePicker p={p} ids={others} labelledBy="rotulo-outros-estilos" onChange={(id) => choose({ direction: id, font: 'auto' })} />
+            <a
+              className={b.otherStyle}
+              href={whatsappLink(contact.whatsappEstilo)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track('whatsapp_open', { context: 'estilo_diferente' })}
+            >
+              <MessageCircle aria-hidden="true" /> Quer um estilo fora da lista? Fale no WhatsApp
+            </a>
+          </div>
+        </details>
       </div>
+
       <div className={b.group}>
         <span className={b.label} id="rotulo-cores">
           Cores
         </span>
-        <SwatchPicker p={p} onPalette={(id) => edit({ palette: id, custom: null })} onCustom={(hex) => edit({ custom: hex })} />
+        <SwatchPicker p={p} onPalette={(id) => choose({ palette: id, custom: null })} onCustom={(hex) => choose({ custom: hex })} />
       </div>
+
       <div className={b.group}>
         <span className={b.label}>
           Logo <small>Opcional</small>
         </span>
         <LogoField logo={logo} onChange={setLogo} />
       </div>
-    </>
-  );
-}
 
-/* ── Etapa 3 — Conteúdo ────────────────────────────────────────────────── */
-
-const extraIds = ['catalogo', 'paginaExtra', 'agendamento', 'animacoes', 'instagram'];
-const extraNote: Record<string, string> = {
-  catalogo: 'Vitrine de produtos, sem pagamento online.',
-  paginaExtra: scopeRules.paginaExtra,
-  agendamento: 'Plataforma externa com assinatura própria.',
-  animacoes: 'Movimentos suaves ao rolar a página.',
-  instagram: 'Pode exigir ferramenta com custo próprio.',
-};
-
-export function StepContent({ p, edit, onPlan }: { p: Project; edit: Edit; onPlan: (id: Project['plan'] & string) => void }) {
-  const rec = recommendedPlan(p);
-  const diagnosis = needsDiagnosis(p);
-  const form = p.features.includes(FORM_EMAIL) ? FORM_EMAIL : p.features.includes(FORM_WHATSAPP) ? FORM_WHATSAPP : 'nenhum';
-  const suggestions = introSuggestions[p.segment] ?? introSuggestions.outro;
-
-  const toggle = (list: 'features' | 'sections', id: string, on: boolean) => {
-    const cur = p[list];
-    edit({ [list]: on ? [...cur, id] : cur.filter((x) => x !== id) });
-  };
-  const setForm = (id: string) => {
-    const rest = p.features.filter((f) => f !== FORM_WHATSAPP && f !== FORM_EMAIL);
-    edit({ features: id === 'nenhum' ? rest : [...rest, id], emailVolume: id === FORM_EMAIL ? p.emailVolume : null });
-  };
-
-  return (
-    <>
-      <Radios
-        label="Estrutura"
-        value={p.plan ?? ''}
-        options={plans.map((x) => ({
-          id: x.id,
-          label: x.name,
-          badge: x.id === rec ? 'Sugerido para seu objetivo' : undefined,
-          hint: diagnosis || x.needsAssessment ? 'Valor após levantamento' : `A partir de ${brl(projectEstimate(applyPlan(p, x.id)).min)}`,
-        }))}
-        onChange={(id) => onPlan(id as Project['plan'] & string)}
-      />
-
-      <div className={b.group}>
-        <span className={b.label}>Seções</span>
-        <div className={s.options}>
-          {sections.map((x) => (
-            <Check
-              key={x.id}
-              title={x.id === 'servicos' && p.objective === 'produtos' ? 'Produtos' : x.name}
-              checked={p.sections.includes(x.id)}
-              disabled={x.fixed}
-              hint={x.fixed ? 'Sempre incluída' : x.id === 'depoimentos' ? 'Só com relatos reais dos seus clientes' : undefined}
-              aside={x.feature ? `+ ${brl(pricing.byFeature[x.feature])}` : 'Incluída'}
-              onChange={(on) => toggle('sections', x.id, on)}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className={b.group}>
-        <span className={b.label}>
-          Frase de apresentação <small>Opcional</small>
-        </span>
-        <div className={b.suggestions}>
-          {suggestions.map((text) => (
-            <button key={text} type="button" aria-pressed={p.description === text} onClick={() => edit({ description: text })}>
-              {text}
-            </button>
-          ))}
-        </div>
-        <label className={s.field}>
-          <span className={s.srOnly}>Frase de apresentação</span>
-          <textarea rows={2} maxLength={160} value={p.description} placeholder="Toque numa sugestão ou escreva a sua" onChange={(ev) => edit({ description: ev.target.value })} />
-        </label>
-      </div>
-
-      <div className={b.group}>
-        <label className={s.field}>
-          Serviço ou produto principal <small>Opcional</small>
-          <input maxLength={100} value={p.service} placeholder="Ex.: instalação de ar-condicionado" onChange={(ev) => edit({ service: ev.target.value })} />
-        </label>
-      </div>
-
-      <details className={s.details}>
-        <summary>Mais recursos</summary>
-        <div className={s.detailsBody}>
-          <Radios
-            label="Formulário de contato"
-            value={form}
-            options={[
-              { id: 'nenhum', label: 'Sem formulário', hint: 'O botão de WhatsApp já está incluído.', aside: 'Incluído' },
-              { id: FORM_WHATSAPP, label: 'Para WhatsApp', hint: 'Sem mensalidade de plataforma.', aside: `+ ${brl(pricing.byFeature[FORM_WHATSAPP])}` },
-              { id: FORM_EMAIL, label: 'Por e-mail', hint: 'Usa uma plataforma externa.', aside: `+ ${brl(pricing.byFeature[FORM_EMAIL])}` },
-            ]}
-            onChange={setForm}
-          />
-          {form === FORM_EMAIL && (
-            <div className={s.infoBox}>
-              <p>{emailFormNotice.limit}</p>
-              <p style={{ marginTop: 4 }}>{emailFormNotice.separateCost}</p>
-              <Radios label={volumeQuestion} variant="chip" value={p.emailVolume ?? ''} options={volumeOptions.map((v) => ({ id: v.id, label: v.label }))} onChange={(id) => edit({ emailVolume: id })} />
-              {p.emailVolume && <p style={{ marginTop: 8 }}>{volumeOptions.find((v) => v.id === p.emailVolume)!.answer}</p>}
-            </div>
-          )}
-          <div className={s.options} style={{ marginTop: 12 }}>
-            {features
-              .filter((f) => extraIds.includes(f.id))
-              .map((f) => (
-                <Check
-                  key={f.id}
-                  title={f.name}
-                  badge={f.id === 'catalogo' && p.objective === 'produtos' ? 'Sugerido' : undefined}
-                  hint={extraNote[f.id]}
-                  aside={`+ ${brl(pricing.byFeature[f.id])}`}
-                  checked={p.features.includes(f.id)}
-                  onChange={(on) => toggle('features', f.id, on)}
-                />
-              ))}
-          </div>
-          <label className={s.field} style={{ marginTop: 12 }}>
-            Categoria do projeto
-            <select value={p.type} onChange={(ev) => edit({ type: ev.target.value })}>
-              {siteTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} · {pricing.byType[t.id] ? `+ ${brl(pricing.byType[t.id])}` : 'incluído'}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-      </details>
-
-      <details className={s.details} open={p.complex.length > 0}>
-        <summary>Precisa de algo mais complexo?</summary>
-        <div className={s.detailsBody}>
-          <p className={b.muted}>Esses itens dependem de um levantamento antes do valor.</p>
-          {complexNeeds.map((n) => (
-            <Check key={n.id} title={n.name} checked={p.complex.includes(n.id)} onChange={(on) => edit({ complex: on ? [...p.complex, n.id] : p.complex.filter((c) => c !== n.id) })} />
-          ))}
-        </div>
-      </details>
+      <p className={b.included}>Estilos, cores da marca e aplicação da logo estão incluídos em todos os pacotes.</p>
     </>
   );
 }

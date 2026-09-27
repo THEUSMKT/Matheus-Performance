@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Consultoria e serviços profissionais: mesa de trabalho (ilustração própria) -->
+  <defs>
+    <linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f6"/><stop offset="1" stop-color="#e1e6ee"/></linearGradient>
+  </defs>
+  <rect width="480" height="360" fill="url(#w)"/>
+  <!-- janela -->
+  <rect x="300" y="40" width="140" height="150" rx="6" fill="#c9d8e8"/>
+  <path d="M370 40v150M300 115h140" stroke="#eef1f6" stroke-width="6"/>
+  <!-- quadro com gráfico -->
+  <rect x="50" y="50" width="200" height="130" rx="8" fill="#fff" stroke="#cdd5e1" stroke-width="3"/>
+  <path d="M74 150l40-34 34 20 46-50 34 24" fill="none" stroke="#3a6ea5" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#3a6ea5"><circle cx="114" cy="116" r="6"/><circle cx="148" cy="136" r="6"/><circle cx="194" cy="86" r="6"/></g>
+  <!-- mesa -->
+  <rect x="30" y="236" width="420" height="20" rx="6" fill="#5a6b80"/>
+  <rect x="60" y="256" width="14" height="104" fill="#48576a"/><rect x="406" y="256" width="14" height="104" fill="#48576a"/>
+  <!-- notebook -->
+  <path d="M170 236l14-70h130l14 70z" fill="#2e3947"/>
+  <path d="M190 226l10-50h100l10 50z" fill="#9fb8d4"/>
+  <rect x="150" y="232" width="200" height="8" rx="4" fill="#3c4858"/>
+  <!-- caderno, xícara e planta -->
+  <rect x="70" y="214" width="80" height="22" rx="4" fill="#f4f1ea" stroke="#d4cdbf" stroke-width="2"/>
+  <path d="M90 222h40M90 229h30" stroke="#b9b1a2" stroke-width="3"/>
+  <rect x="370" y="206" width="28" height="30" rx="6" fill="#f7f7f7" stroke="#cdd5e1" stroke-width="2"/>
+  <path d="M398 214c10 0 10 14 0 14" fill="none" stroke="#cdd5e1" stroke-width="3"/>
+  <path d="M404 236h30l-4-26h-22z" fill="#c7a17d"/>
+  <g fill="#6f8f73"><path d="M419 210c-16-12-20-30-12-44 10 10 14 26 12 44z"/><path d="M419 210c12-16 24-22 34-22-4 14-16 22-34 22z"/></g>
+</svg>

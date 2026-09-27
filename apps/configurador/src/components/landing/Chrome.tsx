@@ -7,6 +7,7 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { contact } from '@/config/contact';
+import { priceRange } from '@/config/packages';
 import { whatsappLink } from '@/lib/whatsapp';
 import { track } from '@/lib/analytics';
 import s from './Landing.module.css';
@@ -42,7 +43,7 @@ export function Brand({ href = '#topo', onHome = true }: { href?: string; onHome
 const navItems = [
   ['#exemplos', 'Exemplos'],
   ['#como-funciona', 'Como funciona'],
-  ['#investimento', 'Investimento'],
+  ['#investimento', 'Pacotes'],
   ['#perguntas', 'Perguntas'],
 ] as const;
 
@@ -61,13 +62,13 @@ function NavLink({ hash, onHome, className, onClick, children }: { hash: string;
 
 export function Header({
   onHome = true,
-  ctaLabel = 'Criar minha prévia',
+  ctaLabel = 'Criar minha prévia grátis',
   ctaHref = builderHref,
   onStart,
 }: {
   onHome?: boolean;
   ctaLabel?: string;
-  /** Na página inicial o botão leva ao cartão flutuante; nas outras, à criação. */
+  /** Destino do botão principal: a página de criação. */
   ctaHref?: string;
   onStart?: (ev: MouseEvent<HTMLAnchorElement>) => void;
 }) {
@@ -132,7 +133,7 @@ export function Footer({ onHome = true }: { onHome?: boolean }) {
           <div>
             <Brand onHome={onHome} />
             <p style={{ marginTop: 10, maxWidth: '36ch' }}>
-              Sites para empresas de todos os portes, com escopo e investimento combinados antes do início.
+              Sites para empresas de pequeno, médio e grande porte. O limite é a complexidade do projeto, não o tamanho da empresa.
             </p>
           </div>
           <div>
@@ -146,7 +147,7 @@ export function Footer({ onHome = true }: { onHome?: boolean }) {
                 </li>
               ))}
               <li>
-                <a href={builderHref}>Criar minha prévia</a>
+                <a href={builderHref}>Criar minha prévia grátis</a>
               </li>
             </ul>
           </div>
@@ -188,7 +189,8 @@ export function Footer({ onHome = true }: { onHome?: boolean }) {
           </div>
         </div>
         <p className={s.footerBottom}>
-          © {new Date().getFullYear()} {contact.brand}. Valores exibidos são estimativas; escopo, investimento e prazo são confirmados por escrito antes da contratação.
+          © {new Date().getFullYear()} {contact.brand}. Pacotes de desenvolvimento de {priceRange}, pagamento único; domínio e hospedagem à parte. Escopo e prazo
+          confirmados por escrito antes da contratação.
         </p>
       </div>
     </footer>

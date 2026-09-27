@@ -3,21 +3,19 @@
 
    O mesmo módulo valida no navegador e no receptor (integrations/
    lead-receiver). O navegador nunca decide o preço da proposta: manda a
-   estimativa só como referência, e o receptor recalcula com as mesmas
+   pacote e o valor só como referência, e o receptor recalcula com as mesmas
    regras. Sucesso só existe quando o receptor responde que salvou.
    ========================================================================== */
-import { complexNeeds } from '../config/offer';
-import {
-  budgetInfo,
-  FLOW_VERSION,
-  needsDiagnosis,
-  normalizeProject,
-  projectEstimate,
-  type Project,
-} from './project';
+import type { PriceInfo } from '../../integrations/lead-receiver/crm';
+import { currentPackage, customNeedNames, deadlineText, FLOW_VERSION, isCustom, normalizeProject, objectiveOf, priceOf, type Project } from './project';
 import type { Origin } from './origin';
 
-export const LEAD_SCHEMA_VERSION = 1;
+export const LEAD_SCHEMA_VERSION = 2;
+
+/** Pacote e valor, calculados pelas mesmas funções da página. */
+export function priceInfo(p: Project): PriceInfo {
+  return { package: currentPackage(p).id, value: priceOf(p), custom: isCustom(p), deadline: deadlineText(p) };
+}
 
 export type LeadPayload = {
   schema: typeof LEAD_SCHEMA_VERSION;
@@ -27,7 +25,6 @@ export type LeadPayload = {
   contact: { name: string; channel: string; value: string };
   qualification: {
     need: string;
-    budget: ReturnType<typeof budgetInfo>;
     deadline: string;
     decision: string;
   };
@@ -35,7 +32,7 @@ export type LeadPayload = {
   /** Projeto completo, com textos privados — só trafega para o receptor. */
   project: Project;
   /** Referência do navegador. O receptor recalcula e é o valor dele que vale. */
-  clientEstimate: { min: number; max: number; total: number; deadline: string; diagnosis: boolean };
+  clientPrice: PriceInfo;
   origin: Origin;
 };
 
@@ -83,13 +80,8 @@ export function stableHash(text: string): string {
  */
 export function buildPayload(input: Project, origin: Origin): LeadPayload {
   const p = normalizeProject(input);
-  const e = projectEstimate(p);
   const contactValue = p.lead.channel === 'email' ? p.lead.contact.trim().toLowerCase() : normalizePhone(p.lead.contact);
-  const need = p.complex.length
-    ? complexNeeds.filter((n) => p.complex.includes(n.id)).map((n) => n.name).join('; ')
-    : p.guidance
-      ? 'Precisa de orientação para definir'
-      : p.objective;
+  const need = isCustom(p) ? `Projeto personalizado: ${customNeedNames(p).join('; ')}` : objectiveOf(p).name;
   const body = {
     projectId: p.id,
     contact: { name: p.lead.name.trim(), channel: p.lead.channel, value: contactValue },
@@ -101,10 +93,10 @@ export function buildPayload(input: Project, origin: Origin): LeadPayload {
     projectId: p.id,
     flowVersion: FLOW_VERSION,
     contact: body.contact,
-    qualification: { need, budget: budgetInfo(p), deadline: p.lead.deadline, decision: p.lead.decision },
+    qualification: { need, deadline: p.lead.deadline, decision: p.lead.decision },
     consent: { commercial: true, marketing: p.lead.marketing },
     project: p,
-    clientEstimate: { min: e.min, max: e.max, total: e.total, deadline: e.deadline, diagnosis: needsDiagnosis(p) },
+    clientPrice: priceInfo(p),
     origin,
   };
 }

@@ -23,19 +23,15 @@ export type ExperimentId = keyof typeof experiments;
 /** Textos que cada variante troca. O controle é o texto aprovado. */
 export const heroVariants = {
   a: {
-    eyebrow: 'Sites para empresas de todos os portes',
-    title: 'Estruture seu site profissional em até 5 minutos.',
-    description: 'Monte uma prévia personalizada em poucos passos.',
+    title: 'Veja como o site da sua empresa pode ficar em até 5 minutos.',
   },
   b: {
-    eyebrow: 'Sites para empresas de todos os portes',
     title: 'Veja o site da sua empresa antes de contratar.',
-    description: 'Monte uma prévia personalizada em poucos passos.',
   },
 } as const;
 
 /** Rótulo do botão principal para quem ainda não tem prévia salva. */
 export const ctaVariants = {
-  a: { primary: 'Criar minha prévia' },
-  b: { primary: 'Montar minha prévia' },
+  a: { primary: 'Criar minha prévia grátis' },
+  b: { primary: 'Ver meu site em 5 minutos' },
 } as const;

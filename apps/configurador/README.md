@@ -1,11 +1,14 @@
 # Configurador de sites — Beck Performance
 
-Página de criação de sites para empresas de todos os portes. A apresentação
-(`/`) mostra exemplos e o investimento inicial; a página de criação
-(`/criar/`) monta a prévia do site em quatro etapas — Seu negócio →
-Aparência → Conteúdo → Sua prévia — com a prévia ao lado (ou em
-“Ver prévia”, no celular). No fim, a estimativa e o pedido de orçamento pelo
-WhatsApp com o resumo pronto. Tudo fica salvo no navegador.
+Prévia gratuita do site da empresa em até 5 minutos e desenvolvimento em
+três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). A apresentação (`/`)
+mostra os dois diferenciais, exemplos, como funciona, os pacotes e as
+perguntas; o botão principal abre direto a página de criação (`/criar/`),
+que monta a prévia em quatro etapas — Seu negócio → Seu objetivo → Sua
+identidade → Seu site — com a prévia ao lado (ou em “Ver meu site”, no
+celular). No fim, o valor do pacote, “Personalizar meu site” e o pedido de
+desenvolvimento pelo WhatsApp com o resumo pronto. Tudo fica salvo neste
+dispositivo.
 
 Next.js 16 · React 19 · TypeScript · CSS Modules. Exporta HTML estático e é
 publicado no GitHub Pages em `/Matheus-Performance/configurador/`.
@@ -21,7 +24,7 @@ publicado no GitHub Pages em `/Matheus-Performance/configurador/`.
 cd apps/configurador
 npm ci
 npm run dev        # http://localhost:3000
-npm test           # regras de preço, migração, orçamento, pedidos e eventos
+npm test           # pacotes, limites, migração, mensagem, pedidos e eventos
 npm run typecheck
 NEXT_PUBLIC_BASE_PATH=/Matheus-Performance/configurador npm run build   # gera out/
 npm run preview    # serve out/ no caminho do GitHub Pages
@@ -36,30 +39,31 @@ texto comercial fica escrito dentro de componente.
 
 | Arquivo | O que controla |
 |---|---|
-| `contact.ts` | Marca, responsável, **WhatsApp** (único lugar do número), e-mail e Instagram (vazios = não aparecem), liberação para o Google |
-| `pricing.ts` | Valor base, acréscimos, faixa exibida, prazos e como a identidade visual entra no preço |
-| `offer.ts` | Os três caminhos de contratação, necessidades que exigem diagnóstico, regras de escopo, rodadas de ajuste |
-| `forms.ts` | Formulário por WhatsApp ou e-mail, limite do plano gratuito e textos de volume |
-| `features.ts` · `siteTypes.ts` | Nomes dos recursos e categorias |
-| `projectFaq.ts` | Perguntas frequentes (valores vêm de `pricing.ts`) |
-| `copy.ts` | Frases de apresentação sugeridas por segmento (exemplos editáveis) |
+| `packages.ts` | **Os três pacotes** (valor, limite de seções, galeria, vitrine, formulário, prazo, o que inclui), rodadas de ajuste, notas de preço, o que é projeto personalizado e custos externos |
+| `contact.ts` | Marca, responsável, **WhatsApp** (único lugar do número), mensagens de abertura, e-mail e Instagram (vazios = não aparecem), liberação para o Google |
+| `segments.ts` | Segmentos, textos sugeridos, estilos e cores sugeridos, respostas rápidas e regras por palavra-chave (ex.: ar-condicionado → imagem de climatização) |
+| `projectFaq.ts` | Perguntas frequentes (valores, prazos e limites vêm de `packages.ts`) |
+| `proof.ts` | Projetos reais e depoimentos — **só com autorização**; vazio = a seção não aparece |
 | `experiments.ts` | Testes de mensagem e CTA (todos inativos) |
 | `integrations.ts` | Receptor de pedidos e ambiente, lidos de variáveis de ambiente |
 
-O cálculo mora em `src/lib/estimate.ts`: a função `breakdown()` gera as
-linhas da composição e o total é a soma delas. Página, PDF, mensagem do
-WhatsApp e receptor usam a mesma função — não há como divergirem.
+O preço é sempre o do pacote escolhido (`priceOf` em `src/lib/project.ts`).
+Estilo, cores da marca e logo não têm cobrança própria. Seções e recursos
+dizem qual pacote exigem (`requiredPackage`); uma escolha que pede outro
+pacote só é aplicada depois que o visitante confirma. O teto de R$ 1.000 é o
+preço do maior pacote — o que não cabe nele vira “projeto personalizado”.
+Página, PDF, mensagem do WhatsApp e receptor usam as mesmas funções.
 
 ## Estrutura
 
 | Caminho | Papel |
 |---|---|
 | `src/components/landing/` | Apresentação, cabeçalho/rodapé (`Chrome`), controles de escolha e estado salvo (`useProject`) |
-| `src/app/criar/` · `src/components/builder/` | Página de criação: as quatro etapas, escolhas visuais, resumo e pedido |
-| `src/components/preview/SitePreview.tsx` | Prévia do site que reflete nome, logo, estilo, cores, seções e objetivo |
-| `src/components/InspirationPreview.tsx` | Miniaturas dos exemplos (`Inspiration.module.css`) |
+| `src/app/criar/` · `src/components/builder/` | Página de criação: as quatro etapas (`Steps`), “Seu site” e “Personalizar meu site” (`Site`), preço e pacotes (`Packages`) |
+| `src/components/preview/SitePreview.tsx` | Prévia do site: nome, logo, segmento, serviço, objetivo, estilo, cores e seções na ordem escolhida |
+| `public/demo/` | Ilustrações próprias por segmento (SVG, sem links externos) |
 | `src/lib/logo.ts` | Logo enviada para a prévia — fica só no navegador |
-| `src/lib/project.ts` | Modelo do projeto (v3), validação, migração da v1/v2, links, mensagem |
+| `src/lib/project.ts` | Modelo do projeto (v4), pacotes, validação, migração da v1/v2/v3, links, mensagem |
 | `src/lib/leads.ts` | Contrato do pedido, validação, envio com idempotência |
 | `src/lib/analytics.ts` · `origin.ts` | Eventos e origem da visita |
 | `integrations/lead-receiver/` | Receptor de referência e modelo do CRM |

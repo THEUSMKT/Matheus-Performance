@@ -19,12 +19,11 @@ global.CustomEvent = class { constructor(type, init) { this.type = type; this.de
 global.window = { dispatchEvent: (e) => events.push(e.detail), dataLayer: [] };
 
 const model = require('../src/lib/project.ts');
-const {pricing} = require('../src/config/pricing.ts');
-const {plans} = require('../src/config/offer.ts');
-const {estimate, breakdown} = require('../src/lib/estimate.ts');
+const pk = require('../src/config/packages.ts');
 const leads = require('../src/lib/leads.ts');
 const analytics = require('../src/lib/analytics.ts');
 const origin = require('../src/lib/origin.ts');
+const {projectFaq} = require('../src/config/projectFaq.ts');
 const {createReceiver, memoryAdapters} = require('../integrations/lead-receiver/receiver.ts');
 const crm = require('../integrations/lead-receiver/crm.ts');
 
@@ -36,157 +35,262 @@ function test(name, fn) {
   else { count++; console.log('PASS', name); }
 }
 const withLead = (p, lead) => model.normalizeProject({ ...p, id: 'bp-abcdef1234', lead: { ...model.emptyLead, ...lead } });
+const base = (patch = {}) => model.normalizeProject({ ...model.initialProject(), name: 'Clima Sul', segment: 'local', ...patch });
+const ok = (r) => { assert.equal(r.kind, 'ok'); return r.project; };
 
-/* ── Preço ─────────────────────────────────────────────────────────────── */
+/* ── Pacotes ───────────────────────────────────────────────────────────── */
 
-test('Projeto base continua em R$ 500 com faixa e prazo originais', () => {
-  const e = model.projectEstimate(model.initialProject());
-  assert.equal(e.total, 500); assert.equal(e.min, 500); assert.equal(e.max, 550); assert.equal(e.deadline, '3–5 dias úteis');
+test('Três pacotes centralizados: R$ 500, R$ 750 e R$ 1.000, com limites do escopo', () => {
+  assert.deepEqual(pk.packages.map((x) => [x.id, x.price, x.maxSections, x.galleryImages, x.showcaseItems, x.form]), [
+    ['essencial', 500, 5, 0, 0, false],
+    ['profissional', 750, 7, 8, 0, true],
+    ['completo', 1000, 8, 15, 10, true],
+  ]);
+  assert.equal(pk.priceRange, 'R$ 500 a R$ 1.000');
+  assert.equal(pk.revisionRounds, 2);
+  assert.equal(pk.priceNotes.payment, 'Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.');
+  assert.equal(pk.priceNotes.landing, 'Valor do desenvolvimento. Domínio e hospedagem à parte.');
+  assert.equal(model.packageOffer('profissional'), 'Disponível no Profissional — R$ 750 no total.');
 });
 
-test('Composição soma exatamente o total em todas as combinações', () => {
+test('Novo projeto começa no Essencial e o preço é exatamente o do pacote', () => {
+  const p = model.initialProject();
+  assert.equal(p.pkg, 'essencial'); assert.equal(model.priceOf(p), 500); assert.equal(model.investmentLabel(p), 'R$ 500');
+  for (const x of pk.packages) {
+    const q = model.switchPackage(p, x.id).project;
+    assert.equal(model.priceOf(q), x.price); assert.equal(model.investmentLabel(q), pk.brl(x.price));
+  }
+});
+
+test('Estilo, cores da marca e logo não mudam o preço', () => {
+  const p = base();
+  for (const d of model.directions) for (const custom of [null, '#123456']) {
+    const q = model.normalizeProject({ ...p, direction: d.id, custom, identitySet: true });
+    assert.equal(model.priceOf(q), 500, d.id);
+    assert.equal(model.projectMessage(q, '', { logo: true }).includes('R$ 500'), true);
+  }
+});
+
+test('Opção de outro pacote não é aplicada sem escolha: checkChange só informa', () => {
+  const p = base();
+  const gal = model.checkChange(p, { sections: [...p.sections.slice(0, -1), 'galeria', 'contato'] });
+  assert.equal(gal.kind, 'upgrade'); assert.equal(gal.to, 'profissional'); assert.equal(gal.project.pkg, 'profissional');
+  assert.equal(p.pkg, 'essencial', 'o projeto atual não muda');
+  assert.equal(model.checkChange(p, { form: true }).to, 'profissional');
+  const vit = model.checkChange(p, { sections: [...p.sections.slice(0, -1), 'vitrine', 'contato'] });
+  assert.equal(vit.to, 'completo');
+  const six = model.checkChange(p, { sections: [...p.sections.slice(0, -1), 'processo', 'contato'] });
+  assert.equal(six.kind, 'upgrade'); assert.equal(six.to, 'profissional', '6 seções pedem o Profissional');
+  const prof = model.switchPackage(p, 'profissional').project;
+  assert.equal(model.checkChange(prof, { form: true }).kind, 'ok');
+  assert.equal(model.checkChange(prof, { sections: [...prof.sections.slice(0, -1), 'galeria', 'contato'], gallery: 15 }).to, 'completo');
+});
+
+test('Teto de R$ 1.000 vem do escopo: mais de 8 seções pede projeto personalizado', () => {
+  const all = model.sections.map((x) => x.id);
+  const c = model.switchPackage(base(), 'completo').project;
+  assert.equal(model.checkChange(c, { sections: all }).kind, 'custom');
+  // Nenhuma combinação válida passa do maior pacote.
   let n = 0;
-  for (const segment of model.segments) for (const objective of model.objectives) for (const direction of model.directions) for (const plan of plans) {
-    const p = model.applyPlan(model.normalizeProject({ ...model.initialProject(), segment: segment.id, objective: objective.id, direction: direction.id, custom: n % 2 ? '#123456' : null, features: ['whatsapp', 'redes', 'catalogo', 'agendamento'] }), plan.id);
-    const e = model.projectEstimate(p);
-    assert.equal(model.composition(p).reduce((s, l) => s + l.value, 0), e.total);
-    assert.equal(breakdown(model.selectionFor(p)).reduce((s, l) => s + l.value, 0), e.total);
-    assert.deepEqual(model.projectEstimate(model.normalizeProject(JSON.parse(JSON.stringify(p)))), e);
-    const msg = model.projectMessage(p);
-    assert(msg.includes(model.priceLabel(p)), 'mensagem usa a mesma faixa');
-    n++;
+  const optional = all.filter((id) => id !== 'apresentacao' && id !== 'contato');
+  for (let mask = 0; mask < 1 << optional.length; mask++) for (const form of [false, true]) for (const gallery of [8, 15]) {
+    const list = ['apresentacao', ...optional.filter((_, i) => mask & (1 << i)), 'contato'];
+    const need = model.requiredPackage({ sections: list, form, gallery });
+    if (list.length > 8) { assert.equal(need, null); continue; }
+    const q = model.normalizeProject({ ...base(), sections: list, form, gallery });
+    assert(model.priceOf(q) <= 1000); assert(pk.rank(q.pkg) >= pk.rank(need)); n++;
   }
-  assert.equal(n, 6 * 7 * 6 * 3, '4 objetivos visíveis + 3 antigos, ainda aceitos; 6 estilos');
+  assert(n > 500);
 });
 
-test('Recurso repetido não é cobrado duas vezes', () => {
-  const sel = { ...model.selectionFor(model.initialProject()), features: ['galeria', 'galeria', 'faq'] };
-  const lines = breakdown(sel).filter((l) => l.kind === 'feature');
-  assert.equal(lines.filter((l) => l.id === 'galeria').length, 1);
-  assert.equal(estimate(sel).total, pricing.base + pricing.byFeature.galeria + pricing.byFeature.faq);
+test('Trocar para pacote menor lista o que sai antes de aplicar', () => {
+  const c = model.normalizeProject({ ...base(), pkg: 'completo', form: true, gallery: 15, sections: ['apresentacao', 'servicos', 'galeria', 'faq', 'vitrine', 'sobre', 'processo', 'contato'] });
+  assert.equal(c.pkg, 'completo');
+  const toProf = model.switchPackage(c, 'profissional');
+  assert(toProf.removed.includes('Vitrine de produtos')); assert(toProf.removed.includes('Galeria acima de 8 imagens'));
+  assert.equal(toProf.project.pkg, 'profissional'); assert.equal(toProf.project.gallery, 8);
+  assert(toProf.project.sections.length <= 7);
+  const toEss = model.switchPackage(c, 'essencial');
+  for (const r of ['Galeria de fotos', 'Perguntas frequentes', 'Formulário para WhatsApp']) assert(toEss.removed.includes(r), r);
+  assert(toEss.project.sections.length <= 5); assert.equal(toEss.project.form, false);
+  assert.deepEqual(model.switchPackage(base(), 'completo').removed, [], 'subir de pacote não remove nada');
 });
 
-test('Identidade incluída no pacote zera só a identidade, sem mudar o resto', () => {
-  const p = model.normalizeProject({ ...model.initialProject(), direction: 'marcante', custom: '#112233' });
-  const before = model.projectEstimate(p).total;
-  const identity = model.composition(p).find((l) => l.label.startsWith('Identidade')).value;
-  pricing.identity.mode = 'incluida';
-  try {
-    assert.equal(model.projectEstimate(p).total, before - identity);
-    assert.equal(model.composition(p).find((l) => l.label.startsWith('Adaptação')).value, pricing.customColors);
-  } finally { pricing.identity.mode = 'vigente'; }
+test('Recomendação explicável e nunca aplicada sozinha', () => {
+  const p = base();
+  const r = model.recommendation(p);
+  assert.equal(r.pkg, 'profissional'); assert(r.reason.includes('formulário'));
+  assert.equal(p.pkg, 'essencial');
+  assert.equal(model.recommendation(model.withObjective(p, 'produtos')).pkg, 'completo');
+  assert.equal(model.recommendation(model.withObjective(p, 'agendamento')).pkg, 'essencial');
 });
 
-test('Caminhos aplicam estrutura e recalculam; empresarial exige levantamento', () => {
-  for (const plan of plans) {
-    const p = model.applyPlan(model.initialProject(), plan.id);
-    assert.equal(p.plan, plan.id);
-    for (const f of plan.config.features) assert(p.features.includes(f));
-    for (const s of plan.config.sections) assert(p.sections.includes(s));
+test('Projeto personalizado: sem valor de pacote, prévia preservada', () => {
+  const p = model.normalizeProject({ ...base(), complex: ['loja', 'loja', 'hack'] });
+  assert.deepEqual(p.complex, ['loja']);
+  assert.equal(model.priceOf(p), null); assert.equal(model.investmentLabel(p), 'Orçamento personalizado');
+  const msg = model.projectMessage(p);
+  assert(msg.startsWith('Olá! Criei a prévia do meu site e preciso de um projeto personalizado.'));
+  assert(msg.includes('Pacote: projeto personalizado (orçamento separado)'));
+  assert(msg.includes('Preciso de: Loja virtual com carrinho e pagamento online'));
+  assert(!msg.includes('Valor do desenvolvimento'));
+  assert.equal(p.name, 'Clima Sul'); assert.deepEqual(p.sections, base().sections);
+});
+
+/* ── Objetivo, conteúdo e prévia ───────────────────────────────────────── */
+
+test('Seis objetivos definem botão, contato e estrutura inicial dentro do Essencial', () => {
+  assert.deepEqual(model.objectives.map((o) => o.name), ['Pedir um orçamento', 'Solicitar um agendamento', 'Conhecer minha empresa', 'Ver meus serviços', 'Conhecer meus produtos', 'Ver meus trabalhos']);
+  for (const o of model.objectives) {
+    const p = model.withObjective(base(), o.id);
+    assert.equal(p.objective, o.id); assert.deepEqual(p.sections, o.structure);
+    assert.equal(model.requiredPackage(p), 'essencial', o.id); assert.equal(p.pkg, 'essencial');
+    assert.equal(model.siteContent(p).cta, o.cta);
   }
-  assert(plans.find((x) => x.id === 'empresarial').needsAssessment);
-  assert(model.projectEstimate(model.applyPlan(model.initialProject(), 'captacao')).total > model.projectEstimate(model.applyPlan(model.initialProject(), 'presenca')).total);
+  assert.deepEqual(model.withObjective(base(), 'orcamento').sections, ['apresentacao', 'servicos', 'diferenciais', 'sobre', 'contato']);
+  assert.deepEqual(model.withObjective(base(), 'trabalhos').sections, ['apresentacao', 'servicos', 'processo', 'sobre', 'contato']);
+  assert(model.objectives.find((o) => o.id === 'agendamento').contactPath.includes('confirmado na conversa'));
 });
 
-test('Recomendação por regra e diagnóstico sem valor automático', () => {
-  const p = model.initialProject();
-  assert.equal(model.recommendedPlan(p), 'captacao');
-  assert.equal(model.recommendedPlan({ ...p, guidance: true }), 'presenca');
-  const complex = model.normalizeProject({ ...p, complex: ['loja'] });
-  assert.equal(model.recommendedPlan(complex), 'empresarial');
-  assert.equal(model.investmentLabel(complex), 'Sob diagnóstico');
-  assert(model.projectMessage(complex).includes('Investimento: sob diagnóstico'));
-  assert(!model.projectMessage(complex).includes('Desenvolvimento estimado'));
-  assert.equal(model.deadlineText(complex), 'Definido após o diagnóstico');
+test('Objetivo não desfaz seções ajustadas à mão; seções do pacote são mantidas', () => {
+  const edited = model.normalizeProject({ ...base(), sections: ['apresentacao', 'processo', 'contato'], structureEdited: true });
+  assert.deepEqual(model.withObjective(edited, 'produtos').sections, ['apresentacao', 'processo', 'contato']);
+  const prof = model.normalizeProject({ ...base(), pkg: 'profissional', sections: ['apresentacao', 'servicos', 'galeria', 'contato'] });
+  const next = model.withObjective(prof, 'agendamento');
+  assert(next.sections.includes('galeria')); assert.equal(next.pkg, 'profissional');
 });
 
-test('Caminho não escolhido aparece como recomendação, não como escolha', () => {
-  const p = model.initialProject();
-  assert(model.projectMessage(p).includes('Caminho: ainda não escolhido (recomendado: Captação de orçamentos)'));
-  assert(model.projectMessage(model.applyPlan(p, 'presenca')).includes('Caminho: Presença profissional\n'));
+test('Nome, segmento, serviço e objetivo mudam a prévia (ar-condicionado)', () => {
+  const p = model.normalizeProject({ ...base(), service: 'instalação de ar-condicionado' });
+  const c = model.siteContent(p);
+  assert.equal(c.name, 'Clima Sul');
+  assert.equal(c.title, 'Instalação de ar-condicionado com orçamento pelo WhatsApp.');
+  assert.equal(c.cta, 'Solicitar orçamento'); assert.equal(c.image, 'clima');
+  assert.deepEqual(c.services, ['Instalação de ar-condicionado', 'Manutenção preventiva', 'Limpeza e higienização']);
+  assert(c.servicesSuggested && c.titleSuggested);
+  const mine = model.normalizeProject({ ...p, services: ['Split', '', 'PMOC'], headline: 'Meu título' });
+  assert.deepEqual(model.siteContent(mine).services, ['Split', 'PMOC']); assert.equal(model.siteContent(mine).title, 'Meu título');
+  const later = model.normalizeProject({ ...p, serviceLater: true });
+  assert.equal(later.service, ''); assert.equal(model.siteContent(later).title, model.segments[0].title);
+  const other = model.normalizeProject({ ...base(), segment: 'outro', segmentOther: 'escola de idiomas' });
+  assert.equal(model.siteContent(other).segmentName, 'Escola de idiomas'); assert.equal(model.siteContent(other).image, 'consultoria');
+  const empty = model.initialProject();
+  assert.equal(model.siteContent(empty).name, 'Seu Negócio'); assert.equal(model.segmentLabel(empty), 'A informar');
 });
 
-/* ── Orçamento ─────────────────────────────────────────────────────────── */
-
-test('Orçamento: ausente, zero, inválido, abaixo e comparação com a faixa', () => {
-  const p = model.initialProject();
-  assert.equal(model.budgetInfo(p).status, 'ausente');
-  assert.equal(model.budgetInfo({ ...p, budgetOn: true, budget: '' }).status, 'ausente');
-  assert.equal(model.budgetInfo({ ...p, budgetOn: true, budget: '0' }).status, 'invalido');
-  assert.equal(model.budgetInfo({ ...p, budgetOn: true, budget: 'mil' }).status, 'invalido');
-  assert.equal(model.budgetInfo({ ...p, budgetOn: true, budget: '300' }).status, 'abaixo');
-  assert.deepEqual(model.budgetInfo({ ...p, budgetOn: true, budget: 'R$ 1.500,00' }), { status: 'valido', value: 1500, fit: 'cabe' });
-  assert.equal(model.budgetInfo({ ...p, budgetOn: true, budget: '520' }).fit, 'pode_ultrapassar');
-  const big = model.normalizeProject({ ...p, features: ['whatsapp', 'redes', 'catalogo', 'paginaExtra'], budgetOn: true, budget: '600' });
-  assert.equal(model.budgetInfo(big).fit, 'excede');
-  assert.equal(model.budgetInfo({ ...big, complex: ['loja'] }).fit, 'diagnostico');
-  assert.equal(model.budgetInfo({ ...p, budgetOn: false, budget: '1500' }).status, 'ausente');
+test('Textos sugeridos não inventam fatos sobre a empresa', () => {
+  const texts = JSON.stringify(model.segments) + JSON.stringify(require('../src/config/segments.ts').keywordRules.map((r) => r.services));
+  for (const bad of [/\d+ anos/i, /clientes satisfeitos/i, /certificad/i, /melhor d[ae]/i, /líder/i, /garant/i, /\d+%/, /premiad/i]) assert(!bad.test(texts), bad);
+  const src = fs.readFileSync(path.join(__dirname, '../src/components/preview/SitePreview.tsx'), 'utf8');
+  for (const bad of [/★/, /estrelas/i, /\d+ clientes/i, /anos de experiência/i]) assert(!bad.test(src), bad);
 });
 
-test('Orçamento sobrevive a salvar, recarregar, resumo, mensagem e pedido', () => {
-  const p = model.normalizeProject({ ...model.initialProject(), budgetOn: true, budget: '1.200' });
-  const saved = model.normalizeProject(JSON.parse(JSON.stringify(p)));
-  assert.equal(saved.budget, '1.200'); assert.equal(saved.budgetOn, true);
-  assert(model.projectMessage(saved).includes('Meu limite de orçamento: R$ 1.200'));
-  const payload = leads.buildPayload(withLead(saved, { name: 'Ana', contact: '51999990000' }), {});
-  assert.deepEqual(payload.qualification.budget, { status: 'valido', value: 1200, fit: 'cabe' });
-  assert(model.projectMessage(model.initialProject()).includes('Meu limite de orçamento: Não informado'));
+test('Trocar estilo ou cor não apaga textos, serviços nem seções', () => {
+  const p = model.normalizeProject({ ...base(), service: 'Pintura', headline: 'Título', description: 'Frase', services: ['A', 'B'], notes: 'obs', sections: ['apresentacao', 'servicos', 'processo', 'contato'], structureEdited: true });
+  for (const d of model.directions) {
+    const q = model.normalizeProject({ ...p, direction: d.id, custom: '#abcdef', identitySet: true });
+    for (const k of ['name', 'service', 'headline', 'description', 'services', 'notes', 'sections', 'pkg']) assert.deepEqual(q[k], p[k], `${d.id} ${k}`);
+  }
+});
+
+test('Ordem das seções: Subir e Descer, com apresentação e contato fixos', () => {
+  const p = model.normalizeProject({ ...base(), sections: ['apresentacao', 'servicos', 'sobre', 'diferenciais', 'contato'] });
+  const up = model.moveSection(p, 'diferenciais', -1);
+  assert.deepEqual(up.sections, ['apresentacao', 'servicos', 'diferenciais', 'sobre', 'contato']); assert(up.structureEdited);
+  assert.deepEqual(model.moveSection(p, 'servicos', -1).sections, p.sections, 'não passa da apresentação');
+  assert.deepEqual(model.moveSection(p, 'diferenciais', 1).sections, p.sections, 'não passa do contato');
+  const messy = model.normalizeProject({ ...base(), sections: ['contato', 'sobre', 'apresentacao', 'sobre', 'x'] });
+  assert.deepEqual(messy.sections, ['apresentacao', 'sobre', 'contato']);
+});
+
+/* ── Mensagem, resumo e consistência ──────────────────────────────────── */
+
+test('Mensagem do WhatsApp traz tudo o que o atendimento precisa (§17)', () => {
+  const p = withLead(model.normalizeProject({ ...base(), service: 'Instalação de ar-condicionado', pkg: 'profissional', form: true, sections: ['apresentacao', 'servicos', 'galeria', 'faq', 'contato'], notes: 'Já tenho domínio', direction: 'elegante', custom: '#112233' }), { name: 'Ana', deadline: 'mes', decision: 'junto' });
+  const msg = model.projectMessage(p, 'google/cpc', { logo: true });
+  for (const s of ['Olá! Criei a prévia do meu site e gostaria de solicitar o desenvolvimento.', 'Empresa: Clima Sul', 'Segmento: Serviços locais', 'Objetivo: Pedir um orçamento', 'Serviço ou produto principal: Instalação de ar-condicionado', 'Estilo e cores: Elegante · cor da marca #112233', 'Logo: tenho e envio por aqui', 'Pacote: Profissional', 'Valor do desenvolvimento: R$ 750 — Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'Seções (5 de até 7): Apresentação, Serviços, Galeria de fotos, Perguntas frequentes, Contato', 'Formulário que encaminha o pedido ao WhatsApp', 'Galeria com até 8 imagens suas', 'Prazo: 5–8 dias úteis', 'Ajustes: 2 rodadas', 'Observações: Já tenho domínio', 'Meu nome: Ana', 'Quando quero começar: No próximo mês', 'Opções de layout (o link não leva nome nem textos):', 'Ref.: bp-abcdef1234 · google/cpc']) assert(msg.includes(s), s);
+  assert(!msg.includes('undefined')); assert(!/\+ ?R\$/.test(msg), 'nunca "+ R$"');
+  assert(!model.projectMessage(model.initialProject()).includes('Meu nome'));
+});
+
+test('Mesmo valor na mensagem, no pedido e no receptor para todo pacote', () => {
+  for (const x of pk.packages) {
+    const p = withLead(model.switchPackage(base(), x.id).project, { name: 'Ana', contact: '51999990000' });
+    const payload = leads.buildPayload(p, {});
+    assert.equal(payload.clientPrice.value, x.price); assert.equal(payload.clientPrice.package, x.id);
+    assert(model.projectMessage(p).includes(`Valor do desenvolvimento: ${pk.brl(x.price)}`));
+  }
+});
+
+test('Perguntas frequentes pedidas, com valores vindos dos pacotes', () => {
+  const qs = projectFaq.map(([q]) => q);
+  for (const q of ['A prévia é gratuita?', 'O que fica pronto em cinco minutos?', 'O que está incluído no valor?', 'Por que existem três pacotes?', 'O que é pago à parte?', 'Existe mensalidade?', 'Qual é o prazo de desenvolvimento?', 'Preciso ter logo e fotos para criar a prévia?', 'Quem fornece os textos?', 'Quantos ajustes estão incluídos?', 'O site funciona no celular?', 'Posso contratar algo mais complexo?', 'Quem fica com o domínio e os acessos?', 'Posso alterar o site depois?']) assert(qs.includes(q), q);
+  const text = JSON.stringify(projectFaq);
+  for (const s of ['R$ 500', 'R$ 750', 'R$ 1.000', '3 a 12 dias úteis', '2 rodadas']) assert(text.includes(s), s);
+  for (const bad of [/parcel/i, /cartão/i, /pix/i, /garantia de/i, /\+ R\$/]) assert(!bad.test(text), bad);
 });
 
 /* ── Migração, links e privacidade ─────────────────────────────────────── */
 
 test('Estado inválido é seguro e não cria preço desconhecido', () => {
   for (const input of [null, [], 42, 'bad', {}, { version: 999 }]) assert.deepEqual(model.normalizeProject(input), model.initialProject());
-  const n = model.normalizeProject({ version: 3, name: {}, segment: 'x', direction: '__proto__', custom: 'url(javascript:bad)', features: ['galeria', 'galeria', 'bad'], sections: ['galeria', 'bad'], step: 999, type: '__proto__', legacyTemplate: 'constructor', id: 'bp-../../x', complex: ['loja', 'loja', 'hack'], budget: 12345678901234567890 });
-  assert.equal(n.step, 3); assert.equal(n.custom, null); assert.equal(n.type, 'landing'); assert.equal(n.legacyTemplate, undefined);
-  assert.equal(n.id, ''); assert.deepEqual(n.complex, ['loja']); assert.equal(n.budget, '');
-  assert.equal(n.features.filter((f) => f === 'galeria').length, 1);
+  const n = model.normalizeProject({ version: 4, name: {}, segment: 'x', direction: '__proto__', custom: 'url(javascript:bad)', sections: ['galeria', 'bad'], step: 999, pkg: '__proto__', gallery: 999, id: 'bp-../../x', complex: ['loja', 'loja', 'hack'], services: [1, 'ok', {}] });
+  assert.equal(n.step, 3); assert.equal(n.custom, null); assert.equal(n.segment, ''); assert.equal(n.direction, 'marcante');
+  assert.equal(n.id, ''); assert.deepEqual(n.complex, ['loja']); assert.equal(n.gallery, 8); assert.deepEqual(n.services, ['ok']);
+  assert.equal(n.pkg, 'profissional', 'pacote nunca fica abaixo do escopo');
 });
 
-test('Migra v2 (seis etapas) e v1 sem perder escolhas nem apagar o antigo', () => {
-  const v2 = { version: 2, name: 'Oficina', description: 'desc', segment: 'local', objective: 'agenda', sections: ['apresentacao', 'servicos', 'galeria', 'contato'], direction: 'elegante', palette: 'verde', custom: null, font: 'auto', features: ['whatsapp', 'redes', 'galeria', 'catalogo'], type: 'local', step: 4 };
-  const storage = { [model.LEGACY_KEYS.v2]: JSON.stringify(v2) };
+test('Migra v3, v2 e v1 sem perder escolhas nem apagar o antigo', () => {
+  const v3 = { version: 3, id: 'bp-abcdefgh12', name: 'Oficina', description: 'desc', segment: 'local', service: 'Reparos', objective: 'agenda', plan: 'captacao', sections: ['apresentacao', 'servicos', 'galeria', 'localizacao', 'contato'], direction: 'elegante', palette: 'verde', custom: null, font: 'auto', features: ['whatsapp', 'redes', 'galeria', 'formularioWhatsapp'], type: 'landing', budget: '900', budgetOn: true, step: 2, lead: { name: 'Ana' } };
+  const storage = { [model.LEGACY_KEYS.v3]: JSON.stringify(v3) };
   const read = model.readStored((k) => storage[k] ?? null);
-  assert.equal(read.source, 'v2');
-  assert.equal(read.project.name, 'Oficina'); assert.equal(read.project.step, 2); assert(read.project.features.includes('catalogo'));
-  assert.equal(model.projectEstimate(read.project).total, model.projectEstimate(model.normalizeProject({ ...v2, version: 3 })).total);
-  assert(storage[model.LEGACY_KEYS.v2], 'leitura não apaga a versão anterior');
-  const v1 = model.migrateLegacy({ selection: { company: 'Empresa', type: 'local', template: 'premium', style: 'premium', features: ['galeria', 'formulario'], customColor: { accent: '#ffffff' } } });
-  assert.equal(v1.name, 'Empresa'); assert.equal(v1.legacyTemplate, 'premium'); assert(v1.sections.includes('galeria')); assert(!v1.features.includes('formulario'));
-  assert.equal(model.readStored((k) => (k === model.LEGACY_KEYS.v1 ? JSON.stringify({ selection: { company: 'X' } }) : null)).source, 'v1');
+  assert.equal(read.source, 'v3');
+  const p = read.project;
+  assert.equal(p.version, 4); assert.equal(p.name, 'Oficina'); assert.equal(p.service, 'Reparos'); assert.equal(p.description, 'desc'); assert.equal(p.lead.name, 'Ana');
+  assert.equal(p.objective, 'agendamento'); assert.equal(p.direction, 'elegante'); assert.equal(p.palette, 'verde');
+  assert.deepEqual(p.sections, ['apresentacao', 'servicos', 'galeria', 'atendimento', 'contato']);
+  assert.equal(p.form, true); assert.equal(p.pkg, 'profissional'); assert.equal(p.step, 3); assert(p.structureEdited && p.identitySet);
+  assert(!('budget' in p)); assert(storage[model.LEGACY_KEYS.v3], 'leitura não apaga a versão anterior');
+  const cat = model.fromV3({ ...v3, features: ['catalogo', 'paginaExtra'], sections: ['apresentacao', 'contato'] });
+  assert(cat.sections.includes('vitrine')); assert.equal(cat.pkg, 'completo'); assert.deepEqual(cat.complex, ['paginas']);
+  const v2 = { version: 2, name: 'Salão', segment: 'beleza', objective: 'servicos', sections: ['apresentacao', 'servicos', 'contato'], features: ['whatsapp'], step: 4 };
+  const r2 = model.readStored((k) => (k === model.LEGACY_KEYS.v2 ? JSON.stringify(v2) : null));
+  assert.equal(r2.source, 'v2'); assert.equal(r2.project.name, 'Salão'); assert.equal(r2.project.step, 3);
+  const v1 = model.migrateLegacy({ selection: { company: 'Empresa', features: ['galeria', 'mapa'], customColor: { accent: '#ffffff' } } });
+  assert.equal(v1.name, 'Empresa'); assert(v1.sections.includes('galeria')); assert(v1.sections.includes('atendimento')); assert.equal(v1.custom, '#ffffff');
   assert.equal(model.readStored(() => null), null);
 });
 
-test('Links v2 e v3 funcionam; links públicos não levam dados pessoais', () => {
-  const p = model.normalizeProject({ ...model.initialProject(), id: 'bp-abcdef1234', name: 'Nome Privado', description: 'Texto privado', service: 'Serviço privado', segment: 'outro', segmentOther: 'Segmento privado', budgetOn: true, budget: '9.999', lead: { name: 'Fulano', channel: 'email', contact: 'fulano@x.com', deadline: 'mes', decision: 'eu', marketing: true } });
+test('Link "opções de layout" v4/v3/v2 funciona e não leva dados pessoais', () => {
+  const p = model.normalizeProject({ ...base(), id: 'bp-abcdef1234', name: 'Nome Privado', headline: 'Título privado', description: 'Texto privado', service: 'Serviço privado', services: ['Item privado'], notes: 'Nota privada', segment: 'outro', segmentOther: 'Segmento privado', pkg: 'profissional', form: true, lead: { name: 'Fulano', channel: 'email', contact: 'fulano@x.com', deadline: 'mes', decision: 'eu', marketing: true } });
   const link = decodeURIComponent(model.shareLink(p));
-  for (const s of ['Privado', 'privado', '9.999', 'Fulano', 'fulano@', 'bp-abcdef1234']) assert(!link.includes(s), s);
-  const back = model.fromShare(new URL(model.shareLink(p)).hash);
-  assert.equal(back.name, ''); assert.equal(back.budget, ''); assert.equal(back.lead.name, '');
-  assert.equal(model.projectEstimate(back).total, model.projectEstimate(p).total);
-  const v2link = '#projeto=' + encodeURIComponent(JSON.stringify({ version: 2, segment: 'beleza', name: 'Vazou', features: ['whatsapp', 'redes', 'galeria'], sections: ['galeria'], step: 5 }));
-  const fromV2 = model.fromShare(v2link);
-  assert.equal(fromV2.name, ''); assert(fromV2.features.includes('galeria')); assert.equal(fromV2.step, 3);
+  assert(link.includes('/criar/#projeto='));
+  for (const s of ['Privado', 'privado', 'privada', 'Fulano', 'fulano@', 'bp-abcdef1234', 'data:image']) assert(!link.includes(s), s);
+  const back = model.fromShare(new globalThis.URL(model.shareLink(p)).hash);
+  assert.equal(back.name, ''); assert.equal(back.notes, ''); assert.equal(back.lead.name, '');
+  assert.equal(back.pkg, 'profissional'); assert.equal(back.form, true); assert.equal(back.direction, p.direction); assert.equal(back.step, 3);
+  const v3link = '#projeto=' + encodeURIComponent(JSON.stringify({ version: 3, segment: 'beleza', name: 'Vazou', features: ['whatsapp', 'faq'], sections: ['apresentacao', 'faq', 'contato'], step: 3 }));
+  const f3 = model.fromShare(v3link);
+  assert.equal(f3.name, ''); assert(f3.sections.includes('faq')); assert.equal(f3.pkg, 'profissional');
   assert.throws(() => model.fromShare('#projeto=%ZZ'));
   assert.throws(() => model.fromShare('#projeto=' + encodeURIComponent('{"version":6}')));
   assert.equal(model.fromShare('#configurador'), null);
 });
 
-test('Exemplo como ponto de partida mantém o que foi digitado', () => {
-  const mine = model.normalizeProject({ ...model.initialProject(), name: 'Minha', service: 'Corte', budgetOn: true, budget: '800', direction: 'marcante', lead: { ...model.emptyLead, name: 'Eu' } });
+test('Exemplo como ponto de partida leva estilo e segmento e mantém o que foi digitado', () => {
+  const mine = model.normalizeProject({ ...base(), name: 'Minha', service: 'Corte', notes: 'x', direction: 'tecnologico', identitySet: true, lead: { ...model.emptyLead, name: 'Eu' } });
   const merged = model.mergeStartingPoint(mine, model.exampleProject('beleza'));
-  assert.equal(merged.name, 'Minha'); assert.equal(merged.service, 'Corte'); assert.equal(merged.budget, '800'); assert.equal(merged.lead.name, 'Eu');
-  assert.equal(merged.segment, 'beleza');
-  assert(model.choiceChanges(mine, merged).includes('identidade visual'));
+  assert.equal(merged.name, 'Minha'); assert.equal(merged.service, 'Corte'); assert.equal(merged.notes, 'x'); assert.equal(merged.lead.name, 'Eu');
+  assert.equal(merged.segment, 'beleza'); assert.equal(merged.direction, 'elegante');
+  assert(model.choiceChanges(mine, merged).includes('estilo'));
   assert(model.hasOwnChoices(mine)); assert(!model.hasOwnChoices(model.initialProject()));
-  for (const s of model.segments) assert.deepEqual(model.exampleProject(s.id).sections, model.recommendations(model.exampleProject(s.id)));
-});
-
-test('Ajuste manual pede confirmação antes de um caminho substituí-lo', () => {
-  const p = model.applyPlan(model.initialProject(), 'presenca');
-  assert.deepEqual(model.customStructure(p), []);
-  const tweaked = model.normalizeProject({ ...p, features: [...p.features, 'animacoes'] });
-  assert.deepEqual(model.customStructure(tweaked), ['recursos']);
+  const layouts = new Set();
+  for (const s of model.segments) {
+    const e = model.exampleProject(s.id);
+    assert(model.priceOf(e) <= 1000); assert.equal(e.pkg, model.requiredPackage(e) === 'completo' ? 'completo' : e.pkg);
+    layouts.add(`${e.direction}|${e.sections.join()}`);
+  }
+  assert.equal(layouts.size, model.segments.length, 'exemplos com composições diferentes');
 });
 
 test('Contraste do texto dos botões com cor própria (WCAG AA)', () => {
@@ -194,30 +298,11 @@ test('Contraste do texto dos botões com cor própria (WCAG AA)', () => {
   for (let i = 0; i < 0xffffff; i += 3571) { const hex = '#' + i.toString(16).padStart(6, '0'), a = lum(hex), b = lum(model.contrastInk(hex)); assert((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5); }
 });
 
-/* ── Página de criação ────────────────────────────────────────────────── */
-
-test('Quatro etapas, quatro objetivos visíveis e seis estilos com nomes simples', () => {
-  assert.deepEqual([...model.steps], ['Seu negócio', 'Aparência', 'Conteúdo', 'Sua prévia']);
+test('Quatro etapas com os nomes pedidos e estilos com nomes simples', () => {
+  assert.deepEqual([...model.steps], ['Seu negócio', 'Seu objetivo', 'Sua identidade', 'Seu site']);
   assert.equal(model.STEP_COUNT, 4);
-  assert.deepEqual(model.objectives.filter((o) => o.visible).map((o) => o.name), ['Receber contatos', 'Apresentar a empresa', 'Mostrar serviços', 'Exibir produtos']);
   assert.deepEqual(model.directions.map((d) => d.name), ['Moderno', 'Elegante', 'Minimalista', 'Tecnológico', 'Sofisticado', 'Escuro']);
-  // Preço de cada estilo sai só da tabela de pricing.ts (modelo + estilo).
-  for (const d of model.directions) assert.equal(model.directionPrice(d.id), pricing.byTemplate[d.template] + pricing.byStyle[d.style], d.name);
-  assert.equal(model.normalizeProject({ ...model.initialProject(), direction: 'escuro' }).direction, 'escuro');
-  assert.equal(model.normalizeProject({ ...model.initialProject(), objective: 'agenda' }).objective, 'agenda', 'objetivo antigo continua válido');
-  const names = model.sections.map((s) => s.name);
-  for (const s of ['Apresentação', 'Sobre a empresa', 'Serviços ou produtos', 'Galeria', 'Contato']) assert(names.includes(s), s);
-});
-
-test('Link compartilhado abre a página de criação', () => {
-  assert(model.shareLink(model.initialProject()).includes('/criar/#projeto='));
-});
-
-test('Logo entra na mensagem só como aviso, nunca como dado', () => {
-  const p = model.initialProject();
-  assert(!model.projectMessage(p).includes('Logo:'));
-  assert(model.projectMessage(p, undefined, { logo: true }).includes('Logo: tenho a logo e envio por aqui'));
-  assert(!model.shareLink(p).includes('data:image'));
+  for (const s of model.segments) { assert.equal(s.styles.length, 3); for (const id of s.styles) assert(model.directions.some((d) => d.id === id)); }
 });
 
 test('"Continuar minha prévia" só quando há algo que valha retomar', () => {
@@ -225,17 +310,22 @@ test('"Continuar minha prévia" só quando há algo que valha retomar', () => {
   assert(!canResume(model.initialProject()));
   assert(canResume({ ...model.initialProject(), name: 'Loja' }));
   assert(canResume({ ...model.initialProject(), step: 2 }));
-  assert(!canResume(model.normalizeProject({ version: 3, step: 'x', name: 42 })));
+  assert(!canResume(model.normalizeProject({ version: 4, step: 'x', name: 42 })));
 });
 
-test('Eventos da prévia e do pedido não levam o que foi digitado', () => {
+test('Eventos do fluxo: pacote, pedido e WhatsApp sem o que foi digitado', () => {
   analytics._resetForTests(); session.clear(); events.length = 0;
+  analytics.track('start_click', { context: 'hero' });
   analytics.track('preview_view', { source: 'etapa', step: 4, name: 'Loja da Ana' });
-  analytics.track('preview_view', { source: 'alternancia', step: 2 });
-  analytics.track('quote_request', { mode: 'whatsapp', message: 'Olá, quero um site' });
-  assert.equal(events.filter((e) => e.event === 'preview_view').length, 2);
-  assert.equal(events.find((e) => e.event === 'quote_request').mode, 'whatsapp');
+  analytics.track('package_selected', { package: 'profissional', source: 'incluido' });
+  analytics.track('package_selected', { package: 'profissional', source: 'incluido' });
+  analytics.track('package_changed', { from: 'essencial', to: 'profissional', source: 'secoes' });
+  analytics.track('request_click', { mode: 'whatsapp', package: 'profissional', message: 'Olá, quero um site' });
+  assert.equal(events.filter((e) => e.event === 'package_selected').length, 1, 'escolha não duplica');
+  assert.equal(events.find((e) => e.event === 'package_changed').to, 'profissional');
+  assert.equal(events.find((e) => e.event === 'request_click').mode, 'whatsapp');
   assert(!JSON.stringify(events).match(/Ana|Olá/));
+  for (const old of ['quote_request', 'plan_selected', 'summary_view']) assert(!(old in analytics.EVENTS), old);
 });
 
 /* ── Pedido de proposta ───────────────────────────────────────────────── */
@@ -289,14 +379,14 @@ test('Receptor: recalcula, salva antes de confirmar e deduplica', async () => {
   const mem = memoryAdapters();
   let n = 0;
   const handle = createReceiver({ ...mem, allowedOrigin: 'https://theusmkt.github.io', newId: () => `L${++n}`, now: () => new Date('2026-09-25T12:00:00Z') });
-  const p = withLead(model.applyPlan(model.initialProject(), 'captacao'), { name: 'Ana', contact: '51999990000' });
+  const p = withLead(model.normalizeProject({ ...model.initialProject(), pkg: 'profissional', form: true }), { name: 'Ana', contact: '51999990000' });
   const payload = leads.buildPayload(p, { utm_source: 'google' });
-  payload.clientEstimate.total = 1; // navegador adulterado
+  payload.clientPrice.value = 1; // navegador adulterado
   const req = { method: 'POST', headers: { origin: 'https://theusmkt.github.io', 'idempotency-key': payload.idempotencyKey }, body: JSON.stringify(payload) };
   const first = await handle(req);
   assert.equal(first.status, 201); assert.deepEqual(JSON.parse(first.body), { ok: true, leadId: 'L1', duplicate: false });
   const row = mem.rows.get(payload.idempotencyKey).record;
-  assert.equal(row.estimate.total, model.projectEstimate(p).total); assert.equal(row.estimateMismatch, true);
+  assert.deepEqual(row.price, { package: 'profissional', value: 750, custom: false, deadline: model.deadlineText(p) }); assert.equal(row.priceMismatch, true);
   assert.equal(row.stage, 'novo_contato'); assert.equal(row.consent.marketing, false);
   const again = await handle(req);
   assert.deepEqual(JSON.parse(again.body), { ok: true, leadId: 'L1', duplicate: true });
@@ -335,7 +425,7 @@ test('Eventos: sem dados pessoais, sem duplicar, lead só com confirmação', ()
   assert(analytics.track('configurator_start'));
   assert(!analytics.track('configurator_start'), 'uma vez por sessão');
   analytics.track('step_complete', { step: 1 }); analytics.track('step_complete', { step: 1 }); analytics.track('step_complete', { step: 2 });
-  analytics.track('whatsapp_open', { context: 'resumo', name: 'Ana', phone: '51999990000', email: 'a@b.com' });
+  analytics.track('whatsapp_open', { context: 'pedido', name: 'Ana', phone: '51999990000', email: 'a@b.com' });
   analytics.track('not_an_event');
   assert.equal(events.filter((e) => e.event === 'step_complete').length, 2);
   const wa = events.find((e) => e.event === 'whatsapp_open');
@@ -356,13 +446,6 @@ test('Origem: só UTMs permitidas, normalizadas, sem dado pessoal nem URL comple
   assert.equal(analytics.variantFor('hero', ''), 'a', 'teste inativo mostra o controle');
   assert.equal(analytics.variantFor('hero', '?v_hero=b'), 'b');
   assert.equal(analytics.variantFor('hero', '?v_hero=zzz'), 'a');
-});
-
-test('Mensagem do WhatsApp é legível e referencia projeto e origem', () => {
-  const p = withLead(model.applyPlan(model.initialProject(), 'captacao'), { name: 'Ana', deadline: 'mes', decision: 'junto' });
-  const msg = model.projectMessage(p, 'google/cpc');
-  for (const s of ['Meu nome: Ana', 'Caminho: Captação de orçamentos', 'Seções:', 'Desenvolvimento estimado:', 'Prazo estimado:', 'Quando quero começar: No próximo mês', 'Ref.: bp-abcdef1234 · google/cpc', 'Custos externos à parte']) assert(msg.includes(s), s);
-  assert(!msg.includes('undefined'));
 });
 
 Promise.all(pending).then(() => console.log(`${count} testes passaram.`)).catch((e) => { console.error(e); process.exit(1); });

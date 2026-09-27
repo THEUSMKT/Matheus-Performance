@@ -22,7 +22,7 @@ export default function Privacidade() {
 
       <h2>O que fica no seu navegador</h2>
       <p>
-        As escolhas da sua prévia — e o que você digitar, como nome da empresa, serviço, limite de orçamento e seu nome — ficam salvas apenas no
+        As escolhas da sua prévia — e o que você digitar, como nome da empresa, serviço, textos, observações e seu nome — ficam salvas apenas no
         armazenamento do seu próprio navegador, para você continuar de onde parou. A logo que você enviar para a prévia é reduzida e guardada
         também só no navegador; ela não entra no link, na mensagem nem no pedido. Esses dados não são enviados a nenhum servidor pela página.
       </p>
@@ -50,9 +50,10 @@ export default function Privacidade() {
         </>
       )}
 
-      <h2>Link de compartilhamento e PDF</h2>
+      <h2>Link de opções de layout e PDF</h2>
       <p>
-        O link de compartilhamento leva apenas as opções do projeto: nome, contato, textos e orçamento ficam fora dele. O PDF é gerado pelo seu
+        O link “Compartilhar opções de layout” leva apenas estilo, cores, objetivo, seções e pacote: nome, textos, logo, observações e contato
+        ficam fora dele. O PDF é gerado pelo seu
         navegador e fica com você; ele inclui os textos do projeto, mas não os seus dados de contato.
       </p>
 

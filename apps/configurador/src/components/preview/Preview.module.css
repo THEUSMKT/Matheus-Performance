@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Prévia do site — três estilos bem diferentes sobre a mesma estrutura.
+   Prévia do site — seis estilos com composições diferentes (topo dividido,
+   centralizado, faixa de imagem, foto de fundo...) sobre as mesmas seções.
    Base = celular; a partir de 620px de largura do próprio componente
    (container query), layout de computador.
    ========================================================================== */
@@ -111,11 +112,25 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.logoBox {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-right: auto;
+}
+/* Logo em fundo escuro: uma base clara mantém a marca legível sem alterá-la. */
+.logoOnDark {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #fff;
+}
 .logo {
   display: block;
+  width: auto;
   max-width: 120px;
-  max-height: 32px;
-  margin-right: auto;
+  height: auto;
+  max-height: 30px;
   object-fit: contain;
 }
 .links {
@@ -194,42 +209,15 @@
   width: 14px;
   height: 14px;
 }
-.art {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 150px;
-  overflow: hidden;
+.heroImg {
+  order: 2;
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
   border-radius: 14px;
   background: var(--soft);
-}
-.artShape,
-.artShape2 {
-  position: absolute;
-  background: var(--acc);
-}
-.artShape {
-  top: -18%;
-  right: -12%;
-  width: 62%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  opacity: 0.18;
-}
-.artShape2 {
-  bottom: -14%;
-  left: -8%;
-  width: 46%;
-  aspect-ratio: 1;
-  border-radius: 24px;
-  opacity: 0.28;
-  transform: rotate(18deg);
-}
-.artIcon {
-  position: relative;
-  width: 46px;
-  height: 46px;
-  color: var(--acc);
 }
 
 /* Seções */
@@ -287,10 +275,85 @@
   gap: 4px;
 }
 .productImg {
+  display: block;
+  width: 100%;
+  height: auto;
   aspect-ratio: 4 / 3;
+  object-fit: cover;
   border: 1px solid #e6e9ef;
   border-radius: 10px;
   background: var(--soft);
+}
+.pill {
+  align-self: flex-start;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: var(--soft);
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 700;
+}
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-weight: 600;
+}
+.list li::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--acc);
+  transform: translateY(-1px);
+}
+.info {
+  display: grid;
+  gap: 8px;
+}
+.info span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #51596a;
+}
+.info svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--acc);
+}
+.steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.steps b {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--acc);
+  color: var(--on);
+  font-size: 12px;
 }
 .gallery {
   display: grid;
@@ -298,19 +361,13 @@
   gap: 6px;
 }
 .tile {
-  display: grid;
-  place-items: center;
+  display: block;
+  width: 100%;
+  height: auto;
   aspect-ratio: 1;
+  object-fit: cover;
   border-radius: 8px;
   background: var(--soft);
-  color: var(--acc);
-}
-.tile:nth-child(even) {
-  background: color-mix(in srgb, var(--acc) 22%, #fff);
-}
-.tile svg {
-  width: 22px;
-  height: 22px;
 }
 .quote {
   display: flex;
@@ -342,22 +399,6 @@
   content: '+';
   color: var(--acc);
 }
-.map {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 110px;
-  border-radius: 12px;
-  background: repeating-linear-gradient(45deg, var(--soft), var(--soft) 12px, #fff 12px, #fff 24px);
-  color: #51596a;
-  font-weight: 600;
-}
-.map svg {
-  width: 18px;
-  height: 18px;
-  color: var(--acc);
-}
 .contact {
   align-items: flex-start;
 }
@@ -382,6 +423,9 @@
   justify-self: start;
 }
 .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   align-self: flex-start;
   padding: 2px 8px;
   border: 1px dashed #cbd2de;
@@ -390,6 +434,14 @@
   color: #5d6577;
   font-size: 10px;
   font-weight: 700;
+}
+.tag svg {
+  width: 12px;
+  height: 12px;
+}
+.btn svg {
+  width: 14px;
+  height: 14px;
 }
 .footer {
   display: flex;
@@ -402,7 +454,7 @@
   font-size: 11px;
 }
 
-/* ── Moderno: contraste forte, blocos e títulos pesados ─────────────────── */
+/* ── Moderno: topo na cor da marca, títulos pesados, cantos retos ──────── */
 .moderno .nav {
   border-bottom: 0;
   background: #111418;
@@ -423,7 +475,7 @@
 }
 .moderno .title {
   color: var(--on);
-  font-size: 28px;
+  font-size: 27px;
   font-weight: 900;
   letter-spacing: -0.01em;
   text-transform: uppercase;
@@ -443,24 +495,9 @@
   border-radius: 4px;
   color: var(--on);
 }
-.moderno .art {
+.moderno .heroImg {
   border-radius: 4px;
-  background: rgb(0 0 0 / 0.14);
-}
-.moderno .artShape,
-.moderno .artShape2 {
-  border-radius: 0;
-  background: var(--on);
-}
-.moderno .artShape {
-  opacity: 0.14;
-  transform: rotate(12deg);
-}
-.moderno .artShape2 {
-  opacity: 0.22;
-}
-.moderno .artIcon {
-  color: var(--on);
+  box-shadow: 10px 10px 0 rgb(0 0 0 / 0.22);
 }
 .moderno .h {
   font-weight: 900;
@@ -479,15 +516,15 @@
 .moderno .contact .h {
   color: #fff;
 }
-.moderno .contact .btnGhost {
-  color: #fff;
+.moderno .contact .text {
+  color: #c7ccd6;
 }
 .moderno .contact .btn {
   background: var(--acc);
   color: var(--on);
 }
 
-/* ── Elegante: tons suaves, serifa, tudo centralizado ───────────────────── */
+/* ── Elegante: serifa, tons suaves, tudo centralizado, foto em arco ─────── */
 .elegante .site {
   background: var(--soft);
 }
@@ -501,7 +538,8 @@
 }
 .elegante .navCta,
 .elegante .btn,
-.elegante .btnGhost {
+.elegante .btnGhost,
+.elegante .pill {
   border-radius: 99px;
 }
 .elegante .hero {
@@ -520,11 +558,11 @@
   font-style: italic;
   font-weight: 500;
 }
-.elegante .art {
-  width: 72%;
-  max-width: 300px;
-  border-radius: 160px 160px 16px 16px;
-  background: color-mix(in srgb, var(--acc) 22%, var(--soft));
+.elegante .heroImg {
+  width: 78%;
+  max-width: 320px;
+  aspect-ratio: 4 / 5;
+  border-radius: 200px 200px 16px 16px;
 }
 .elegante .section {
   align-items: center;
@@ -536,7 +574,13 @@
   border-color: rgb(0 0 0 / 0.06);
   border-radius: 18px;
 }
-.elegante .tag {
+.elegante .list li,
+.elegante .info span,
+.elegante .steps li {
+  justify-content: center;
+}
+.elegante .tag,
+.elegante .pill {
   align-self: center;
 }
 .elegante .form .btn {
@@ -546,12 +590,17 @@
   background: transparent;
 }
 
-/* ── Minimalista: branco, linhas finas, muito respiro ───────────────────── */
+/* ── Minimalista: texto grande, muito respiro, imagem em faixa larga ────── */
 .minimal .hero {
-  padding-top: 32px;
+  padding-top: 34px;
 }
 .minimal .title {
+  font-size: 30px;
   font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.minimal .eyebrow {
+  color: #6b7385;
 }
 .minimal .navCta,
 .minimal .btn,
@@ -561,24 +610,9 @@
 .minimal .btnGhost {
   border-color: #1b1d22;
 }
-.minimal .art {
-  border-radius: 4px;
-  background: #f4f5f7;
-}
-.minimal .artShape {
-  top: 18%;
-  right: 14%;
-  width: 40%;
-  border-radius: 0;
-  opacity: 0.12;
-}
-.minimal .artShape2 {
-  bottom: 20%;
-  left: 18%;
-  width: 18%;
-  border-radius: 50%;
-  opacity: 0.9;
-  transform: none;
+.minimal .heroImg {
+  aspect-ratio: 21 / 9;
+  border-radius: 2px;
 }
 .minimal .card {
   padding: 12px 0;
@@ -586,8 +620,13 @@
   border-top: 1px solid #e6e9ef;
   border-radius: 0;
 }
+.minimal .steps b {
+  background: transparent;
+  border: 1px solid #1b1d22;
+  color: #1b1d22;
+}
 
-/* ── Tecnológico: topo escuro com grade, detalhes digitais ──────────────── */
+/* ── Tecnológico: topo escuro com grade, imagem em cartão ───────────────── */
 .tecnologico .nav {
   border-bottom-color: rgb(255 255 255 / 0.08);
   background: #0b1120;
@@ -628,22 +667,14 @@
   border-color: rgb(255 255 255 / 0.35);
   color: #fff;
 }
-.tecnologico .art {
-  border: 1px solid rgb(255 255 255 / 0.14);
+.tecnologico .heroImg {
+  padding: 6px;
+  border: 1px solid rgb(255 255 255 / 0.18);
   border-radius: 14px;
-  background: rgb(255 255 255 / 0.04);
+  background: rgb(255 255 255 / 0.06);
 }
-.tecnologico .artShape {
-  border-radius: 14px;
-  opacity: 0.55;
-}
-.tecnologico .artShape2 {
-  opacity: 0.35;
-}
-.tecnologico .artIcon {
-  color: #fff;
-}
-.tecnologico .num {
+.tecnologico .num,
+.tecnologico .steps b {
   font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 }
 .tecnologico .card {
@@ -651,7 +682,7 @@
   border-left: 3px solid var(--acc);
 }
 
-/* ── Sofisticado: serifa, linhas finas e tons de papel ──────────────────── */
+/* ── Sofisticado: foto de fundo no topo, serifa e tons de papel ─────────── */
 .sofisticado .site {
   background: #faf8f4;
 }
@@ -666,42 +697,64 @@
 }
 .sofisticado .navCta,
 .sofisticado .btn,
-.sofisticado .btnGhost {
+.sofisticado .btnGhost,
+.sofisticado .pill {
   border-radius: 0;
 }
 .sofisticado .navCta {
   border-color: #1c1a16;
   color: #1c1a16;
 }
+.sofisticado .hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 300px;
+  align-content: end;
+  color: #fff;
+}
+.sofisticado .hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgb(20 18 14 / 0.1), rgb(20 18 14 / 0.78));
+}
+.sofisticado .heroImg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
 .sofisticado .eyebrow {
-  color: #7c6a4a;
+  color: #f1e6cf;
   letter-spacing: 0.24em;
 }
-.sofisticado .title,
+.sofisticado .title {
+  color: #fff;
+  font-weight: 500;
+}
+.sofisticado .lead {
+  color: #efe9df;
+}
 .sofisticado .h {
   font-weight: 500;
 }
 .sofisticado .btn {
-  background: #1c1a16;
-  color: #fff;
-}
-.sofisticado .btnGhost {
-  border-color: #1c1a16;
+  background: #fff;
   color: #1c1a16;
 }
-.sofisticado .art {
-  border: 1px solid #d9d0bf;
-  border-radius: 0;
-  background: color-mix(in srgb, var(--acc) 14%, #faf8f4);
-  outline: 1px solid #d9d0bf;
-  outline-offset: -10px;
-}
-.sofisticado .artShape,
-.sofisticado .artShape2 {
-  border-radius: 0;
+.sofisticado .btnGhost {
+  border-color: #fff;
+  color: #fff;
 }
 .sofisticado .section {
   border-top-color: #ece6db;
+}
+.sofisticado .section .btn {
+  background: #1c1a16;
+  color: #fff;
 }
 .sofisticado .card {
   border-color: #e7e1d6;
@@ -712,7 +765,7 @@
   background: #f3efe7;
 }
 
-/* ── Escuro: fundo escuro em todo o site ────────────────────────────────── */
+/* ── Escuro: fundo escuro em todo o site, imagem arredondada ────────────── */
 .escuro .site {
   background: #0f1115;
   color: #e8eaf0;
@@ -725,16 +778,20 @@
 .escuro .links,
 .escuro .lead,
 .escuro .text,
-.escuro .map {
+.escuro .info span {
   color: #b9bfcc;
 }
 .escuro .title,
 .escuro .h,
-.escuro .cardTitle {
+.escuro .cardTitle,
+.escuro .list li,
+.escuro .steps li {
   color: #fff;
 }
 .escuro .eyebrow,
-.escuro .num {
+.escuro .num,
+.escuro .info svg,
+.escuro .pill {
   color: color-mix(in srgb, var(--acc) 50%, #fff);
 }
 .escuro .navCta {
@@ -745,19 +802,14 @@
   border-color: #3a3f4d;
   color: #e8eaf0;
 }
-.escuro .art,
 .escuro .card,
 .escuro .quote,
 .escuro .productImg,
-.escuro .tile,
-.escuro .input {
+.escuro .input,
+.escuro .pill {
   border-color: #2b303c;
   background: #171a21;
 }
-.escuro .tile:nth-child(even) {
-  background: color-mix(in srgb, var(--acc) 30%, #171a21);
-}
-.escuro .tile,
 .escuro .quote svg {
   color: color-mix(in srgb, var(--acc) 50%, #fff);
 }
@@ -767,9 +819,6 @@
 }
 .escuro .faq span {
   border-color: #2b303c;
-}
-.escuro .map {
-  background: repeating-linear-gradient(45deg, #171a21, #171a21 12px, #0f1115 12px, #0f1115 24px);
 }
 .escuro .tag {
   border-color: #394050;
@@ -788,8 +837,13 @@
 .escuro .hero {
   background: radial-gradient(120% 90% at 85% 10%, color-mix(in srgb, var(--acc) 38%, transparent), transparent 60%);
 }
-.escuro .art {
-  border-radius: 999px 999px 18px 18px;
+.escuro .heroImg {
+  order: 0;
+  aspect-ratio: 1;
+  width: 72%;
+  justify-self: center;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px #171a21, 0 0 0 7px #2b303c;
 }
 
 /* ── Layout de computador ───────────────────────────────────────────────── */
@@ -805,7 +859,7 @@
     display: flex;
     margin-left: auto;
   }
-  .logo {
+  .logoBox {
     margin-right: 0;
   }
   .hero {
@@ -815,14 +869,11 @@
     padding: 52px 32px;
   }
   .title {
-    font-size: 42px;
+    font-size: 40px;
   }
   .lead {
     max-width: 46ch;
     font-size: 15px;
-  }
-  .art {
-    min-height: 260px;
   }
   .section {
     padding: 36px 32px;
@@ -836,6 +887,11 @@
   }
   .gallery {
     grid-template-columns: repeat(6, 1fr);
+  }
+  .list,
+  .info,
+  .steps {
+    grid-template-columns: repeat(3, 1fr);
   }
   .form {
     max-width: 420px;
@@ -851,16 +907,39 @@
     font-size: 13px;
   }
   .moderno .title {
-    font-size: 50px;
+    font-size: 46px;
   }
-  .elegante .hero {
+  /* Centralizado: texto em cima, foto em arco embaixo */
+  .elegante .hero,
+  .minimal .hero {
     grid-template-columns: 1fr;
   }
-  .elegante .art {
-    width: 44%;
-    min-height: 220px;
+  .elegante .heroImg {
+    width: 40%;
+    aspect-ratio: 4 / 3;
   }
   .elegante .lead {
     margin-inline: auto;
+  }
+  /* Faixa larga: título grande à esquerda, imagem ocupando a largura */
+  .minimal .title {
+    max-width: 16ch;
+    font-size: 48px;
+  }
+  .minimal .heroImg {
+    aspect-ratio: 32 / 9;
+  }
+  /* Foto de fundo: texto sobre a imagem, alinhado embaixo à esquerda */
+  .sofisticado .hero {
+    grid-template-columns: minmax(0, 0.65fr);
+    min-height: 380px;
+    padding-block: 56px;
+  }
+  /* Invertido: imagem à esquerda */
+  .escuro .hero {
+    grid-template-columns: 0.8fr 1.2fr;
+  }
+  .escuro .heroImg {
+    width: 88%;
   }
 }

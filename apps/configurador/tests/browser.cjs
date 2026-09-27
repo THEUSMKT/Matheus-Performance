@@ -17,7 +17,7 @@ async function ready(page) {
   await page.waitForFunction(() => !document.querySelector('[data-bar=configurador] button:disabled, [class*=desktopActions] button:disabled'));
 }
 async function next(page) {
-  await page.locator('[data-bar=configurador] button, [class*=desktopActions] button').filter({ hasText: /^(Continuar|Ver minha prévia)$/ }).filter({ visible: true }).first().click();
+  await page.locator('[data-bar=configurador] button, [class*=desktopActions] button').filter({ hasText: /^(Continuar|Ver meu site)$/ }).filter({ visible: true }).first().click();
 }
 
 (async () => {
@@ -31,31 +31,31 @@ async function next(page) {
   await page.goto(base);
   await shot(page, 'desktop-top');
   await shot(page, 'desktop', true);
-  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Estruture seu site profissional em até 5 minutos.');
+  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Veja como o site da sua empresa pode ficar em até 5 minutos.');
   assert.deepEqual(
-    await page.locator('#exemplos [class*="inspirationNav"] strong').allTextContents(),
-    ['SERVIÇOS LOCAIS', 'BELEZA E BEM-ESTAR', 'CONSULTORIA', 'PORTFÓLIO CRIATIVO', 'ALIMENTAÇÃO'],
+    await page.locator('#exemplos [class*=exampleName]').allTextContents(),
+    ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo'],
   );
-  await page.getByRole('button', { name: 'Abrir exemplo de Beleza e bem-estar' }).click();
+  await page.getByRole('button', { name: 'Abrir exemplo de Beleza e estética' }).click();
   await shot(page, 'desktop-demo');
   await page.locator('dialog[open]').getByRole('button', { name: 'Celular' }).click();
   await shot(page, 'desktop-demo-celular');
-  await page.locator('dialog[open]').getByRole('button', { name: 'Usar este modelo como ponto de partida' }).click();
+  await page.locator('dialog[open]').getByRole('button', { name: 'Usar este modelo' }).click();
   await page.waitForURL(/\/criar\/$/);
   await ready(page);
   await page.locator('#nome-empresa').fill('Aurora Teste');
   await shot(page, 'desktop-etapa1');
   await next(page);
-  await page.getByRole('radio', { name: /^Elegante/ }).click();
   await shot(page, 'desktop-etapa2');
   await next(page);
+  await page.getByRole('radio', { name: /^Sofisticado/ }).click();
   await shot(page, 'desktop-etapa3');
   await next(page);
-  const current = await page.getByTestId('estimate').innerText();
-  const wa = await page.locator('[class*=desktopOnly] a', { hasText: 'Solicitar orçamento' }).getAttribute('href');
+  const current = await page.getByTestId('preco').innerText();
+  const wa = await page.locator('[class*=desktopOnly] a', { hasText: 'Solicitar desenvolvimento' }).getAttribute('href');
   const message = new URL(wa).searchParams.get('text');
   assert(message.includes('Aurora Teste'));
-  assert(message.includes(current));
+  assert(message.includes(`Valor do desenvolvimento: ${current}`));
   assert(wa.startsWith('https://wa.me/5551981947979'));
   await shot(page, 'desktop-etapa4', true);
   for (const width of [1024, 1280, 1440]) {
@@ -73,14 +73,14 @@ async function next(page) {
     await noSideScroll(page, `início ${width}px`);
     await shot(page, `mobile-${width}-top`);
     if (width === 390) await shot(page, 'mobile', true);
-    await page.locator('a[class*=floatCta]').click();
+    await page.locator('[class*=heroCopy] a[class*=shine]').click();
     await page.waitForURL(/\/criar\/$/);
     await ready(page);
     await page.locator('#nome-empresa').fill('Loja Azul');
-    await page.getByRole('radio', { name: 'Mostrar serviços' }).click();
+    await page.getByRole('radio', { name: 'Serviços locais', exact: true }).click();
     await page.waitForTimeout(400);
     await shot(page, `mobile-${width}-etapa1`);
-    await page.getByRole('button', { name: 'Ver prévia' }).click();
+    await page.getByRole('button', { name: 'Ver meu site' }).first().click();
     await shot(page, `mobile-${width}-etapa1-previa`);
     await page.getByRole('button', { name: 'Editar', exact: true }).click();
     for (let step = 2; step <= 4; step++) {

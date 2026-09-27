@@ -1,15 +1,15 @@
 /* ==========================================================================
    Receptor de pedidos — implementação de referência, sem dependência de
-   provedor. Recebe o POST da página, valida de novo, recalcula a
-   estimativa, salva ANTES de responder e só então tenta o CRM.
+   provedor. Recebe o POST da página, valida de novo, recalcula o
+   pacote e o valor, salva ANTES de responder e só então tenta o CRM.
 
    Para ativar: hospede este handler numa função serverless (ou servidor)
    com os adaptadores reais de armazenamento, CRM e fila, e publique a URL
    em NEXT_PUBLIC_LEAD_ENDPOINT. Tokens do CRM ficam só no ambiente dessa
    função — nunca na página. Ver OPERACAO.md.
    ========================================================================== */
-import { buildPayload, validateLead, LEAD_SCHEMA_VERSION } from '../../src/lib/leads';
-import { normalizeProject, projectEstimate, needsDiagnosis } from '../../src/lib/project';
+import { buildPayload, priceInfo, validateLead, LEAD_SCHEMA_VERSION } from '../../src/lib/leads';
+import { normalizeProject } from '../../src/lib/project';
 import { CRM_SCHEMA_VERSION, type CrmLead } from './crm';
 
 export type Stored = { leadId: string; record: CrmLead };
@@ -89,9 +89,8 @@ export function createReceiver(deps: Deps) {
     const existing = await deps.store.get(key);
     if (existing) return json(200, { ok: true, leadId: existing.leadId, duplicate: true }, origin);
 
-    const e = projectEstimate(project);
-    const estimate = { min: e.min, max: e.max, total: e.total, deadline: e.deadline, diagnosis: needsDiagnosis(project) };
-    const client = data.clientEstimate as Partial<typeof estimate> | undefined;
+    const price = priceInfo(project);
+    const client = data.clientPrice as Partial<typeof price> | undefined;
     const leadId = newId();
     const record: CrmLead = {
       schema: CRM_SCHEMA_VERSION,
@@ -102,8 +101,8 @@ export function createReceiver(deps: Deps) {
       contact: payload.contact,
       qualification: payload.qualification,
       consent: { commercial: true, marketing: project.lead.marketing },
-      estimate,
-      estimateMismatch: !client || client.total !== estimate.total || client.min !== estimate.min || client.max !== estimate.max,
+      price,
+      priceMismatch: !client || client.value !== price.value || client.package !== price.package || client.custom !== price.custom,
       flowVersion: typeof data.flowVersion === 'string' ? data.flowVersion.slice(0, 40) : '',
       projectId: project.id,
       project,

@@ -38,17 +38,17 @@ export const contact = {
   siteUrl: 'https://theusmkt.github.io/Matheus-Performance/configurador',
 
   /** Abertura da mensagem enviada ao WhatsApp com o briefing montado. */
-  whatsappIntro:
-    'Olá! Montei a prévia do meu site e gostaria de solicitar um orçamento.',
-  /** Fechamento da mensagem. */
-  whatsappOutro: 'Gostaria de conversar sobre o projeto.',
+  whatsappIntro: 'Olá! Criei a prévia do meu site e gostaria de solicitar o desenvolvimento.',
+  /** Abertura quando o projeto precisa de orçamento personalizado. */
+  whatsappPersonalizado: 'Olá! Criei a prévia do meu site e preciso de um projeto personalizado.',
+  /** Pedido de projeto fora dos pacotes, a partir da apresentação. */
+  whatsappProjetoPersonalizado:
+    'Olá! Vi os pacotes de site da Beck Performance e preciso de um projeto personalizado. Posso explicar o que preciso?',
 
-  /**
-   * Mensagem dos CTAs genéricos — rodapé e afins. Não se mistura com o
-   * briefing do configurador, que é montado em src/lib/whatsapp.ts.
-   */
-  /** Pedido de um estilo fora dos disponíveis na etapa Aparência. */
+  /** Pedido de um estilo fora dos disponíveis na etapa Sua identidade. */
   whatsappEstilo: 'Olá! Gostaria de um estilo diferente dos disponíveis no configurador para o meu site.',
+
+  /** Mensagem dos botões genéricos — rodapé e afins. */
 
   whatsappCurta:
     'Olá! Vi o site da Beck Performance e gostaria de tirar uma dúvida sobre a criação de um site.',

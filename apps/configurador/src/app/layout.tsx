@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 
 import { contact } from '@/config/contact';
+import { priceRange } from '@/config/packages';
 import { isProduction } from '@/config/integrations';
 import './globals.css';
 
 const title = 'Beck Performance | Sites para empresas de todos os portes';
-const description =
-  'Monte uma prévia personalizada do site da sua empresa em poucos passos, sem cadastro. Escopo e investimento confirmados antes da contratação.';
+const description = `Veja como o site da sua empresa pode ficar em até 5 minutos. Prévia grátis, sem cadastro. Desenvolvimento profissional de ${priceRange}.`;
 
 /** Indexa só no build de produção E com a liberação em contact.ts. */
 const indexable = isProduction && contact.indexarNoGoogle;

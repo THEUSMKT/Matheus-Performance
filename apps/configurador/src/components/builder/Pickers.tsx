@@ -1,12 +1,13 @@
 'use client';
 /* ==========================================================================
-   Seletores visuais da etapa Aparência: estilo (miniatura real da prévia),
-   cores (amostras) e logo (envio opcional, reduzida no navegador).
+   Seletores visuais da etapa Sua identidade: estilo (miniatura real da
+   prévia), cores (amostras) e logo (envio opcional, reduzida no navegador).
+   Estilos, cores da marca e logo estão incluídos em todos os pacotes: nada
+   aqui tem preço próprio.
    ========================================================================== */
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ImagePlus } from 'lucide-react';
-import { pricing, brl } from '@/config/pricing';
-import { directionPrice, directions, normalizeProject, palettes, type Project } from '@/lib/project';
+import { directions, normalizeProject, palettes, type Project } from '@/lib/project';
 import { logoErrorText, prepareLogo, type LogoError } from '@/lib/logo';
 import { SitePreview } from '../preview/SitePreview';
 import { DesktopFrame } from '../landing/DemoFrames';
@@ -36,43 +37,36 @@ function useRovingKeys<T>(items: T[], index: number, select: (i: number) => void
   return { refs, onKey, tabIndex };
 }
 
-export function StylePicker({ p, onChange }: { p: Project; onChange: (id: string) => void }) {
-  const legacy = Boolean(p.legacyTemplate || p.legacyStyle);
-  const index = legacy ? -1 : directions.findIndex((d) => d.id === p.direction);
-  const { refs, onKey, tabIndex } = useRovingKeys(directions as unknown as unknown[], index, (i) => onChange(directions[i].id));
+export function StylePicker({ p, ids, labelledBy, onChange }: { p: Project; ids: string[]; labelledBy: string; onChange: (id: string) => void }) {
+  const list = ids.map((id) => directions.find((d) => d.id === id)!).filter(Boolean);
+  const index = list.findIndex((d) => d.id === p.direction);
+  const { refs, onKey, tabIndex } = useRovingKeys(list as unknown[], index, (i) => onChange(list[i].id));
   return (
-    <div className={b.styles} role="radiogroup" aria-labelledby="rotulo-estilo">
-      {directions.map((d, i) => {
-        const price = directionPrice(d.id);
-        const checked = i === index;
-        return (
-          <div
-            key={d.id}
-            ref={(el) => {
-              refs.current[i] = el;
-            }}
-            role="radio"
-            aria-checked={checked}
-            aria-label={`${d.name}${price ? `, mais ${brl(price)}` : ', incluído'}`}
-            tabIndex={tabIndex(i)}
-            className={b.styleOpt}
-            onClick={() => onChange(d.id)}
-            onKeyDown={(e) => onKey(e, i)}
-          >
-            <div className={b.styleThumb} aria-hidden="true">
-              <DesktopFrame width={330}>
-                <SitePreview project={normalizeProject({ ...p, direction: d.id, font: 'auto', legacyTemplate: undefined, legacyStyle: undefined })} compact bare />
-              </DesktopFrame>
-            </div>
-            <span className={b.styleName} aria-hidden="true">
-              {d.name}
-            </span>
-            <span className={b.stylePrice} aria-hidden="true">
-              {price ? `+ ${brl(price)}` : 'Incluído'}
-            </span>
+    <div className={b.styles} role="radiogroup" aria-labelledby={labelledBy}>
+      {list.map((d, i) => (
+        <div
+          key={d.id}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          role="radio"
+          aria-checked={i === index}
+          aria-label={`${d.name}: ${d.description}`}
+          tabIndex={tabIndex(i)}
+          className={b.styleOpt}
+          onClick={() => onChange(d.id)}
+          onKeyDown={(e) => onKey(e, i)}
+        >
+          <div className={b.styleThumb} aria-hidden="true">
+            <DesktopFrame width={330}>
+              <SitePreview project={normalizeProject({ ...p, direction: d.id, font: 'auto' })} compact bare />
+            </DesktopFrame>
           </div>
-        );
-      })}
+          <span className={b.styleName} aria-hidden="true">
+            {d.name}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -110,7 +104,7 @@ export function SwatchPicker({ p, onPalette, onCustom }: { p: Project; onPalette
           type="button"
           role="radio"
           aria-checked={index === items.length - 1}
-          aria-label={`Cor da marca, mais ${brl(pricing.customColors)}`}
+          aria-label="Cor da marca"
           tabIndex={tabIndex(items.length - 1)}
           className={b.swatchOpt}
           onClick={() => select(items.length - 1)}
@@ -126,7 +120,6 @@ export function SwatchPicker({ p, onPalette, onCustom }: { p: Project; onPalette
             <input className={s.colorInput} type="color" value={p.custom} onChange={(ev) => onCustom(ev.target.value)} />
             Escolha a cor principal
           </label>
-          <span className={b.muted}>+ {brl(pricing.customColors)} pela adaptação das cores</span>
         </div>
       )}
     </>

@@ -284,10 +284,24 @@
   color: var(--muted);
   max-width: 40ch;
 }
-.heroCopy > .primary {
-  margin-top: 24px;
+.heroLead strong {
+  color: var(--navy);
+  font-weight: 750;
+  white-space: nowrap;
+}
+.priceNote {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.heroActions {
+  display: grid;
+  gap: 10px;
   align-self: stretch;
-  min-height: 54px;
+  margin-top: 22px;
+}
+.heroActions > * {
+  min-height: 52px;
   font-size: 16px;
 }
 .micro {
@@ -372,45 +386,6 @@
   100% {
     transform: translateX(310%) skewX(-22deg);
   }
-}
-
-/* Benefícios: ícone + título (descrição só a partir do tablet) */
-.benefits {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  padding-bottom: 48px;
-}
-.benefits li {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.benefitIcon {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--tint);
-  color: var(--blue-ink);
-}
-.benefitIcon svg {
-  width: 20px;
-  height: 20px;
-}
-.benefits h3 {
-  font-size: 15px;
-  line-height: 1.25;
-}
-.benefits p {
-  display: none;
-  font-size: 14px;
-  color: var(--muted);
 }
 
 /* ── Seções ─────────────────────────────────────────────────────────────── */
@@ -565,55 +540,10 @@ button.exampleCard:hover {
   box-shadow: var(--shadow);
   transform: translateY(-2px);
 }
-.clickBadge {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: -14px 0 8px;
-  padding: 5px 14px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid #b9cff7;
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--blue-ink);
-  animation: halo 2.4s ease-in-out infinite;
-}
-.clickBadge svg {
-  width: 16px;
-  height: 16px;
-}
-/* Brilho passando pelo texto; todas as cores do degradê têm contraste AA. */
-.clickText {
-  background: linear-gradient(100deg, #081b5c 0%, #081b5c 38%, #0761fd 50%, #081b5c 62%, #081b5c 100%);
-  background-size: 260% 100%;
-  background-position: 0 0;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: textShine 2.8s linear infinite;
-}
-@keyframes textShine {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: -160% 0;
-  }
-}
-@keyframes halo {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgb(7 97 253 / 0.3);
-  }
-  50% {
-    box-shadow: 0 0 0 7px rgb(7 97 253 / 0);
-  }
-}
 .exampleThumb {
   display: block;
-  margin: 0 12px 12px;
+  height: 190px;
+  margin: 12px 12px 12px;
   padding: 10px 10px 0;
   border-radius: var(--radius-sm);
   background: var(--tint);
@@ -632,6 +562,20 @@ button.exampleCard:hover {
   padding-inline: 16px;
   font-size: 14px;
   color: var(--muted);
+}
+.exampleOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding-inline: 16px;
+  color: var(--blue-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+.exampleOpen svg {
+  width: 16px;
+  height: 16px;
 }
 .otherCard {
   display: flex;
@@ -812,6 +756,13 @@ button.exampleCard:hover {
   border-color: var(--blue);
   background: var(--tint);
   box-shadow: inset 0 0 0 1px var(--blue);
+}
+.tileBadge {
+  display: block;
+  margin-top: 4px;
+  color: var(--ok);
+  font-size: 12px;
+  font-weight: 700;
 }
 .suggest {
   display: inline-block;
@@ -1040,222 +991,143 @@ button.exampleCard:hover {
   color: #8c1d18;
 }
 
-/* Cartão flutuante: é ele que abre a página de criação. Fica no canto
-   inferior direito o tempo todo; os botões principais trazem o visitante
-   até aqui e o destacam por um instante. */
-.floatCta {
-  --size: 120px;
-  position: fixed;
-  right: calc(12px + env(safe-area-inset-right));
-  bottom: calc(12px + env(safe-area-inset-bottom));
-  z-index: 40;
+/* Como funciona: nota e materiais */
+.processNote {
+  margin-top: 20px;
+  max-width: 62ch;
+  font-weight: 600;
+}
+.materials {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  max-width: 640px;
+}
+.materials h3 {
+  font-size: 16px;
+}
+.materials p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Pacotes */
+.packages {
+  display: grid;
+  gap: 12px;
+}
+.package {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.package h3 {
+  font-size: 18px;
+}
+.packagePrice {
+  margin-top: 4px;
+  font-size: 34px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+}
+.packageFor {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 15px;
+}
+.packagesNote {
+  margin-top: 14px;
+  font-weight: 600;
+  font-size: 15px;
+}
+.packagesNote a {
+  margin-left: 4px;
+  color: var(--blue-ink);
+  font-weight: 600;
+}
+.customBox {
+  margin-top: 18px;
+  padding: 18px 20px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+}
+.customBox h3 {
+  font-size: 16px;
+}
+.customBox p {
+  margin: 6px 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.investCta {
+  display: grid;
   gap: 8px;
-  max-width: calc(100vw - 24px);
-  min-height: 44px;
-  padding: 0 14px 0 12px;
-  border-radius: 999px;
-  background: linear-gradient(145deg, #1f7bff 0%, var(--blue) 45%, var(--navy) 100%);
+  justify-items: start;
+  margin-top: 22px;
+}
+.investCta small {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Projetos reais (só com material autorizado) */
+.realList,
+.quotes {
+  display: grid;
+  gap: 14px;
+}
+.realCard {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.realTag {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 2px 10px;
+  border-radius: 99px;
+  background: var(--navy);
   color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.realCard figure {
+  margin: 0;
+}
+.realCard img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+.realCard figcaption {
+  margin-top: 4px;
+  color: var(--muted);
   font-size: 13px;
-  font-weight: 750;
-  line-height: 1.2;
-  white-space: nowrap;
-  text-decoration: none;
-  box-shadow: 0 14px 30px -10px rgb(8 27 92 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.18);
-  animation: floatGlow 2.8s ease-in-out infinite;
-  /* Escondido até o botão principal do topo sair da tela. */
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transform: translateY(16px) scale(0.96);
-  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s, box-shadow 0.18s ease;
 }
-.floatCta[data-shown] {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transform: none;
-  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s, box-shadow 0.18s ease;
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
-.floatCta svg {
-  width: 18px;
-  height: 18px;
-  flex: none;
-}
-.floatArrow {
-  opacity: 0.85;
-}
-.floatCta[data-shown]:hover {
-  transform: scale(1.06);
-  box-shadow: 0 18px 36px -10px rgb(8 27 92 / 0.7), inset 0 0 0 1px rgb(255 255 255 / 0.28);
-}
-.floatCta[data-shown]:active {
-  transform: scale(0.98);
-}
-:where(.page) .floatCta:focus-visible {
-  outline: 3px solid var(--navy);
-  outline-offset: 3px;
-}
-/* Destaque quando um botão principal traz o visitante até aqui (a/b reinicia). */
-.floatCta[data-spot='a'] {
-  animation: spotA 1.1s ease-out 2, floatGlow 2.8s ease-in-out 2.2s infinite;
-}
-.floatCta[data-spot='b'] {
-  animation: spotB 1.1s ease-out 2, floatGlow 2.8s ease-in-out 2.2s infinite;
-}
-@keyframes floatGlow {
-  0%,
-  100% {
-    box-shadow: 0 14px 30px -10px rgb(8 27 92 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.18), 0 0 0 0 rgb(7 97 253 / 0.35);
-  }
-  50% {
-    box-shadow: 0 14px 30px -10px rgb(8 27 92 / 0.6), inset 0 0 0 1px rgb(255 255 255 / 0.18), 0 0 0 9px rgb(7 97 253 / 0);
-  }
-}
-@keyframes spotA {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgb(7 97 253 / 0.55);
-  }
-  40% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 22px rgb(7 97 253 / 0);
-  }
-}
-@keyframes spotB {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgb(7 97 253 / 0.55);
-  }
-  40% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 22px rgb(7 97 253 / 0);
-  }
-}
-/* O fim da página rola acima do cartão. */
-.page:has(.floatCta) .footer {
-  padding-bottom: calc(var(--float-space, 76px) + env(safe-area-inset-bottom));
-}
-/* A partir do tablet: cartão quadrado. */
-@media (min-width: 760px) {
-  .floatCta {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-end;
-    width: var(--size);
-    height: var(--size);
-    padding: 14px;
-    border-radius: 18px;
-    font-size: 13.5px;
-    white-space: normal;
-  }
-  .floatArrow {
-    position: absolute;
-    top: 14px;
-    right: 14px;
-  }
-  .floatCta > svg:first-child {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-  }
-  .page:has(.floatCta) .footer {
-    --float-space: 150px;
-  }
+.quotes blockquote {
+  margin: 0;
+  font-size: 16px;
 }
 
 /* Perguntas: ver todas */
 .faqMore {
   width: 100%;
   margin-top: 14px;
-}
-
-/* Investimento: preço inicial e os três caminhos, sem cartões aninhados */
-.invest {
-  display: grid;
-  gap: 14px;
-  max-width: 920px;
-}
-.invest > :not(.investMain, .investList) {
-  grid-column: 1 / -1;
-}
-.investMain {
-  display: grid;
-  align-content: center;
-  gap: 2px;
-  padding: 20px 22px;
-  border-radius: var(--radius);
-  background: var(--navy);
-  color: #fff;
-}
-.investMain span,
-.investMain small {
-  font-size: 14px;
-  color: rgb(255 255 255 / 0.84);
-}
-.investMain strong {
-  font-size: clamp(34px, 8vw, 44px);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-.investList {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  overflow: hidden;
-}
-.investList li + li {
-  border-top: 1px solid var(--line);
-}
-.investList button {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 12px;
-  width: 100%;
-  min-height: 64px;
-  padding: 12px 16px;
-  border: 0;
-  background: none;
-  text-align: left;
-  color: var(--navy);
-}
-.investList button:hover {
-  background: var(--tint);
-}
-.investName {
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 1.3;
-}
-.investPrice {
-  font-size: 14px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.investList svg {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  width: 18px;
-  height: 18px;
-  color: var(--blue-ink);
-}
-.invest .hint {
-  margin-top: 0;
-  font-size: 14px;
-}
-.invest .hint a {
-  color: var(--blue-ink);
-  font-weight: 600;
 }
 
 /* Quem atende */
@@ -1494,6 +1366,14 @@ button.exampleCard:hover {
 .demoFoot .confirmBox {
   margin-top: 0;
 }
+.demoUse {
+  display: grid;
+  gap: 6px;
+}
+.demoUse small {
+  color: var(--muted);
+  font-size: 13px;
+}
 .demoFoot > .primary {
   padding-inline: 12px;
 }
@@ -1604,9 +1484,19 @@ button.exampleCard:hover {
 
 /* ── ≥ 760px ────────────────────────────────────────────────────────────── */
 @media (min-width: 760px) {
-  .heroCopy > .primary {
+  .packages {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .realList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .heroActions {
+    display: flex;
+    flex-wrap: wrap;
     align-self: flex-start;
-    padding-inline: 30px;
+  }
+  .heroActions > * {
+    padding-inline: 26px;
   }
   .micro,
   .quiet {
@@ -1615,10 +1505,7 @@ button.exampleCard:hover {
   .heroLead {
     font-size: 19px;
   }
-  .benefits p {
-    display: block;
-  }
-  .slide {
+    .slide {
     flex-basis: calc((100% - 16px) / 2.15);
   }
   .options.twoCol{
@@ -1627,18 +1514,7 @@ button.exampleCard:hover {
   .fields.twoCol {
     grid-template-columns: repeat(2, 1fr);
   }
-  .invest {
-    grid-template-columns: 260px minmax(0, 1fr);
-  }
-  .investList button {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    padding-inline: 20px;
-  }
-  .investList svg {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .finalActions {
+    .finalActions {
     flex-direction: row;
     justify-content: center;
     gap: 20px;
@@ -1717,13 +1593,7 @@ button.exampleCard:hover {
   .hero + .section {
     padding-top: 56px;
   }
-  .benefits {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .benefits li {
-    padding: 18px;
-  }
-  .slide {
+    .slide {
     flex-basis: calc((100% - 32px) / 3);
   }
   .arrow {
@@ -1744,8 +1614,8 @@ button.exampleCard:hover {
     display: none;
   }
   .process {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
   }
   .process li,
   .process li:last-child {
@@ -1758,29 +1628,6 @@ button.exampleCard:hover {
     bottom: auto;
     width: auto;
     height: 2px;
-  }
-  .floatCta {
-    --size: 148px;
-    right: 24px;
-    bottom: 24px;
-    padding: 16px;
-    border-radius: 22px;
-    font-size: 15px;
-  }
-  .floatCta svg {
-    width: 24px;
-    height: 24px;
-  }
-  .floatArrow {
-    top: 16px;
-    right: 16px;
-  }
-  .floatCta > svg:first-child {
-    top: 16px;
-    left: 16px;
-  }
-  .page:has(.floatCta) .footer {
-    --float-space: 176px;
   }
   .section {
     padding-block: 80px;

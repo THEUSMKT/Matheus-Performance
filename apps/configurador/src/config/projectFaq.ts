@@ -1,75 +1,71 @@
 /* ==========================================================================
    Perguntas frequentes — EDITE AQUI
    As 5 primeiras aparecem direto na página; as demais, em "Ver todas".
-   Cada resposta descreve o que a página e o serviço fazem hoje. Valores
-   vêm de pricing.ts e offer.ts para não divergirem da estimativa.
+   Respostas curtas, com o que o serviço faz hoje. Valores, prazos e
+   limites vêm de packages.ts para nunca divergirem do configurador.
+   Nada de formas de pagamento, garantias ou condições que não existam.
    ========================================================================== */
-import { pricing, brl } from './pricing';
-import { revisionRounds } from './offer';
+import { brl, customNeeds, externalCosts, packages, priceNotes, priceRange, revisionRounds } from './packages';
 
-const spread = Math.round(pricing.rangeSpread * 100);
-const numbers = pricing.deadlines.flatMap((d) => d.label.match(/\d+/g) ?? []).map(Number);
+const [essencial, profissional, completo] = packages;
+const numbers = packages.flatMap((p) => p.deadline.match(/\d+/g) ?? []).map(Number);
 const prazos = `${Math.min(...numbers)} a ${Math.max(...numbers)} dias úteis`;
 
 export const projectFaq: [string, string][] = [
   [
-    'O que está incluído?',
-    `Página principal responsiva, botão de WhatsApp, links para as redes sociais, ${revisionRounds} rodadas de ajustes antes da publicação e acompanhamento até o site ir ao ar. Os opcionais escolhidos aparecem no resumo com o valor de cada um.`,
+    'A prévia é gratuita?',
+    'Sim. Você cria e ajusta a prévia sem cadastro e sem pagar nada. Só o desenvolvimento do site final é pago.',
   ],
   [
-    'O que fica à parte?',
-    'Domínio, hospedagem, e-mail profissional e plataformas externas (como formulários por e-mail, agendamento ou exibição do Instagram) têm cobrança própria, paga direto ao fornecedor. Produção de textos, fotos e vídeos também não está incluída.',
+    'O que fica pronto em cinco minutos?',
+    'A prévia: uma demonstração do seu site com nome, segmento, objetivo, estilo e cores. O site final é desenvolvido depois, com o seu conteúdo.',
   ],
   [
-    'Há mensalidade?',
-    'O desenvolvimento é cobrado uma vez. Não há mensalidade de desenvolvimento. Manutenção ou atualizações depois da entrega só existem se forem combinadas à parte.',
+    'O que está incluído no valor?',
+    `Página responsiva, aplicação da logo e das cores da marca, estilos disponíveis, botão de WhatsApp, links para as redes, ${revisionRounds} rodadas de ajustes e acompanhamento da publicação. Cada pacote soma seções e recursos.`,
   ],
   [
-    'Quanto tempo leva?',
-    `A estimativa atual vai de ${prazos}, conforme a complexidade. A contagem começa quando textos, imagens e logo são entregues.`,
+    'Por que existem três pacotes?',
+    `Porque o valor depende do que o site mostra: ${essencial.name} (${brl(essencial.price)}) com até ${essencial.maxSections} seções; ${profissional.name} (${brl(profissional.price)}) com até ${profissional.maxSections} seções, galeria e formulário; ${completo.name} (${brl(completo.price)}) com até ${completo.maxSections} seções e vitrine de produtos. O preço é o total — não há cobrança por estilo ou cor.`,
   ],
   [
-    'A prévia já é o meu site?',
-    'Não. A prévia é demonstrativa: mostra a estrutura, a identidade e o tipo de conteúdo. Textos, imagens e nomes são ilustrativos. O site final é desenvolvido com o seu conteúdo depois que o escopo é confirmado.',
+    'O que é pago à parte?',
+    `${externalCosts.join(', ')} são pagos direto aos fornecedores. Produção de textos, fotos e vídeos não está incluída.`,
   ],
   [
-    'Como a estimativa é calculada?',
-    `Parte do projeto base de ${brl(pricing.base)} e soma a categoria, a identidade visual, as cores próprias e os recursos escolhidos. O resumo mostra cada item. A faixa varia ${spread}% para cima ou para baixo porque o valor final depende do conteúdo e dos detalhes confirmados na conversa.`,
+    'Existe mensalidade?',
+    `Não há mensalidade de desenvolvimento: ${priceNotes.payment.toLowerCase()} Manutenção ou atualizações depois da entrega só existem se forem combinadas à parte.`,
   ],
   [
-    'O valor exibido é uma proposta?',
-    'Não. É uma estimativa para você decidir com informação. Escopo, investimento e prazo são confirmados por escrito antes de qualquer contratação. Depois de aprovado, mudanças de escopo são orçadas à parte.',
+    'Qual é o prazo de desenvolvimento?',
+    `De ${prazos}, conforme o pacote, ${priceNotes.deadlineStart}. O prazo é confirmado por escrito antes do início.`,
   ],
   [
-    'Por que alguns projetos aparecem como "sob diagnóstico"?',
-    'Várias unidades, loja virtual com pagamento, sistema de reservas próprio, integrações, área de login ou mais de um idioma dependem de levantamento. Para esses casos a página não mostra um valor automático, que poderia não se sustentar.',
+    'Preciso ter logo e fotos para criar a prévia?',
+    'Não. Sem logo, a prévia usa o nome da empresa; as imagens são ilustrações de exemplo. Para o site final, você envia a logo (se tiver) e as fotos da empresa.',
   ],
   [
-    'Qual a diferença entre seção, página e categoria?',
-    'Seção é uma parte da página principal, como serviços ou contato. Página adicional tem endereço próprio e aparece como item separado. A categoria só ajusta a organização do conteúdo — não adiciona páginas.',
+    'Quem fornece os textos?',
+    'Você fornece as informações da empresa. Os textos sugeridos na prévia são um ponto de partida e são revisados com você antes de entrar no site.',
   ],
   [
-    'Catálogo é o mesmo que loja virtual?',
-    'Não. O catálogo apresenta itens e encaminha o pedido pelo contato. Carrinho, estoque e pagamento online são loja virtual, que passa por diagnóstico.',
+    'Quantos ajustes estão incluídos?',
+    `${revisionRounds} rodadas de ajustes antes da publicação, em todos os pacotes. Mudanças de escopo depois da aprovação são orçadas à parte.`,
   ],
   [
-    'Como funciona a solicitação de horário?',
-    'Sem plataforma externa, o visitante pede um horário pelo WhatsApp e você confirma. Agenda com disponibilidade automática exige uma plataforma de agendamento, com assinatura própria e avaliação de compatibilidade.',
+    'O site funciona no celular?',
+    'Sim. Todos os pacotes incluem layout responsivo, pensado primeiro para o celular e ajustado para o computador.',
   ],
   [
-    'O que acontece quando eu clico em "Solicitar orçamento"?',
-    'Você revisa o resumo do projeto antes de enviar: a página abre uma mensagem pronta no WhatsApp ou, quando disponível, um formulário curto. Nada é enviado sem você confirmar.',
+    'Posso contratar algo mais complexo?',
+    `Sim, como projeto personalizado, com orçamento separado. Por exemplo: ${customNeeds.slice(0, 5).map((n) => n.name.toLowerCase()).join(', ')}. Os pacotes vão de ${priceRange}.`,
   ],
   [
-    'Minhas respostas ficam salvas?',
-    'Ficam só neste navegador, para você continuar de onde parou. O link de compartilhamento leva apenas as opções do projeto — sem nome, contato, textos ou orçamento. "Começar novamente" apaga o que está salvo.',
-  ],
-  [
-    'Posso usar depoimentos?',
-    'Sim, desde que sejam relatos reais, autorizados pelos seus clientes. A prévia reserva o espaço, mas não inventa avaliações.',
-  ],
-  [
-    'Quem fica com o site e os acessos?',
+    'Quem fica com o domínio e os acessos?',
     'O site entregue passa a ser seu após a quitação. A titularidade do domínio e das contas, e a transferência dos acessos, ficam registradas na proposta antes da contratação.',
+  ],
+  [
+    'Posso alterar o site depois?',
+    'Sim. Depois da publicação, alterações e manutenção são combinadas e orçadas à parte.',
   ],
 ];
