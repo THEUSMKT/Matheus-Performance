@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Oficina mecânica: carro na garagem com ferramentas (ilustração própria) -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6e9ee"/><stop offset="1" stop-color="#d5dae1"/></linearGradient>
+    <linearGradient id="c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3e6fa3"/><stop offset="1" stop-color="#2f5d8a"/></linearGradient>
+  </defs>
+  <rect width="480" height="360" fill="url(#g)"/>
+  <!-- porta de garagem -->
+  <rect x="40" y="40" width="400" height="200" rx="6" fill="#c7cdd6"/>
+  <g stroke="#b5bcc7" stroke-width="4"><path d="M40 80h400M40 120h400M40 160h400M40 200h400"/></g>
+  <rect y="280" width="480" height="80" fill="#9aa3ae"/>
+  <path d="M0 280h480" stroke="#e0a526" stroke-width="6" stroke-dasharray="30 20"/>
+  <!-- carro -->
+  <path d="M86 262v-34q0-14 14-18l46-12 40-40q10-10 26-10h96q16 0 28 12l38 38 36 8q16 4 16 20v36z" fill="url(#c)"/>
+  <path d="M196 164h52v40h-86zM260 164h42q8 0 14 6l30 34h-86z" fill="#bcd3e6"/>
+  <rect x="96" y="222" width="22" height="10" rx="4" fill="#f5d27a"/><rect x="398" y="222" width="18" height="10" rx="4" fill="#e07a5f"/>
+  <path d="M254 212h14" stroke="#1f3f60" stroke-width="5" stroke-linecap="round"/>
+  <!-- rodas -->
+  <g><circle cx="156" cy="262" r="32" fill="#2b2f36"/><circle cx="156" cy="262" r="14" fill="#aeb6c0"/></g>
+  <g><circle cx="352" cy="262" r="32" fill="#2b2f36"/><circle cx="352" cy="262" r="14" fill="#aeb6c0"/></g>
+  <!-- chave inglesa -->
+  <path d="M40 320l70-40" stroke="#5b6773" stroke-width="12" stroke-linecap="round"/>
+  <circle cx="116" cy="277" r="15" fill="#5b6773"/><circle cx="116" cy="277" r="6" fill="#9aa3ae"/>
+  <!-- pneus empilhados -->
+  <g fill="#2b2f36"><rect x="392" y="296" width="72" height="22" rx="10"/><rect x="392" y="318" width="72" height="22" rx="10"/></g>
+  <g fill="#4a505a"><rect x="416" y="303" width="24" height="8" rx="4"/><rect x="416" y="325" width="24" height="8" rx="4"/></g>
+  <!-- galão de óleo -->
+  <rect x="330" y="306" width="36" height="42" rx="6" fill="#e0a526"/><rect x="338" y="298" width="14" height="10" rx="3" fill="#b58318"/>
+</svg>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Pet shop: cachorro no banho com espuma (ilustração própria) -->
+  <defs>
+    <linearGradient id="p" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4f0ee"/><stop offset="1" stop-color="#f3f7f5"/></linearGradient>
+  </defs>
+  <rect width="480" height="360" fill="url(#p)"/>
+  <!-- azulejos -->
+  <g stroke="#d3e4e0" stroke-width="3">
+    <path d="M0 80h480M0 160h480M80 0v240M160 0v240M240 0v240M320 0v240M400 0v240"/>
+  </g>
+  <rect y="290" width="480" height="70" fill="#cfdcd8"/>
+  <!-- rabo e orelha de trás -->
+  <path d="M322 214q44-30 34-70" stroke="#c98b4f" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- corpo -->
+  <ellipse cx="258" cy="214" rx="86" ry="54" fill="#d9a066"/>
+  <!-- cabeça -->
+  <circle cx="176" cy="150" r="52" fill="#d9a066"/>
+  <path d="M136 112q-30 6-28 60q18 4 30-18z" fill="#a8703e"/>
+  <path d="M214 108q30 2 34 54q-18 8-32-12z" fill="#a8703e"/>
+  <ellipse cx="170" cy="176" rx="30" ry="22" fill="#f1d3ae"/>
+  <ellipse cx="170" cy="164" rx="11" ry="8" fill="#3b2f2a"/>
+  <circle cx="154" cy="138" r="6" fill="#3b2f2a"/><circle cx="192" cy="138" r="6" fill="#3b2f2a"/>
+  <path d="M160 186q10 8 20 0" stroke="#3b2f2a" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- banheira -->
+  <path d="M96 222h300l-16 60a18 18 0 0 1-17 13H129a18 18 0 0 1-17-13z" fill="#2f7f86"/>
+  <rect x="86" y="212" width="320" height="18" rx="9" fill="#3b949b"/>
+  <rect x="134" y="295" width="12" height="16" rx="4" fill="#256a70"/><rect x="346" y="295" width="12" height="16" rx="4" fill="#256a70"/>
+  <!-- espuma -->
+  <g fill="#ffffff">
+    <circle cx="130" cy="210" r="20"/><circle cx="162" cy="202" r="24"/><circle cx="200" cy="208" r="20"/><circle cx="236" cy="200" r="24"/>
+    <circle cx="274" cy="208" r="20"/><circle cx="310" cy="200" r="22"/><circle cx="348" cy="208" r="20"/><circle cx="378" cy="212" r="16"/>
+    <circle cx="170" cy="96" r="12"/><circle cx="194" cy="84" r="9"/><circle cx="150" cy="88" r="7"/>
+  </g>
+  <!-- bolhas -->
+  <g fill="none" stroke="#9fc9c6" stroke-width="3">
+    <circle cx="300" cy="120" r="12"/><circle cx="330" cy="92" r="8"/><circle cx="360" cy="126" r="10"/><circle cx="96" cy="150" r="9"/>
+  </g>
+  <!-- osso -->
+  <g fill="#f4efe7" stroke="#d8cdbd" stroke-width="3">
+    <rect x="392" y="304" width="46" height="12" rx="6"/>
+    <circle cx="392" cy="304" r="8"/><circle cx="392" cy="316" r="8"/><circle cx="438" cy="304" r="8"/><circle cx="438" cy="316" r="8"/>
+  </g>
+</svg>
