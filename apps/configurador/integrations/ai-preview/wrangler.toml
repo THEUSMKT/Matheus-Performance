@@ -1,0 +1,18 @@
+# Cloudflare Worker da prévia por descrição. Nenhum segredo aqui.
+# A chave do Gemini é cadastrada como segredo:  npx wrangler secret put GEMINI_API_KEY
+# Passo a passo completo: README.md desta pasta.
+name = "beck-configurador-ia"
+main = "worker.ts"
+compatibility_date = "2026-09-01"
+
+[vars]
+# Só estas origens podem chamar o Worker (separe por vírgula).
+ALLOWED_ORIGINS = "https://theusmkt.github.io"
+# Confirme o nome exato do modelo na lista do Google AI Studio antes de publicar.
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+
+# Limite por visitante (IP): 5 gerações por minuto. Protege a cota gratuita.
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 5, period = 60 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { contact } from '@/config/contact';
-import { leadMode } from '@/config/integrations';
+import { aiEnabled, leadMode } from '@/config/integrations';
 import { LegalPage } from '@/components/LegalPage';
 
 export const metadata: Metadata = {
@@ -36,6 +36,21 @@ export default function Privacidade() {
         Ao abrir o WhatsApp pela página, o aplicativo já vem com um resumo do projeto escrito. Nada é enviado
         automaticamente: a mensagem só chega até nós se você decidir enviá-la. A partir daí vale também a política do próprio WhatsApp.
       </p>
+
+      {aiEnabled && (
+        <>
+          <h2>Prévia por descrição (inteligência artificial)</h2>
+          <p>
+            Se você usar “Descreva o site que você quer”, o texto digitado é enviado ao nosso servidor intermediário e, dele, à API do Google
+            Gemini, só para montar a prévia. Antes do envio, e-mails e números longos (como telefones) são removidos. O servidor não guarda nem
+            registra o texto; o resultado volta para o seu navegador e fica salvo apenas nele.
+          </p>
+          <p>
+            O processamento pelo Google segue os termos da API do Gemini. No uso gratuito da API, o Google pode usar o conteúdo enviado para
+            melhorar os próprios produtos, inclusive com revisão humana. Por isso, não inclua dados pessoais ou confidenciais na descrição.
+          </p>
+        </>
+      )}
 
       {leadMode === 'receptor' && (
         <>

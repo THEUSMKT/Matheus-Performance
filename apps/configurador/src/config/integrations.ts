@@ -16,9 +16,16 @@ export const integrations = {
    * prazo real esteja combinado — nada é prometido por padrão.
    */
   responseExpectation: process.env.NEXT_PUBLIC_RESPONSE_EXPECTATION ?? '',
+  /**
+   * URL pública do servidor intermediário da prévia por descrição (IA). Não é
+   * segredo: a chave do Gemini fica só no servidor. Vazia = recurso desligado
+   * e a página funciona exatamente como antes.
+   */
+  aiEndpoint: process.env.NEXT_PUBLIC_AI_ENDPOINT ?? '',
   /** 'production' só no build publicado; qualquer outro valor é teste. */
   siteEnv: process.env.NEXT_PUBLIC_SITE_ENV ?? 'development',
 } as const;
 
 export const leadMode: 'receptor' | 'whatsapp' = integrations.leadEndpoint ? 'receptor' : 'whatsapp';
+export const aiEnabled = Boolean(integrations.aiEndpoint);
 export const isProduction = integrations.siteEnv === 'production';

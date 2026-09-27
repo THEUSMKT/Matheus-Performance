@@ -1,5 +1,33 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — prévia por descrição com o Gemini (etapa 1: texto)
+
+- Na página de criação, quando o servidor da IA estiver configurado, aparece
+  “Descreva o site que você quer”: a pessoa escreve em poucas frases o que a
+  empresa faz e o que o site deve mostrar, e a prévia é montada **nos
+  layouts existentes** — a IA escolhe segmento, objetivo, estilo, cores e
+  ordem das seções e sugere título, frase e serviços. Logo abaixo continua o
+  passo a passo.
+- Segurança: a chave do Gemini fica só num Cloudflare Worker
+  (`integrations/ai-preview/`), nunca na página nem no repositório. O Worker
+  aceita só o site permitido, limita 5 gerações/minuto por visitante,
+  remove e-mails e telefones do texto e não guarda nem registra a descrição.
+- Validação: a resposta da IA passa por `sanitizeSuggestion` — ids fora da
+  lista caem, textos são cortados e frases com fatos não informados (anos
+  de mercado, número de clientes, prêmios, garantias, preços) são
+  descartadas. O pacote nunca muda: seções de outro pacote e itens fora dos
+  pacotes aparecem só como aviso.
+- **Desligado por padrão:** sem a variável `AI_ENDPOINT`, o build é igual ao
+  publicado (há teste para isso).
+- Testes: 40 unitários (6 novos: pedido ao Gemini, validação, aplicação sem
+  mudar pacote, respostas bloqueadas/inválidas, Worker com origem, tamanho,
+  limite, cota e log sem texto, cliente) e 26 cenários de navegador (2 novos,
+  com a IA simulada — nenhuma chamada real ao Gemini foi feita).
+- Pendências: criar a chave e o Worker (passo a passo no README da pasta),
+  confirmar o nome do modelo no AI Studio e testar com descrições reais.
+  Próximas etapas: áudio, salvamento dos projetos e acesso por código.
+
+
 ## Edição — reformulação: prévia em 5 minutos e pacotes de R$ 500 a R$ 1.000
 
 ### O que mudou

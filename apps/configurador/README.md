@@ -67,6 +67,7 @@ Página, PDF, mensagem do WhatsApp e receptor usam as mesmas funções.
 | `src/lib/leads.ts` | Contrato do pedido, validação, envio com idempotência |
 | `src/lib/analytics.ts` · `origin.ts` | Eventos e origem da visita |
 | `integrations/lead-receiver/` | Receptor de referência e modelo do CRM |
+| `integrations/ai-preview/` · `src/lib/aiPreview.ts` | Prévia por descrição com o Gemini: servidor intermediário (Cloudflare Worker) e contrato/validação da sugestão. Desligado sem `NEXT_PUBLIC_AI_ENDPOINT` — ver o README da pasta |
 | `public/brand/` | Símbolo oficial e foto do responsável |
 
 ## Publicar
