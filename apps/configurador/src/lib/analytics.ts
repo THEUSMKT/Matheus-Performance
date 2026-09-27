@@ -40,6 +40,11 @@ export const EVENTS = {
   /** Descrição por áudio: gravação transcrita ou falha. Nunca leva áudio nem texto. */
   ai_audio: { once: false, props: ['result', 'reason'] },
   layout_share: { once: false, props: [] },
+  /** "Copiar resumo" na revisão. Nunca leva o texto. */
+  summary_copy: { once: false, props: [] },
+  /** "Baixar meu projeto" / "Abrir arquivo de projeto". Nunca levam o conteúdo. */
+  project_export: { once: false, props: [] },
+  project_import: { once: false, props: [] },
   pdf_save: { once: false, props: [] },
   help_open: { once: false, props: ['step'] },
   lead_submit_attempt: { once: false, props: [] },

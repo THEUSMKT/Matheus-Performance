@@ -6,12 +6,55 @@
    sem o visitante pedir ("Começar novamente").
    ========================================================================== */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { KEY, LEGACY_KEYS, dropStaleCopy, fromShare, hasOwnChoices, initialProject, newProjectId, normalizeProject, readStored, type Project } from '@/lib/project';
+import {
+  KEY,
+  LEGACY_KEYS,
+  dropStaleCopy,
+  editableTexts,
+  fromShare,
+  hasOwnChoices,
+  initialProject,
+  newProjectId,
+  normalizeProject,
+  readStored,
+  type EditableText,
+  type Project,
+} from '@/lib/project';
 import { captureOrigin, type Origin } from '@/lib/origin';
 import { setContext, variantFor } from '@/lib/analytics';
 import { clearLogo } from '@/lib/logo';
 
 export type Variants = { hero: string; cta: string; fluxo: string };
+
+/**
+ * Versão anterior guardada antes de uma substituição inteira (usar um
+ * modelo, abrir um arquivo de projeto). Fica no mesmo navegador, como o
+ * projeto, e sai com "Começar novamente".
+ */
+export const BACKUP_KEY = 'mb.configurador.anterior';
+export type BackupReason = 'modelo' | 'arquivo';
+export type Backup = { reason: BackupReason; project: Project };
+
+function readBackup(): Backup | null {
+  try {
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data?.reason !== 'modelo' && data?.reason !== 'arquivo') return null;
+    return { reason: data.reason, project: normalizeProject(data.project) };
+  } catch {
+    return null;
+  }
+}
+
+/** Campos de texto que mudaram entre duas versões (para marcar edição manual). */
+function editedFields(old: Project, next: Project): EditableText[] {
+  return editableTexts.filter((f) => {
+    const a = f in old.previewCopy ? old.previewCopy[f as keyof Project['previewCopy']] : old[f as 'headline' | 'description' | 'services'];
+    const b = f in next.previewCopy ? next.previewCopy[f as keyof Project['previewCopy']] : next[f as 'headline' | 'description' | 'services'];
+    return JSON.stringify(a) !== JSON.stringify(b);
+  });
+}
 
 /** Há algo que valha retomar: uma etapa avançada, um nome ou escolhas próprias. */
 export function canResume(p: Project): boolean {
@@ -40,6 +83,7 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
   const [origin, setOrigin] = useState<Origin>({});
   const [variants, setVariants] = useState<Variants>({ hero: 'a', cta: 'a', fluxo: 'a' });
   const saveFailed = useRef(false);
+  const [backup, setBackup] = useState<Backup | null>(null);
 
   useEffect(() => {
     const o = captureOrigin();
@@ -47,6 +91,7 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
     setOrigin(o);
     setVariants(v);
     setContext(o, v);
+    setBackup(readBackup());
 
     let loaded: Project | null = null;
     if (readHash) {
@@ -113,8 +158,13 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
   }, [project, ready, hasProgress]);
 
   const update = useCallback((patch: Partial<Project>) => {
-    // Edição feita pela pessoa: textos da IA que ficaram desatualizados saem.
-    setProject((old) => dropStaleCopy(old, normalizeProject({ ...old, ...patch })));
+    // Edição feita pela pessoa: textos da IA que ficaram desatualizados saem,
+    // e os textos que ela mexeu ficam marcados como seus.
+    setProject((old) => {
+      const next = dropStaleCopy(old, normalizeProject({ ...old, ...patch }));
+      const touched = 'edited' in patch ? [] : editedFields(old, normalizeProject({ ...old, ...patch }));
+      return touched.length ? { ...next, edited: [...new Set([...next.edited, ...touched])] } : next;
+    });
     setHasProgress(true);
   }, []);
 
@@ -133,6 +183,42 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
     return stored ?? normalized;
   }, []);
 
+  /**
+   * Troca o projeto inteiro (modelo, arquivo), guardando o atual para
+   * "Recuperar minha versão anterior". Grava na hora.
+   */
+  const replaceKeeping = useCallback(
+    (next: Project, reason: BackupReason) => {
+      if (hasProgress) {
+        const kept: Backup = { reason, project };
+        try {
+          localStorage.setItem(BACKUP_KEY, JSON.stringify(kept));
+        } catch {
+          /* sem armazenamento: a versão anterior fica só nesta aba */
+        }
+        setBackup(kept);
+      }
+      return commit(next);
+    },
+    [commit, hasProgress, project],
+  );
+
+  const dropBackup = useCallback(() => {
+    setBackup(null);
+    try {
+      localStorage.removeItem(BACKUP_KEY);
+    } catch {
+      /* nada salvo */
+    }
+  }, []);
+
+  /** Volta à versão guardada; a atual deixa de existir. */
+  const restoreBackup = useCallback(() => {
+    if (!backup) return;
+    commit(backup.project);
+    dropBackup();
+  }, [backup, commit, dropBackup]);
+
   const reset = useCallback(() => {
     setProject(normalizeProject({ ...initialProject(), segment: origin.segment ?? initialProject().segment }));
     setHasProgress(false);
@@ -141,15 +227,17 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
     try {
       localStorage.removeItem(KEY);
       for (const key of Object.values(LEGACY_KEYS)) localStorage.removeItem(key);
+      localStorage.removeItem(BACKUP_KEY);
     } catch {
       /* nada salvo para apagar */
     }
     clearLogo();
+    setBackup(null);
     if (location.hash) history.replaceState(null, '', `${location.pathname}${location.search}`);
     setNotice('Respostas apagadas. Você pode começar de novo.');
   }, [origin.segment]);
 
-  return { project, ready, hasProgress, resumable, saved, notice, setNotice, origin, variants, update, replace, commit, reset };
+  return { project, ready, hasProgress, resumable, saved, notice, setNotice, origin, variants, update, replace, commit, reset, backup, replaceKeeping, restoreBackup, dropBackup };
 }
 
 export type ProjectState = ReturnType<typeof useProject>;

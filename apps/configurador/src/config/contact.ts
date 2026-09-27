@@ -38,9 +38,11 @@ export const contact = {
   siteUrl: 'https://theusmkt.github.io/Matheus-Performance/configurador',
 
   /** Abertura da mensagem enviada ao WhatsApp com o briefing montado. */
-  whatsappIntro: 'Olá! Criei a prévia do meu site e gostaria de solicitar o desenvolvimento.',
+  whatsappIntro: 'Olá, Matheus! Quero solicitar o desenvolvimento do meu site pela Beck Performance.',
   /** Abertura quando o projeto precisa de orçamento personalizado. */
-  whatsappPersonalizado: 'Olá! Criei a prévia do meu site e preciso de um projeto personalizado.',
+  whatsappPersonalizado: 'Olá, Matheus! Criei a prévia do meu site e preciso de um projeto personalizado.',
+  /** Fechamento da mensagem do pedido. */
+  whatsappClosing: 'Gostaria de alinhar os próximos passos para desenvolver este projeto.',
   /** Pedido de projeto fora dos pacotes, a partir da apresentação. */
   whatsappProjetoPersonalizado:
     'Olá! Vi os pacotes de site da Beck Performance e preciso de um projeto personalizado. Posso explicar o que preciso?',

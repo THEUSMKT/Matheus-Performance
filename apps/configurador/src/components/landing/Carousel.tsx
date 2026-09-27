@@ -184,7 +184,7 @@ export function Carousel({ id, label, itemLabel, start = 0, untilDesktop = false
         ))}
       </div>
       {overflowing && (
-        <div className={s.carouselFoot}>
+        <div className={s.carouselFoot} data-float-avoid="">
           <button type="button" className={s.arrow} onClick={() => step(-1)} disabled={edges.start} aria-label="Anterior" aria-controls={id}>
             <ChevronLeft aria-hidden="true" />
           </button>

@@ -563,15 +563,50 @@ button.exampleCard:hover {
   font-size: 14px;
   color: var(--muted);
 }
+/* "Ver este exemplo": parece e se comporta como botão (o cartão inteiro é o botão). */
 .exampleOpen {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-  padding-inline: 16px;
-  color: var(--blue-ink);
+  gap: 6px;
+  min-height: 44px;
+  margin: 10px 16px 0;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--blue), var(--navy-2));
+  color: #fff;
   font-size: 14px;
   font-weight: 700;
+  box-shadow: 0 10px 22px -14px rgb(7 97 253 / 0.9);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.exampleOpen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.45) 50%, transparent 65%) no-repeat;
+  background-size: 250% 100%;
+  background-position: 120% 0;
+  transition: background-position 0.3s ease-out;
+}
+button.exampleCard:hover .exampleOpen,
+button.exampleCard:focus-visible .exampleOpen {
+  box-shadow: 0 14px 26px -14px rgb(7 97 253 / 1);
+}
+button.exampleCard:hover .exampleOpen::after,
+button.exampleCard:focus-visible .exampleOpen::after {
+  background-position: -120% 0;
+}
+button.exampleCard:active .exampleOpen {
+  transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  .exampleOpen,
+  .exampleOpen::after {
+    transition: none;
+  }
 }
 .exampleOpen svg {
   width: 16px;

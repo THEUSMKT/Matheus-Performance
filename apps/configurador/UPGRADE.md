@@ -1,5 +1,81 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — pacotes no início, pedido legível, exemplos fiéis e edição sem perder trabalho
+
+**Causas encontradas**
+- *Mensagem com `complex%22%3A…`, `identitySet`, `direction`, `palette`, `font`:*
+  `projectMessage` terminava com a linha "Opções de layout", que é o
+  `shareLink` — uma URL com `encodeURIComponent(JSON.stringify(estado))`.
+  Essa URL ia no corpo e, codificada de novo pelo link do WhatsApp, aparecia
+  como texto cru. Agora a mensagem não leva link nem JSON; o estado completo
+  vai no arquivo "Baixar meu projeto". A codificação do link continua uma só
+  (`whatsappLink`), e `10%`, `&`, `+`, emoji e URLs chegam intactos.
+- *Exemplos:* cartão e janela já usavam a mesma configuração
+  (`exampleProject`), mas "Usar este modelo" misturava o exemplo com textos
+  e serviço do rascunho, então o site aberto na criação não era o do
+  cartão. Agora o modelo entra inteiro (só o nome da empresa, observações e
+  contato ficam), com confirmação e "Recuperar minha versão anterior". Não
+  existe exemplo de pet shop no catálogo; o exemplo roxo é o Estúdio Forma
+  (arquitetura/criativo) e foi usado para validar a regra.
+- *Botões dos exemplos:* o cartão já abria o exemplo, mas a ação parecia só
+  um link ("Ver exemplo"). Agora é o botão "Ver este exemplo", com brilho
+  discreto; um gesto lateral no carrossel não abre o cartão.
+
+**O que mudou**
+- **Pacote no início da personalização:** "Escolha o pacote do seu site"
+  (Escolha 1 de 6) com os três cartões (nome, preço, para quem é, até três
+  benefícios derivados do catálogo, "Selecionado", "Escolher Profissional"),
+  "Comparar pacotes" (tabela curta, alinhada por recurso, também na
+  apresentação) e recomendação só quando as escolhas pedem, com o motivo
+  ("O Profissional inclui a galeria de fotos que você escolheu"). A primeira
+  prévia nunca espera essa escolha e diz em que pacote está.
+- **Resumo compacto sempre à vista:** "Profissional · R$ 750 · Alterar pacote".
+- **Troca de pacote sem perder trabalho:** para um pacote menor, a caixa
+  mostra o novo preço e o que sai; o que sai fica guardado no rascunho
+  (`parked`), fora da prévia, do resumo e do pedido, e volta com
+  "Restaurar no Profissional". Com seções demais, a pessoa escolhe quais
+  manter. "Desfazer" vale para a última troca de pacote, restauração ou
+  nova geração. Decisão: guardar só os ids das seções, o formulário e o
+  tamanho da galeria — os textos das seções já ficam no projeto, então não
+  foi preciso duplicar o projeto a cada troca.
+- **Seções como benefícios:** nome, uma frase de benefício, "Incluído no seu
+  pacote" / "Disponível no Completo" (em texto) e "Ver pacote Completo".
+  Limite atingido tem mensagem própria ("Você já selecionou 5 de 5 seções do
+  Essencial.").
+- **Pedido legível:** mensagem em blocos (MEU NEGÓCIO, PACOTE ESCOLHIDO,
+  COMO IMAGINEI O SITE, TEXTOS…, OBSERVAÇÕES, SOBRE MIM), resumo do pedido
+  antes da saída com "Editar" em cada linha, **Copiar resumo**, **Baixar meu
+  projeto** (JSON versionado, sem contato) e **Abrir arquivo de projeto**.
+  Acima de ~1.800 caracteres vai um resumo enxuto que aponta o arquivo.
+- **Textos por seção:** "Editar os textos das seções" (sobre, detalhes dos
+  serviços, diferenciais, como funciona, perguntas) sem gerar de novo; o que
+  a pessoa edita fica marcado e uma nova geração mantém, com "Usar os textos
+  novos" se ela quiser. "Voltar ao texto sugerido" por grupo.
+- **"Deixar minha prévia mais específica":** quem atende, onde atende, o
+  que destacar (no segmento de imóveis: tipos, região, compra/venda/locação).
+  Entra no pedido, no bloco de atendimento da prévia e, se couber no
+  limite, na descrição enviada à IA ao gerar de novo — sem mudar o contrato.
+- **Prévia do visitante sem nome** mostra "Seu negócio"; nomes fictícios
+  ficam só nos exemplos. Galeria e vitrine mostram espaços de foto marcados
+  (não a mesma ilustração repetida como se fossem trabalhos diferentes); um
+  aviso único de "textos sugeridos" substitui os selos repetidos por seção.
+- **Botão flutuante** sai da frente enquanto as setas/bolinhas do carrossel
+  ou o "Ver este exemplo" passam pela faixa de baixo da tela.
+- Fluxo `guiado-v2`; projetos `guiado-v1` abrem na mesma escolha.
+  Eventos novos: `summary_copy`, `project_export`, `project_import` (sem
+  conteúdo). Nenhum preço, limite, segredo ou variável de produção mudou.
+
+**Testes:** 61 unitários e 41 cenários de navegador (Chromium; 360, 390,
+430, 768 e 1366 px; microfone simulado; WhatsApp interceptado, nada é
+enviado). Não testado aqui: áudio real no Safari/iPhone, teclado virtual e
+área segura em aparelho real.
+
+**Publicação:** o site (merge na `main`) resolve tudo. O Worker **pode**
+ser publicado de novo depois (opcional): as regras da IA ganharam duas
+linhas (evitar clichês citados e usar "Quem atendo/Onde atendo/Quero
+destacar"). O contrato não mudou, então qualquer ordem funciona e o site
+nunca fica sem gerar prévias.
+
 ## Edição — criação guiada: gravar, gerar, ver e personalizar
 
 - **Botão flutuante de volta na apresentação.** Tinha saído de propósito na

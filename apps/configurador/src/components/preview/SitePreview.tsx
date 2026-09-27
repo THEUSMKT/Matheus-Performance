@@ -80,12 +80,45 @@ const segmentCopy: Record<string, { about: string; serviceDetails: string[]; dif
   },
 };
 
+const isRealEstateProject = (p: Project) => p.segment === 'imoveis' || /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i.test(p.service);
+
+/** Lista própria com lacunas preenchidas pelo exemplo; vazia = exemplo inteiro. */
+const fill = (own: string[], example: string[]) => (own.some((t) => t.trim()) ? own.map((t, i) => t.trim() || example[i] || '').filter(Boolean) : example);
+
+/**
+ * Textos das seções exatamente como a prévia mostra: os do visitante (ou da
+ * IA) e, no que faltar, os de exemplo do segmento. Usado também como
+ * sugestão nos campos de edição.
+ */
+export function previewTexts(p: Project): Project['previewCopy'] {
+  const c = siteContent(p);
+  const detail = isRealEstateProject(p) ? segmentCopy.imoveis : segmentCopy[p.segment] ?? segmentCopy.default;
+  return {
+    about: c.previewCopy.about || detail.about,
+    serviceDetails: c.services.map((_, i) => c.previewCopy.serviceDetails[i] || detail.serviceDetails[i] || detail.serviceDetails[0]),
+    differentials: fill(c.previewCopy.differentials, detail.differentials),
+    processSteps: fill(c.previewCopy.processSteps, detail.processSteps),
+    faqQuestions: fill(c.previewCopy.faqQuestions, detail.faqQuestions),
+  };
+}
+
+/** Espaço de foto, claramente marcado: nunca a mesma ilustração repetida como se fossem trabalhos diferentes. */
+function PhotoSlot({ label, className }: { label: string; className: string }) {
+  return (
+    <span className={`${className} ${s.slot}`}>
+      <ImageIcon aria-hidden="true" />
+      <span>{label}</span>
+    </span>
+  );
+}
+
 export function SitePreview({
   project: p,
   logo = null,
   compact = false,
   mobile = false,
   bare = false,
+  demo = false,
 }: {
   project: Project;
   logo?: string | null;
@@ -95,8 +128,10 @@ export function SitePreview({
   mobile?: boolean;
   /** Sem barra de navegador (tela cheia ou celular). */
   bare?: boolean;
+  /** Exemplo da apresentação: usa o nome fictício do segmento. */
+  demo?: boolean;
 }) {
-  const c = siteContent(p);
+  const c = siteContent(p, { demo });
   const obj = objectiveOf(p);
   const palette = palettes.find((x) => x.id === p.palette) ?? palettes[0];
   const accent = p.custom ?? palette.accent;
@@ -112,9 +147,10 @@ export function SitePreview({
   const middle = p.sections.filter((id) => id !== 'apresentacao' && id !== 'contato');
   const navLinks = middle.slice(0, 3).map((id) => sectionName(p, id).replace(/ em destaque$/, '').replace('Informações de atendimento', 'Atendimento'));
   const showcase = p.objective === 'produtos' || p.objective === 'trabalhos';
-  const isRealEstate = p.segment === 'imoveis' || /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i.test(p.service);
-  const detail = isRealEstate ? segmentCopy.imoveis : segmentCopy[p.segment] ?? segmentCopy.default;
-  const serviceDetails = c.services.map((_, i) => c.previewCopy.serviceDetails[i] || detail.serviceDetails[i] || detail.serviceDetails[0]);
+  const isRealEstate = isRealEstateProject(p);
+  const texts = previewTexts(p);
+  const serviceDetails = texts.serviceDetails;
+  const region = p.details.region.trim();
 
   const blocks: Record<string, () => ReactNode> = {
     servicos: () => (
@@ -124,7 +160,7 @@ export function SitePreview({
           {c.services.map((sv, i) =>
             showcase ? (
               <div key={`${sv}-${i}`} className={s.product}>
-                <img className={s.productImg} src={image} alt="" loading="lazy" width={480} height={360} style={{ objectPosition: `${20 + i * 30}% 50%` }} />
+                <PhotoSlot className={s.productImg} label={p.objective === 'trabalhos' ? 'Foto do trabalho' : 'Foto do produto'} />
                 <span className={s.cardTitle}>{sv}</span>
               </div>
             ) : (
@@ -136,25 +172,22 @@ export function SitePreview({
             ),
           )}
         </div>
-        <Tag>{c.previewCopy.serviceDetails.some(Boolean) ? 'Descrições sugeridas a partir da sua descrição' : 'Textos de exemplo · personalize antes de publicar'}</Tag>
       </div>
     ),
     sobre: () => (
       <div className={`${s.section} ${s.about}`} key="sobre">
         <span className={s.h}>Sobre {c.name}</span>
-        <span className={s.text}>{c.previewCopy.about || detail.about}</span>
-        <Tag>{c.previewCopy.about ? 'Sugestão baseada na sua descrição · revise antes de publicar' : 'Texto de exemplo · personalize antes de publicar'}</Tag>
+        <span className={s.text}>{texts.about}</span>
       </div>
     ),
     diferenciais: () => (
       <div className={s.section} key="diferenciais">
         <span className={s.h}>Por que escolher {c.name}</span>
         <ul className={s.list}>
-          {(c.previewCopy.differentials.length ? c.previewCopy.differentials : detail.differentials).map((d) => (
+          {texts.differentials.map((d) => (
             <li key={d}>{d}</li>
           ))}
         </ul>
-        <Tag>Confira se cada ponto corresponde ao seu atendimento</Tag>
       </div>
     ),
     atendimento: () => (
@@ -165,7 +198,7 @@ export function SitePreview({
             <Clock aria-hidden="true" /> Seus dias e horários
           </span>
           <span>
-            <MapPin aria-hidden="true" /> Sua região ou endereço
+            <MapPin aria-hidden="true" /> {region || 'Sua região ou endereço'}
           </span>
           <span>
             <MessageCircle aria-hidden="true" /> {p.objective === 'agendamento' ? 'Pedido de horário pelo WhatsApp' : 'Contato pelo WhatsApp'}
@@ -178,14 +211,13 @@ export function SitePreview({
       <div className={s.section} key="processo">
         <span className={s.h}>Como funciona</span>
         <ol className={s.steps}>
-          {(c.previewCopy.processSteps.length ? c.previewCopy.processSteps : detail.processSteps).map((t, i) => (
+          {texts.processSteps.map((t, i) => (
             <li key={t}>
               <b>{i + 1}</b>
               {t}
             </li>
           ))}
         </ol>
-        <Tag>Etapas sugeridas · ajuste ao seu processo</Tag>
       </div>
     ),
     galeria: () => (
@@ -193,7 +225,7 @@ export function SitePreview({
         <span className={s.h}>{p.objective === 'trabalhos' ? 'Trabalhos' : 'Galeria'}</span>
         <div className={s.gallery}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <img key={i} className={s.tile} src={image} alt="" loading="lazy" width={480} height={360} style={{ objectPosition: `${(i * 23) % 100}% ${(i * 41) % 100}%` }} />
+            <PhotoSlot key={i} className={s.tile} label={`Sua foto ${i + 1}`} />
           ))}
         </div>
         <Tag>
@@ -205,7 +237,7 @@ export function SitePreview({
       <div className={s.section} key="faq">
         <span className={s.h}>Perguntas frequentes</span>
         <div className={s.faq}>
-          {(c.previewCopy.faqQuestions.length ? c.previewCopy.faqQuestions : detail.faqQuestions).map((q) => (
+          {texts.faqQuestions.map((q) => (
             <span key={q}>{q}</span>
           ))}
         </div>
@@ -229,7 +261,7 @@ export function SitePreview({
         <div className={s.products}>
           {[...c.services, 'Item 4', 'Item 5', 'Item 6'].map((sv, i) => (
             <div key={`${sv}-${i}`} className={s.product}>
-              <img className={s.productImg} src={image} alt="" loading="lazy" width={480} height={360} style={{ objectPosition: `${(i * 37) % 100}% 40%` }} />
+              <PhotoSlot className={s.productImg} label="Foto do item" />
               <span className={s.cardTitle}>{sv}</span>
               <span className={s.pill}>Pedir pelo WhatsApp</span>
             </div>
@@ -251,7 +283,7 @@ export function SitePreview({
       aria-label={`Prévia do site de ${c.name}`}
     >
       {bare ? (
-        !compact && <div className={s.strip}>Prévia demonstrativa · botões sem ação</div>
+        !compact && <div className={s.strip}>Prévia demonstrativa · textos sugeridos para você revisar</div>
       ) : (
         <div className={s.bar} aria-hidden="true">
           <span className={s.dots}>
@@ -321,7 +353,7 @@ export function SitePreview({
               </div>
               <div className={s.footer}>
                 <span>© {c.name}</span>
-                <span>Prévia demonstrativa · textos e imagens ilustrativos</span>
+                <span>Prévia demonstrativa · textos sugeridos e imagens ilustrativas, revisados antes de publicar</span>
               </div>
             </>
           )}

@@ -10,11 +10,13 @@ import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp, Check as CheckIcon, MessageCircle, Sparkles } from 'lucide-react';
 import { contact } from '@/config/contact';
 import { customNeeds, packageById, packages, rank } from '@/config/packages';
-import { currentPackage, directions, moveSection, sectionName, sections, segmentOf, siteContent, suggestedServices, type Project } from '@/lib/project';
+import { currentPackage, directions, formBenefit, moveSection, sectionName, sections, segmentOf, siteContent, suggestedServices, type Project } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { Check } from '../landing/Controls';
 import { ColorPicker, FontPicker, LogoField, StylePicker } from './Pickers';
+import { ParkedNote } from './Packages';
+import { previewTexts } from '../preview/SitePreview';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
@@ -23,6 +25,17 @@ export type Scope = (patch: Partial<Project>, anchor: string) => void;
 type Gate = (anchor: string) => ReactNode;
 
 /* ── Sua prévia está pronta ────────────────────────────────────────────── */
+
+const editedNames: Record<Project['edited'][number], string> = {
+  headline: 'título',
+  description: 'frase de apresentação',
+  services: 'serviços',
+  about: 'sobre a empresa',
+  serviceDetails: 'detalhes dos serviços',
+  differentials: 'diferenciais',
+  processSteps: 'como funciona',
+  faqQuestions: 'perguntas frequentes',
+};
 
 export function StepReady({
   p,
@@ -33,11 +46,16 @@ export function StepReady({
   editLabel,
   onReview,
   narrow,
+  keptEdits = [],
+  onUseNewTexts,
 }: {
   p: Project;
   edit: Edit;
   /** Observações da geração (seções de outro pacote, itens fora dos pacotes). */
   notes: string[];
+  /** Textos editados à mão que a nova geração manteve. */
+  keptEdits?: Project['edited'];
+  onUseNewTexts?: () => void;
   onPersonalize: () => void;
   onEditDescription: () => void;
   editLabel: string;
@@ -61,6 +79,14 @@ export function StepReady({
             <li key={n}>{n}</li>
           ))}
         </ul>
+      )}
+      {keptEdits.length > 0 && onUseNewTexts && (
+        <div className={b.keptEdits} role="status">
+          <p>Mantivemos os textos que você editou ({keptEdits.map((f) => editedNames[f]).join(', ')}).</p>
+          <button type="button" className={`${s.secondary} ${s.small}`} onClick={onUseNewTexts}>
+            Usar os textos novos
+          </button>
+        </div>
       )}
       <div className={b.readyActions}>
         <button type="button" className={`${s.primary} ${b.wideBtn}`} onClick={onPersonalize}>
@@ -185,6 +211,8 @@ export function StepContent({ p, edit, logo, setLogo }: { p: Project; edit: Edit
           </button>
         )}
       </fieldset>
+      <SectionTexts p={p} edit={edit} />
+      <MoreSpecific p={p} edit={edit} />
       <p className={b.muted} style={{ marginTop: 14 }}>
         A prévia usa ilustrações de exemplo. No site final entram as suas fotos.
       </p>
@@ -192,29 +220,167 @@ export function StepContent({ p, edit, logo, setLogo }: { p: Project; edit: Edit
   );
 }
 
+type Copy = Project['previewCopy'];
+type ListField = 'serviceDetails' | 'differentials' | 'processSteps' | 'faqQuestions';
+
+/**
+ * Textos de cada seção, editáveis sem gerar de novo. Os campos mostram o
+ * texto que está na prévia; o que a pessoa muda fica marcado como dela e
+ * uma nova geração não o substitui sem ela pedir.
+ */
+function SectionTexts({ p, edit }: { p: Project; edit: Edit }) {
+  const shown = previewTexts(p);
+  const own = (field: keyof Copy) => p.edited.includes(field);
+  const has = (id: string) => p.sections.includes(id);
+  // Campo já editado mostra o texto da pessoa (mesmo vazio, enquanto ela digita); senão, o da prévia.
+  const listValue = (field: ListField, i: number) => (own(field) ? p.previewCopy[field][i] ?? '' : shown[field][i] ?? '');
+  const setList = (field: ListField, i: number, v: string) => {
+    const base = shown[field].map((_, j) => listValue(field, j));
+    edit({ previewCopy: { ...p.previewCopy, [field]: base.map((t, j) => (j === i ? v : t)) } });
+  };
+  const reset = (field: keyof Copy) =>
+    edit({ previewCopy: { ...p.previewCopy, [field]: field === 'about' ? '' : [] }, edited: p.edited.filter((f) => f !== field) });
+  const services = siteContent(p).services;
+  const groups: { id: string; field: keyof Copy; title: string }[] = [
+    { id: 'servicos', field: 'serviceDetails', title: `${sectionName(p, 'servicos')}: uma frase para cada item` },
+    { id: 'sobre', field: 'about', title: `Sobre ${siteContent(p).name}` },
+    { id: 'diferenciais', field: 'differentials', title: 'Diferenciais' },
+    { id: 'processo', field: 'processSteps', title: 'Como funciona' },
+    { id: 'faq', field: 'faqQuestions', title: 'Perguntas frequentes' },
+  ];
+  const active = groups.filter((g) => has(g.id) && !(g.id === 'servicos' && (p.objective === 'produtos' || p.objective === 'trabalhos')));
+  if (!active.length) return null;
+  return (
+    <details className={s.details} id="textos-secoes">
+      <summary>Editar os textos das seções</summary>
+      <div className={s.detailsBody}>
+        <p className={b.muted}>Os campos mostram o texto que está na prévia. O que você mudar fica como seu.</p>
+        {active.map((g) => (
+          <fieldset key={g.id} className={b.group}>
+            <legend className={b.label}>{g.title}</legend>
+            <div className={s.fields}>
+              {g.field === 'about' ? (
+                <label className={s.field}>
+                  <span className={s.srOnly}>Texto sobre a empresa</span>
+                  <textarea rows={3} maxLength={420} value={own('about') ? p.previewCopy.about : shown.about} onChange={(ev) => edit({ previewCopy: { ...p.previewCopy, about: ev.target.value } })} />
+                </label>
+              ) : (
+                shown[g.field as ListField].slice(0, 3).map((_, i) => (
+                  <label key={i} className={s.field}>
+                    <span className={g.field === 'serviceDetails' ? undefined : s.srOnly}>{g.field === 'serviceDetails' ? services[i] : `${g.title} ${i + 1}`}</span>
+                    <input
+                      maxLength={g.field === 'serviceDetails' ? 160 : g.field === 'processSteps' ? 80 : 100}
+                      value={listValue(g.field as ListField, i)}
+                      onChange={(ev) => setList(g.field as ListField, i, ev.target.value)}
+                    />
+                  </label>
+                ))
+              )}
+            </div>
+            {own(g.field) && (
+              <button type="button" className={b.textButton} onClick={() => reset(g.field)}>
+                Voltar ao texto sugerido
+              </button>
+            )}
+          </fieldset>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+/** Detalhes opcionais: só fatos informados pela pessoa. */
+function MoreSpecific({ p, edit }: { p: Project; edit: Edit }) {
+  const d = p.details;
+  const set = (patch: Partial<Project['details']>) => edit({ details: { ...d, ...patch } });
+  const realEstate = p.segment === 'imoveis';
+  const filled = [d.audience, d.region, d.highlights].filter((x) => x.trim()).length;
+  return (
+    <details className={s.details} id="mais-especifica">
+      <summary>
+        Deixar minha prévia mais específica {filled > 0 && <small>({filled} de 3)</small>}
+      </summary>
+      <div className={s.detailsBody}>
+        <p className={b.muted}>Opcional. Entra no seu pedido e ajuda se você gerar a prévia de novo pela descrição.</p>
+        <div className={s.fields}>
+          <label className={s.field}>
+            {realEstate ? 'Tipos de imóveis e quem você atende' : 'Quem você atende'}
+            <input maxLength={120} value={d.audience} placeholder={realEstate ? 'Ex.: apartamentos e casas para famílias' : 'Ex.: famílias e pequenos comércios'} onChange={(ev) => set({ audience: ev.target.value })} />
+          </label>
+          <label className={s.field}>
+            {realEstate ? 'Cidade ou região dos imóveis' : 'Onde você atende'}
+            <input maxLength={120} value={d.region} placeholder="Ex.: Porto Alegre e região metropolitana" onChange={(ev) => set({ region: ev.target.value })} />
+          </label>
+          <label className={s.field}>
+            {realEstate ? 'Compra, venda, locação ou consultoria?' : 'O que você quer destacar'}
+            <input
+              maxLength={200}
+              value={d.highlights}
+              placeholder={realEstate ? 'Ex.: venda e locação, com visita agendada' : 'Ex.: atendimento no mesmo dia'}
+              onChange={(ev) => set({ highlights: ev.target.value })}
+            />
+          </label>
+        </div>
+      </div>
+    </details>
+  );
+}
+
 /* ── Seções ────────────────────────────────────────────────────────────── */
 
-export function StepSections({ p, edit, scope, gate }: { p: Project; edit: Edit; scope: Scope; gate: Gate }) {
+export function StepSections({
+  p,
+  edit,
+  scope,
+  gate,
+  onSeePackages,
+  onRestore,
+}: {
+  p: Project;
+  edit: Edit;
+  scope: Scope;
+  gate: Gate;
+  /** Abre a comparação/escolha de pacotes. */
+  onSeePackages: () => void;
+  onRestore: () => void;
+}) {
   const pkg = currentPackage(p);
   const optional = sections.filter((x) => !x.fixed);
   const middle = p.sections.slice(1, -1);
+  /** Disponibilidade, em texto (nunca só pela cor). */
+  const status = (min: Project['pkg'], on: boolean) =>
+    rank(min) <= rank(p.pkg) ? (
+      <span className={b.avail}>
+        <CheckIcon aria-hidden="true" /> {on ? 'No seu site' : 'Incluído no seu pacote'}
+      </span>
+    ) : (
+      <span className={b.availAbove}>Disponível no {packageById(min).name}</span>
+    );
+  const above = [...new Set(optional.filter((x) => rank(x.min) > rank(p.pkg)).map((x) => x.min))];
   return (
     <>
       <p className={b.hint}>
-        {p.sections.length} de até {pkg.maxSections} seções no pacote {pkg.name}. Apresentação e contato entram sempre.
+        <strong>
+          {p.sections.length} de {pkg.maxSections} seções
+        </strong>{' '}
+        no pacote {pkg.name}. Apresentação e contato entram sempre. Incluído não é obrigatório: marque só o que fizer sentido.
       </p>
+      <ParkedNote p={p} onRestore={onRestore} />
       <div className={b.group}>
-        <div className={s.options}>
+        <div className={`${s.options} ${b.features}`}>
           {optional.map((x) => {
             const on = p.sections.includes(x.id);
-            const above = rank(x.min) > rank(p.pkg);
             return (
               <Check
                 key={x.id}
                 title={sectionName(p, x.id)}
                 checked={on}
-                hint={x.hint}
-                aside={above && !on ? `No ${packageById(x.min).name}` : undefined}
+                hint={
+                  <>
+                    {x.benefit}
+                    {status(x.min, on)}
+                  </>
+                }
                 onChange={(checked) =>
                   scope({ sections: checked ? [...p.sections.slice(0, -1), x.id, 'contato'] : p.sections.filter((id) => id !== x.id), structureEdited: true }, 'secoes')
                 }
@@ -222,14 +388,27 @@ export function StepSections({ p, edit, scope, gate }: { p: Project; edit: Edit;
             );
           })}
           <Check
-            title="Formulário que encaminha o pedido ao WhatsApp"
+            title="Formulário de atendimento"
             checked={p.form}
-            hint="Organiza nome e pedido antes de abrir a conversa."
-            aside={!p.form && rank('profissional') > rank(p.pkg) ? 'No Profissional' : undefined}
+            hint={
+              <>
+                {formBenefit}
+                {status('profissional', p.form)}
+              </>
+            }
             onChange={(checked) => scope({ form: checked }, 'secoes')}
           />
         </div>
         {gate('secoes')}
+        {above.length > 0 && (
+          <p className={b.seePkg}>
+            {above.map((id) => (
+              <button key={id} type="button" className={b.textButton} onClick={onSeePackages}>
+                Ver pacote {packageById(id).name}
+              </button>
+            ))}
+          </p>
+        )}
       </div>
 
       {p.sections.includes('galeria') && (

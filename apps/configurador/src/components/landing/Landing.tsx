@@ -18,10 +18,11 @@ import { brl, customNeeds, packageById, packages, priceNotes, priceRange } from 
 import { projectFaq } from '@/config/projectFaq';
 import { realProjects, testimonials } from '@/config/proof';
 import { ctaVariants, heroVariants } from '@/config/experiments';
-import { choiceChanges, exampleProject, hasOwnChoices, mergeStartingPoint, segments } from '@/lib/project';
+import { STEP, exampleProject, hasOwnChoices, segments } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { SitePreview } from '../preview/SitePreview';
+import { PackageCompare } from '../builder/Packages';
 import { Carousel, type CarouselApi } from './Carousel';
 import { Footer, Header, asset, builderHref } from './Chrome';
 import { ConfirmBox, type Pending } from './Controls';
@@ -142,15 +143,19 @@ export default function Landing() {
 /**
  * Acesso persistente à criação. Fica escondido enquanto algum botão
  * principal da página estiver visível; sem IntersectionObserver, fica
- * sempre visível (nunca somem os dois ao mesmo tempo).
+ * sempre visível (nunca somem os dois ao mesmo tempo). Também sai da
+ * frente enquanto controles que ele cobriria (setas e bolinhas do
+ * carrossel, "Ver este exemplo") passam pela faixa de baixo da tela.
  */
 function FloatingStart({ label, onStart }: { label: string; onStart: () => void }) {
-  const [shown, setShown] = useState(false);
+  const [mainVisible, setMainVisible] = useState(true);
+  const [covering, setCovering] = useState(false);
+  const shown = !mainVisible && !covering;
 
   useEffect(() => {
     const targets = [...document.querySelectorAll<HTMLElement>('[data-main-cta]')];
     if (!targets.length || typeof IntersectionObserver === 'undefined') {
-      setShown(true);
+      setMainVisible(false);
       return;
     }
     const visible = new Set<Element>();
@@ -160,13 +165,40 @@ function FloatingStart({ label, onStart }: { label: string; onStart: () => void 
           if (e.isIntersecting) visible.add(e.target);
           else visible.delete(e.target);
         }
-        setShown(visible.size === 0);
+        setMainVisible(visible.size > 0);
       },
       // O cabeçalho fixo cobre o topo: um botão escondido atrás dele não conta.
       { rootMargin: '-64px 0px 0px 0px' },
     );
     targets.forEach((t) => io.observe(t));
     return () => io.disconnect();
+  }, []);
+
+  // Faixa ocupada pelo botão (≈ 110px embaixo): controles ali fazem ele sair da frente.
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    let io: IntersectionObserver | null = null;
+    const setup = () => {
+      io?.disconnect();
+      const hits = new Set<Element>();
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) hits.add(e.target);
+            else hits.delete(e.target);
+          }
+          setCovering(hits.size > 0);
+        },
+        { rootMargin: `-${Math.max(0, window.innerHeight - 110)}px 0px 0px 0px` },
+      );
+      document.querySelectorAll('[data-float-avoid]').forEach((el) => io!.observe(el));
+    };
+    setup();
+    window.addEventListener('resize', setup);
+    return () => {
+      io?.disconnect();
+      window.removeEventListener('resize', setup);
+    };
   }, []);
 
   return (
@@ -180,18 +212,37 @@ function FloatingStart({ label, onStart }: { label: string; onStart: () => void 
   );
 }
 
-/** Ponto de partida: aplica mantendo o que foi digitado; diz se precisa confirmar. */
+/**
+ * "Usar este modelo": o projeto passa a ser exatamente o do exemplo
+ * (segmento, estilo, cores, fonte, seções, ordem e pacote) — só o nome da
+ * empresa, as observações e o contato do visitante continuam. Com rascunho,
+ * pede confirmação e guarda a versão anterior para "Recuperar".
+ */
 function startingPoint(state: ProjectState, id: string) {
   const p = state.project;
-  const next = mergeStartingPoint(p, exampleProject(id));
+  const next = { ...exampleProject(id), id: p.id, name: p.name, notes: p.notes, lead: p.lead, step: id === 'outro' ? STEP.negocio : STEP.pronta };
   const run = () => {
-    state.commit({ ...next, step: 0 });
+    state.replaceKeeping(next, 'modelo');
     track('example_applied', { segment: id });
     track('start_click', { context: 'exemplo' });
     location.href = builderHref;
   };
-  const changes = choiceChanges(p, next);
-  return { needs: state.hasProgress && hasOwnChoices(p) && changes.length > 0, changes, run };
+  return { needs: state.hasProgress && (hasOwnChoices(p) || p.step > 0), run };
+}
+
+/** Um gesto lateral no carrossel não conta como toque no cartão. */
+function useTapGuard() {
+  const start = useRef<{ x: number; y: number } | null>(null);
+  return {
+    onPointerDown: (e: React.PointerEvent) => {
+      start.current = { x: e.clientX, y: e.clientY };
+    },
+    moved: (e: React.MouseEvent) => {
+      const s0 = start.current;
+      start.current = null;
+      return Boolean(s0 && e.detail > 0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 10);
+    },
+  };
 }
 
 function packageNote(id: string) {
@@ -208,6 +259,7 @@ function Examples({ state }: { state: ProjectState }) {
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [dialogPending, setDialogPending] = useState<Pending | null>(null);
   const [otherPending, setOtherPending] = useState<Pending | null>(null);
+  const tap = useTapGuard();
 
   // Campanha de um segmento: o carrossel começa no exemplo dele.
   const campaign = state.origin.segment;
@@ -246,13 +298,27 @@ function Examples({ state }: { state: ProjectState }) {
       dialog.current?.close();
       sp.run();
     };
-    if (sp.needs) setDialogPending({ title: 'Usar este modelo substitui escolhas que você já fez.', changes: sp.changes, confirmLabel: 'Usar este modelo', apply: finish });
+    if (sp.needs)
+      setDialogPending({
+        title: 'Usar este modelo substitui o seu rascunho.',
+        detail: 'Estilo, cores, seções, pacote e textos passam a ser os do exemplo. Sua versão atual fica guardada: você pode recuperá-la na página de criação.',
+        confirmLabel: 'Usar este modelo',
+        cancelLabel: 'Manter meu rascunho',
+        apply: finish,
+      });
     else finish();
   }
 
   function applyOther() {
     const sp = startingPoint(state, 'outro');
-    if (sp.needs) setOtherPending({ title: 'Começar com outro segmento substitui escolhas que você já fez.', changes: sp.changes, confirmLabel: 'Começar assim', apply: sp.run });
+    if (sp.needs)
+      setOtherPending({
+        title: 'Começar com outro segmento substitui o seu rascunho.',
+        detail: 'Sua versão atual fica guardada: você pode recuperá-la na página de criação.',
+        confirmLabel: 'Começar assim',
+        cancelLabel: 'Manter meu rascunho',
+        apply: sp.run,
+      });
     else sp.run();
   }
 
@@ -282,20 +348,21 @@ function Examples({ state }: { state: ProjectState }) {
               }}
               type="button"
               className={s.exampleCard}
-              onClick={() => openAt(i)}
-              aria-label={`Abrir exemplo de ${x.name}`}
+              onPointerDown={tap.onPointerDown}
+              onClick={(e) => !tap.moved(e) && openAt(i)}
+              aria-label={`Ver este exemplo: ${x.name}`}
             >
               <span className={s.exampleThumb} aria-hidden="true">
                 <DesktopFrame width={900}>
-                  <SitePreview project={exampleProject(x.id)} compact />
+                  <SitePreview project={exampleProject(x.id)} compact demo />
                 </DesktopFrame>
               </span>
               <span className={s.exampleName}>{x.name}</span>
               <span className={s.exampleDemo}>
                 {x.demo} · {packageNote(x.id)}
               </span>
-              <span className={s.exampleOpen}>
-                Ver exemplo <ChevronRight aria-hidden="true" />
+              <span className={s.exampleOpen} data-float-avoid="">
+                Ver este exemplo <ChevronRight aria-hidden="true" />
               </span>
             </button>
           )),
@@ -333,11 +400,11 @@ function Examples({ state }: { state: ProjectState }) {
             <div className={s.demoBody}>
               {device === 'desktop' ? (
                 <DesktopFrame key={`d-${opened.id}`}>
-                  <SitePreview project={exampleProject(opened.id)} />
+                  <SitePreview project={exampleProject(opened.id)} demo />
                 </DesktopFrame>
               ) : (
                 <PhoneFrame key={`m-${opened.id}`}>
-                  <SitePreview project={exampleProject(opened.id)} bare />
+                  <SitePreview project={exampleProject(opened.id)} bare demo />
                 </PhoneFrame>
               )}
             </div>
@@ -358,7 +425,7 @@ function Examples({ state }: { state: ProjectState }) {
                 <button type="button" className={s.primary} onClick={applyOpened}>
                   Usar este modelo
                 </button>
-                <small>Leva o estilo e o segmento. Começa no {packageNote(opened.id)}; você pode mudar no final.</small>
+                <small>Leva estilo, cores, seções e o {packageNote(opened.id)} deste exemplo. Você pode mudar tudo depois.</small>
               </div>
             </div>
           </>
@@ -394,6 +461,12 @@ function Investment() {
         <p className={s.packagesNote}>
           {priceNotes.payment} <a href="#perguntas">Ver o que é pago à parte</a>
         </p>
+        <details className={s.details}>
+          <summary>Comparar pacotes</summary>
+          <div className={s.detailsBody}>
+            <PackageCompare caption="Comparação dos pacotes" />
+          </div>
+        </details>
         <div className={s.customBox}>
           <h3>Precisa de algo fora dos pacotes?</h3>
           <p>
