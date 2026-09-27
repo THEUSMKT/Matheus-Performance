@@ -141,6 +141,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 | `package_changed` | Trocar de pacote, sempre depois da confirmação | `from`, `to`, `source` (`objetivo`, `seu_site`, `secoes`, `imagens`, `incluido`) |
 | `request_click` | Clique em “Solicitar desenvolvimento” (**intenção**) | `mode` (`whatsapp`, `formulario`), `package` (ou `personalizado`) |
 | `whatsapp_open` | Clique para abrir o WhatsApp (**intenção, não é pedido recebido**) | `context` (`pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `projeto_personalizado`, `final`, `rodape`) |
+| `ai_generate` | Resultado de “Gerar minha prévia” (só com a IA ligada) | `result` (`ok`, `erro`), `reason` |
 | `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |
@@ -196,7 +197,17 @@ todos os eventos (`var_hero`, `var_cta`). Defina antes a métrica principal
 e o volume mínimo; não declare vencedor com poucos pedidos e não teste mais
 de uma coisa na mesma área ao mesmo tempo. Nenhum resultado foi simulado.
 
-## 6. Decisões e dependências em aberto
+## 6. Prévia por descrição (IA)
+
+Desligada até existir a variável `AI_ENDPOINT` no repositório. Configuração
+passo a passo (chave do Gemini, Cloudflare Worker, segredo, teste) em
+[`integrations/ai-preview/README.md`](integrations/ai-preview/README.md).
+A IA só escolhe entre os layouts, estilos, cores e seções existentes e
+sugere textos; não troca pacote nem marca itens de projeto personalizado.
+A descrição não é guardada em servidor; no navegador, o rascunho fica só
+na aba (`sessionStorage`, chave `bp.descricao.v1`).
+
+## 7. Decisões e dependências em aberto
 
 - **Compartilhar a prévia completa com um sócio** exige guardar o projeto
   num servidor (banco ou armazenamento de arquivos com link privado). Hoje

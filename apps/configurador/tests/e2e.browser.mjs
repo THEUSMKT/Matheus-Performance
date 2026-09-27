@@ -1,11 +1,13 @@
 // Cenários de navegador. Requer o Playwright (npm i -D playwright) e dois builds servidos:
 //   BASE: build normal (modo WhatsApp) em http://localhost:4190/Matheus-Performance/configurador/
 //   BASE_R: build com NEXT_PUBLIC_LEAD_ENDPOINT=https://receptor.test/leads (o teste intercepta essa URL)
-// Rode: BASE=... BASE_R=... node tests/e2e.browser.mjs   (CHROMIUM=/caminho opcional)
+//   BASE_AI: build com NEXT_PUBLIC_AI_ENDPOINT=https://ia.test/preview (o teste simula o servidor da IA)
+// Rode: BASE=... BASE_R=... BASE_AI=... node tests/e2e.browser.mjs   (CHROMIUM=/caminho opcional)
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 const URL = process.env.BASE ?? 'http://localhost:4190/Matheus-Performance/configurador/';
 const URL_R = process.env.BASE_R ?? 'http://localhost:4191/Matheus-Performance/configurador/';
+const URL_AI = process.env.BASE_AI ?? 'http://localhost:4192/Matheus-Performance/configurador/';
 const B = URL + 'criar/';
 const browser = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 let passed = 0;
@@ -498,6 +500,66 @@ for (const width of [360, 390, 430]) {
     for (const f of fonts) assert(f >= 16, 'campos sem zoom automático');
   }, { viewport: { width, height: 844 }, isMobile: true, hasTouch: true });
 }
+
+
+/* ── Prévia por descrição (IA simulada) ─────────────────────────────────── */
+
+await scenario('Sem servidor de IA configurado, a criação fica igual à publicada', async (page) => {
+  await page.goto(B);
+  await ready(page);
+  assert.equal(await page.locator('#descricao-ia').count(), 0);
+  await page.goto(URL + 'privacidade/');
+  assert(!(await page.locator('main').innerText()).includes('Gemini'));
+});
+
+await scenario('IA: descrição vira prévia nos layouts existentes; falha não perde o texto; nada de dado pessoal', async (page) => {
+  const bodies = [];
+  let calls = 0;
+  const answer = {
+    name: 'Clima Sul', segment: 'local', segmentOther: '', service: 'Instalação de ar-condicionado', objective: 'orcamento',
+    headline: 'Ar-condicionado instalado do jeito certo', description: 'Peça seu orçamento pelo WhatsApp.', services: ['Instalação', 'Manutenção', 'Higienização'],
+    sections: ['servicos', 'diferenciais', 'galeria', 'sobre'], direction: 'tecnologico', palette: 'azul', brandColor: null, needs: ['loja'],
+  };
+  await page.route('https://ia.test/preview', async (route) => {
+    calls++; bodies.push(route.request().postData());
+    const cors = { 'Access-Control-Allow-Origin': '*' };
+    if (calls === 1) return route.fulfill({ status: 502, contentType: 'application/json', headers: cors, body: '{"ok":false,"error":"ia"}' });
+    await new Promise((r) => setTimeout(r, 300));
+    return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion: answer }) });
+  });
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  const box = page.locator('#descricao-ia');
+  await box.fill('Meu WhatsApp é 51 99999-0000 e faço instalação de ar-condicionado.');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  assert((await page.locator('#erro-descricao').innerText()).includes('Tire telefone'));
+  assert.equal(calls, 0, 'com telefone, nada é enviado');
+  const desc = 'Faço instalação e manutenção de ar-condicionado. Quero receber pedidos de orçamento, com visual moderno.';
+  await box.fill(desc);
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.locator('#erro-descricao').waitFor();
+  assert((await page.locator('#erro-descricao').innerText()).includes('não respondeu'));
+  assert.equal(await box.inputValue(), desc, 'texto preservado na falha');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.getByRole('button', { name: 'Gerando sua prévia…' }).waitFor();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent === 'Seu site');
+  assert.equal(calls, 2);
+  const sent = JSON.parse(bodies[1]);
+  assert.deepEqual(Object.keys(sent).sort(), ['description', 'pkg', 'schema']);
+  assert.equal(sent.pkg, 'essencial');
+  const pv = await preview(page).innerText();
+  assert(pv.includes('Clima Sul')); assert(pv.includes('Ar-condicionado instalado do jeito certo')); assert(pv.includes('Higienização'));
+  assert.match(await preview(page).locator('[aria-roledescription=prévia]').getAttribute('class'), /tecnologico/);
+  assert.equal(await price(page), 'R$ 500', 'a IA não troca o pacote');
+  const notice = await page.locator('[class*=notice]').innerText();
+  for (const s of ['a partir da sua descrição', 'Galeria de fotos', 'loja virtual com carrinho']) assert(notice.includes(s), s);
+  assert((await waMessage(page)).includes('Pacote: Essencial'));
+  const ev = await allEvents(page);
+  assert.deepEqual(ev.filter((e) => e.event === 'ai_generate').map((e) => e.result), ['erro', 'ok']);
+  assert(!JSON.stringify(ev).match(/ar-condicionado|Clima/), 'eventos sem texto');
+  await page.goto(URL_AI + 'privacidade/');
+  assert((await page.locator('main').innerText()).includes('Google Gemini'));
+});
 
 /* ── Com receptor de pedidos ────────────────────────────────────────────── */
 

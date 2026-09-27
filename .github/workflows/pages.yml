@@ -54,6 +54,9 @@ jobs:
           # Vazias: a página usa o modo WhatsApp. Ver apps/configurador/OPERACAO.md.
           NEXT_PUBLIC_LEAD_ENDPOINT: ${{ vars.LEAD_ENDPOINT }}
           NEXT_PUBLIC_RESPONSE_EXPECTATION: ${{ vars.RESPONSE_EXPECTATION }}
+          # Endereço do servidor da prévia por descrição (IA). Vazio = recurso desligado.
+          # Ver apps/configurador/integrations/ai-preview/README.md.
+          NEXT_PUBLIC_AI_ENDPOINT: ${{ vars.AI_ENDPOINT }}
         run: npm run build
 
       - name: Montar o site

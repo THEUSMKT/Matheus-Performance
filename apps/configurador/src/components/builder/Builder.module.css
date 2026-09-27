@@ -459,6 +459,49 @@
   font-size: 15px;
 }
 
+/* Etapa 1: descrição para a IA (só com NEXT_PUBLIC_AI_ENDPOINT) */
+.describe {
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #c9dafb;
+  border-radius: var(--radius);
+  background: var(--tint);
+}
+.describeTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+}
+.describeTitle svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--blue-ink);
+}
+.counter {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+.orSteps {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+.orSteps::before,
+.orSteps::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line-strong);
+}
+
 /* Etapa 1: respostas rápidas */
 .quick {
   display: flex;
@@ -1123,4 +1166,11 @@
   .bottomBar {
     display: none !important;
   }
+}
+
+.describe a {
+  color: var(--blue-ink);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

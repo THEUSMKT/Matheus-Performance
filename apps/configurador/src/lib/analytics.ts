@@ -35,6 +35,8 @@ export const EVENTS = {
   request_click: { once: false, props: ['mode', 'package'] },
   /** Abertura de conversa no WhatsApp — não é pedido recebido nem contratação. */
   whatsapp_open: { once: false, props: ['context'] },
+  /** Prévia por descrição: pedido e resultado. Nunca leva o texto digitado. */
+  ai_generate: { once: false, props: ['result', 'reason'] },
   layout_share: { once: false, props: [] },
   pdf_save: { once: false, props: [] },
   help_open: { once: false, props: ['step'] },

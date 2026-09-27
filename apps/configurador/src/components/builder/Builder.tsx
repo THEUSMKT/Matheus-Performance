@@ -17,6 +17,7 @@ import {
   helpMessage,
   packageOffer,
   projectMessage,
+  sectionName,
   steps,
   switchPackage,
   type Project,
@@ -34,6 +35,10 @@ import { SitePreview } from '../preview/SitePreview';
 import { PackageDialog, PriceBar } from './Packages';
 import { PrintSummary, RequestButton, StepSite } from './Site';
 import { StepBusiness, StepIdentity, StepObjective, type StepErrors } from './Steps';
+import { Describe } from './Describe';
+import { aiEnabled } from '@/config/integrations';
+import { applySuggestion, type Suggestion } from '@/lib/aiPreview';
+import { customNeeds } from '@/config/packages';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
@@ -202,6 +207,28 @@ export default function Builder() {
     );
   }
 
+  /** Sugestão da IA: aplica nos layouts existentes e explica o que ficou de fora. */
+  function applyAi(sug: Suggestion) {
+    const next = applySuggestion(p, sug);
+    const notes = ['Prévia montada a partir da sua descrição. Os textos são sugestões: revise tudo em “Personalizar meu site”.'];
+    if (sug.extraSections.length) {
+      const names = sug.extraSections.map((id) => sectionName(next, id)).join(', ');
+      notes.push(`Também combinam com o seu site: ${names} — de outro pacote; você pode incluir em “Personalizar meu site”.`);
+    }
+    if (sug.needs.length) {
+      const names = customNeeds.filter((n) => sug.needs.includes(n.id)).map((n) => n.name.toLowerCase()).join(', ');
+      notes.push(`Sua descrição cita itens fora dos pacotes (${names}). Se precisar deles, marque em “Preciso de algo fora dos pacotes”.`);
+    }
+    if (next.step === 0) notes.push('Confira o nome da empresa e o segmento para continuar.');
+    setErrors({});
+    setPending(null);
+    setView('edit');
+    focusHeading.current = next.step !== p.step;
+    replace(next);
+    setNotice(notes.join(' '));
+    track('preview_view', { source: 'ia', step: next.step + 1 });
+  }
+
   function openPersonalize(open: boolean) {
     setPersonalize(open);
     if (open) requestAnimationFrame(() => document.getElementById('personalizar-titulo')?.focus());
@@ -329,6 +356,7 @@ export default function Builder() {
               {hints[p.step] && <p className={b.hint}>{hints[p.step]}</p>}
               {pending && !pending.anchor && <ConfirmBox pending={pending} onCancel={() => setPending(null)} />}
 
+              {p.step === 0 && aiEnabled && <Describe p={p} onSuggestion={applyAi} />}
               {p.step === 0 && <StepBusiness p={p} edit={edit} replace={replace} errors={errors} nameRef={nameRef} />}
               {p.step === 1 && (
                 <>
