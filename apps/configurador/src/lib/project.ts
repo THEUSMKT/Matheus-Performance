@@ -187,6 +187,14 @@ export type Project = {
   description: string;
   /** Serviços ou produtos escritos pelo visitante. Vazio = sugestões. */
   services: string[];
+  /** Textos ricos da prévia gerados a partir da descrição e validados no navegador. */
+  previewCopy: {
+    about: string;
+    serviceDetails: string[];
+    differentials: string[];
+    processSteps: string[];
+    faqQuestions: string[];
+  };
   /** Seções na ordem da página. Apresentação sempre primeiro, contato sempre por último. */
   sections: string[];
   /** O visitante mexeu nas seções: trocar o objetivo não reorganiza mais sozinho. */
@@ -227,6 +235,7 @@ export function initialProject(): Project {
     headline: '',
     description: '',
     services: [],
+    previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] },
     sections: [...objectives[0].structure],
     structureEdited: false,
     form: false,
@@ -300,6 +309,13 @@ export function normalizeProject(input: unknown): Project {
     headline: cleanText(x.headline, 90),
     description: cleanText(x.description, 200),
     services: strings(x.services).slice(0, 6).map((s) => cleanText(s, 60)),
+    previewCopy: {
+      about: cleanText(record(x.previewCopy).about, 420),
+      serviceDetails: strings(record(x.previewCopy).serviceDetails).slice(0, 3).map((s) => cleanText(s, 160)),
+      differentials: strings(record(x.previewCopy).differentials).slice(0, 3).map((s) => cleanText(s, 100)),
+      processSteps: strings(record(x.previewCopy).processSteps).slice(0, 3).map((s) => cleanText(s, 80)),
+      faqQuestions: strings(record(x.previewCopy).faqQuestions).slice(0, 3).map((s) => cleanText(s, 100)),
+    },
     sections: orderSections(Array.isArray(x.sections) ? strings(x.sections) : d.sections),
     structureEdited: x.structureEdited === true,
     form: x.form === true,
@@ -527,6 +543,25 @@ export function withObjective(p: Project, id: string, { chosen = true } = {}): P
   });
 }
 
+/**
+ * Textos de apoio gerados pela IA descrevem o negócio e os serviços daquele
+ * momento. Quando a pessoa troca o segmento ou o serviço principal, todos
+ * saem (a prévia volta aos textos de exemplo do segmento); quando edita um
+ * serviço da lista, sai só a descrição daquele serviço.
+ */
+export function dropStaleCopy(prev: Project, next: Project): Project {
+  const copy = next.previewCopy;
+  const empty = !copy.about && ![copy.serviceDetails, copy.differentials, copy.processSteps, copy.faqQuestions].some((l) => l.length);
+  if (empty) return next;
+  const mainService = (x: Project) => (x.serviceLater ? '' : x.service.trim().toLowerCase());
+  if (next.segment !== prev.segment || mainService(next) !== mainService(prev)) {
+    return { ...next, previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] } };
+  }
+  const changed = (i: number) => (next.services[i] ?? '').trim() !== (prev.services[i] ?? '').trim();
+  if (!copy.serviceDetails.some((_, i) => changed(i))) return next;
+  return { ...next, previewCopy: { ...copy, serviceDetails: copy.serviceDetails.map((d, i) => (changed(i) ? '' : d)) } };
+}
+
 /** Nome da seção conforme o objetivo ("Serviços", "Produtos em destaque"...). */
 export function sectionName(p: Pick<Project, 'objective'>, id: string): string {
   if (id === 'servicos') return p.objective === 'produtos' ? 'Produtos em destaque' : p.objective === 'trabalhos' ? 'Trabalhos em destaque' : 'Serviços';
@@ -602,6 +637,7 @@ export type SiteContent = {
   servicesSuggested: boolean;
   /** Nome da ilustração em public/demo (sem extensão). */
   image: string;
+  previewCopy: Project['previewCopy'];
 };
 
 /** Tudo o que a prévia mostra, derivado das respostas. Sugestões são marcadas como tal. */
@@ -621,6 +657,7 @@ export function siteContent(p: Project): SiteContent {
     services: own.length ? own : suggestedServices(p),
     servicesSuggested: !own.length,
     image: ruleFor(p)?.image ?? seg.image,
+    previewCopy: p.previewCopy,
   };
 }
 
@@ -629,6 +666,7 @@ export function exampleProject(id: string): Project {
   const seg = segments.find((s) => s.id === id) ?? segments[0];
   const extras: Record<string, Partial<Project>> = {
     local: {},
+    imoveis: { pkg: 'profissional', sections: ['apresentacao', 'servicos', 'galeria', 'processo', 'sobre', 'faq', 'contato'] },
     beleza: { pkg: 'profissional', sections: ['apresentacao', 'servicos', 'atendimento', 'galeria', 'sobre', 'faq', 'contato'] },
     consultoria: { pkg: 'profissional', form: true, sections: ['apresentacao', 'servicos', 'diferenciais', 'processo', 'sobre', 'faq', 'contato'] },
     alimentacao: { pkg: 'completo', sections: ['apresentacao', 'vitrine', 'sobre', 'galeria', 'atendimento', 'faq', 'contato'] },

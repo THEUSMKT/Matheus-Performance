@@ -99,6 +99,20 @@ export const segments: Segment[] = [
     quick: ['Projetos de arquitetura', 'Fotografia', 'Design gráfico'],
   },
   {
+    id: 'imoveis',
+    name: 'Imóveis e corretores',
+    short: 'Imóveis e corretores',
+    demo: 'Clara Imóveis',
+    title: 'Encontre um imóvel com orientação em cada etapa.',
+    intro: 'Conheça opções e converse sobre o que faz sentido para você, com atendimento próximo do primeiro contato à visita.',
+    services: ['Compra e venda de imóveis', 'Avaliação de imóveis', 'Consultoria imobiliária'],
+    image: 'imoveis',
+    objectives: ['trabalhos', 'agendamento', 'orcamento'],
+    styles: ['sofisticado', 'elegante', 'marcante'],
+    palette: 'azul',
+    quick: ['Compra de imóveis', 'Venda de imóveis', 'Consultoria imobiliária'],
+  },
+  {
     id: 'outro',
     name: 'Outro segmento',
     short: 'Outro',
@@ -120,6 +134,7 @@ export const segments: Segment[] = [
  * próximos. São sugestões — o visitante confirma ou edita.
  */
 export const keywordRules: { match: RegExp; image?: string; services: string[] }[] = [
+  { match: /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i, image: 'imoveis', services: ['Compra e venda de imóveis', 'Consultoria imobiliária', 'Avaliação de imóveis'] },
   { match: /ar[\s-]?condicionado|climatiza|refrigera/i, image: 'clima', services: ['Instalação de ar-condicionado', 'Manutenção preventiva', 'Limpeza e higienização'] },
   { match: /el[eé]tric/i, image: 'reparos', services: ['Instalações elétricas', 'Manutenção elétrica', 'Troca de disjuntores e tomadas'] },
   { match: /hidr[aá]ulic|encana/i, image: 'reparos', services: ['Reparos hidráulicos', 'Instalações', 'Troca de torneiras e registros'] },

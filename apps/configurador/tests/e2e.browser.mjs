@@ -131,12 +131,12 @@ await scenario('Vitrine do topo: exemplo fictício identificado, nada clicável'
 await scenario('Exemplos: composições diferentes, pacote indicado, abrir, alternar, fechar e usar o modelo', async (page) => {
   await page.goto(URL);
   const cards = page.locator('#exemplos button[class*=exampleCard]');
-  assert.equal(await cards.count(), 5);
+  assert.equal(await cards.count(), 6);
   const names = await page.locator('#exemplos [class*=exampleName]').allInnerTexts();
-  assert.deepEqual(names, ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo']);
+  assert.deepEqual(names, ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo', 'Imóveis e corretores']);
   assert(await page.getByRole('heading', { name: 'Outro segmento' }).isVisible());
-  const classes = await page.locator('#exemplos [aria-roledescription=prévia]').evaluateAll((els) => els.map((e) => e.className.split(' ')[1]));
-  assert.equal(new Set(classes).size, 5, 'cada exemplo com um estilo');
+  const classes = await page.locator('#exemplos [aria-roledescription=prévia]').evaluateAll((els) => els.map((e) => e.className));
+  assert.equal(new Set(classes).size, 6, 'cada exemplo com uma composição');
   await page.getByRole('button', { name: 'Abrir exemplo de Beleza e estética' }).click();
   const dialog = page.locator('dialog[open]');
   assert((await dialog.innerText()).includes('Exemplo fictício'));
@@ -519,6 +519,8 @@ await scenario('IA: descrição vira prévia nos layouts existentes; falha não 
     name: 'Clima Sul', segment: 'local', segmentOther: '', service: 'Instalação de ar-condicionado', objective: 'orcamento',
     headline: 'Ar-condicionado instalado do jeito certo', description: 'Peça seu orçamento pelo WhatsApp.', services: ['Instalação', 'Manutenção', 'Higienização'],
     sections: ['servicos', 'diferenciais', 'galeria', 'sobre'], direction: 'tecnologico', palette: 'azul', brandColor: null, needs: ['loja'],
+    about: 'Instalação e manutenção para casas e empresas, com visita combinada antes.',
+    serviceDetails: ['Detalhe um da IA', 'Detalhe dois da IA', 'Detalhe três da IA'],
   };
   await page.route('https://ia.test/preview', async (route) => {
     calls++; bodies.push(route.request().postData());
@@ -554,6 +556,11 @@ await scenario('IA: descrição vira prévia nos layouts existentes; falha não 
   const notice = await page.locator('[class*=notice]').innerText();
   for (const s of ['a partir da sua descrição', 'Galeria de fotos', 'loja virtual com carrinho']) assert(notice.includes(s), s);
   assert((await waMessage(page)).includes('Pacote: Essencial'));
+  assert(pv.includes('Detalhe dois da IA') && pv.includes('visita combinada antes'), 'textos de apoio da IA na prévia');
+  await personalize(page);
+  await page.getByLabel('Item 2').fill('PMOC');
+  const edited = await preview(page).innerText();
+  assert(!edited.includes('Detalhe dois da IA') && edited.includes('Detalhe um da IA'), 'descrição do serviço editado sai; as outras ficam');
   const ev = await allEvents(page);
   assert.deepEqual(ev.filter((e) => e.event === 'ai_generate').map((e) => e.result), ['erro', 'ok']);
   assert(!JSON.stringify(ev).match(/ar-condicionado|Clima/), 'eventos sem texto');

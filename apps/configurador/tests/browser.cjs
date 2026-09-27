@@ -34,7 +34,7 @@ async function next(page) {
   assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Veja como o site da sua empresa pode ficar em até 5 minutos.');
   assert.deepEqual(
     await page.locator('#exemplos [class*=exampleName]').allTextContents(),
-    ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo'],
+    ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo', 'Imóveis e corretores'],
   );
   await page.getByRole('button', { name: 'Abrir exemplo de Beleza e estética' }).click();
   await shot(page, 'desktop-demo');

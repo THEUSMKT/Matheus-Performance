@@ -12,6 +12,12 @@ Navegador (GitHub Pages) ──POST {descrição}──▶ Cloudflare Worker ─
 Sem a variável `AI_ENDPOINT` no repositório, o recurso fica desligado e o
 site publicado não muda.
 
+Quando a página receber uma atualização de conteúdo ou instruções do Gemini,
+publique também este Worker com `npx wrangler deploy` dentro desta pasta para
+usar a geração detalhada. O contrato continua compatível com o Worker atual;
+se ele ainda não tiver sido atualizado, a página mostra os textos de apoio
+específicos de cada segmento.
+
 ## 1. Criar a chave do Gemini (Google AI Studio)
 
 1. Entre em <https://aistudio.google.com> com a conta Google da empresa.
@@ -80,7 +86,7 @@ página de criação. Para desligar, apague a variável e publique de novo.
 | 5 gerações/minuto por IP | `[[ratelimits]]` |
 | Descrição de 20 a 1.200 caracteres, corpo até 6 KB | `worker.ts` |
 | E-mails e telefones removidos antes do Gemini | `redact()` em `src/lib/aiPreview.ts` |
-| Resposta validada: só ids existentes, textos curtos, sem alegações inventadas, pacote nunca muda | `sanitizeSuggestion()` / `applySuggestion()` |
+| Resposta validada: ids do catálogo, textos limitados, sem alegações inventadas, pacote nunca muda | `sanitizeSuggestion()` / `applySuggestion()` |
 | Nada do texto vai para log ou armazenamento | `worker.ts` registra só códigos de status |
 
 A checagem de origem impede o uso por outros sites no navegador, mas não
