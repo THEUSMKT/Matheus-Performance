@@ -85,7 +85,7 @@ export function systemPrompt(): string {
     '- objective deve priorizar a ação de conversão pedida: se a pessoa quer marcar uma consulta ou horário, escolha agendamento; se quer receber propostas, escolha orcamento. Ver trabalhos ou conhecer a empresa são objetivos secundários e podem entrar como seções.',
     '- headline: título curto e natural (até 70 caracteres) que mencione o serviço principal quando houver.',
     '- description: uma frase (até 160 caracteres) que explique para quem é e o que o visitante consegue fazer no site.',
-    '- services: até 3 serviços ou produtos, com nomes curtos, tirados da descrição ou típicos do segmento.',
+    '- services: até 3 serviços ou produtos que o cliente contrata ou compra, com nomes curtos, tirados da descrição ou típicos do segmento (ex.: "Ensaios de família", "Projetos residenciais", "Bolos de aniversário"). Nunca use nomes de seções do site, como "Projetos realizados", "Nossa história", "Trajetória", "Depoimentos" ou "Portfólio".',
     '- about: 2 a 3 frases sobre a atuação, o público e a forma de atendimento, sem fingir que a pessoa contou uma história que não contou.',
     '- serviceDetails: descrições úteis, diferentes entre si e na mesma ordem de services. Conecte cada serviço a uma necessidade real do cliente.',
     '- differentials: use somente características informadas pelo usuário; se não houver, descreva benefícios práticos do próprio processo, sem dizer que a empresa é melhor que outras.',
@@ -188,7 +188,11 @@ const CLAIMS = [
   /\d+\s*%/,
   /\b(líder|número\s*1|n[ºo°]\s*1|melhor(es)?\s+d[aeo]s?|premiad[ao]s?|certificad[ao]s?|garantid[ao]s?|garantia|referência\s+em|desde\s+(19|20)\d{2}|mais\s+de\s+\d+)\b/i,
   /R\$\s*\d/,
+  /\b(provas?\s+reais|comprovad[ao]s?|resultados\s+reais)\b/i,
 ];
+
+/** Nomes de seção do site que a IA às vezes devolve como "serviço". */
+const SECTION_LIKE = /^(projetos?\s+realizados?|trabalhos\s+realizados|nossa\s+hist[oó]ria|hist[oó]ria(\s+e\s+trajet[oó]ria)?|trajet[oó]ria|minha\s+trajet[oó]ria|provas?\s+reais|depoimentos?|portf[oó]lio|galeria|sobre(\s+(n[oó]s|mim|a\s+empresa))?|contato|fale\s+conosco|quem\s+somos)$/i;
 
 /**
  * Recursos fora dos pacotes (loja virtual, pagamento, agenda online, login).
@@ -243,7 +247,7 @@ export function sanitizeSuggestion(raw: unknown, pkg: PackageId = 'essencial'): 
     objective,
     headline: honest(text(x.headline, 90)),
     description: honest(text(x.description, 200)),
-    services: [...new Set(strings(x.services).map((s) => honest(text(s, 60))).filter(Boolean))].slice(0, 3),
+    services: [...new Set(strings(x.services).map((s) => honest(text(s, 60))).filter((s) => s && !SECTION_LIKE.test(s)))].slice(0, 3),
     previewCopy: {
       about: honest(text(copy.about, 420)),
       serviceDetails: strings(copy.serviceDetails).map((s) => honest(text(s, 160))).filter(Boolean).slice(0, 3),

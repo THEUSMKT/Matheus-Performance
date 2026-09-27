@@ -23,6 +23,11 @@ export type Segment = {
   /** Três estilos sugeridos, na ordem de exibição. */
   styles: string[];
   palette: string;
+  /**
+   * Imagem genérica do segmento, usada quando o serviço não combina com o
+   * exemplo. Sem ela, a prévia usa a fachada de loja neutra.
+   */
+  neutral?: string;
   /** Exemplos de serviço principal para escolher com um toque. */
   quick: string[];
 };
@@ -65,6 +70,7 @@ export const segments: Segment[] = [
     intro: 'Orientação próxima para organizar prioridades e decidir com segurança.',
     services: ['Diagnóstico inicial', 'Planejamento', 'Acompanhamento'],
     image: 'consultoria',
+    neutral: 'consultoria',
     objectives: ['orcamento', 'empresa'],
     styles: ['essencial', 'elegante', 'tecnologico'],
     palette: 'azul',
@@ -93,6 +99,7 @@ export const segments: Segment[] = [
     intro: 'Projetos pensados do conceito à entrega, com atenção a cada detalhe.',
     services: ['Projetos residenciais', 'Projetos comerciais', 'Interiores'],
     image: 'interiores',
+    neutral: 'criativo',
     objectives: ['trabalhos', 'orcamento'],
     styles: ['escuro', 'marcante', 'sofisticado'],
     palette: 'roxo',
