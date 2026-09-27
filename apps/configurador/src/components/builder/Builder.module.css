@@ -109,7 +109,53 @@
   font-weight: 600;
 }
 
-/* Alternância Editar / Ver prévia (celular e tablet) */
+/* Nomes das etapas e preço sempre à vista */
+.stepNames {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.stepNames li[aria-current='step'] {
+  color: var(--navy);
+  font-weight: 800;
+}
+.stepNames li[data-done] {
+  color: var(--ok);
+}
+.stepNames li[data-done]::before {
+  content: '✓ ';
+}
+.priceBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 10px;
+  padding: 4px 4px 4px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.priceMain {
+  font-size: 15px;
+  font-weight: 600;
+}
+.priceMain strong {
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.pricePkg {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.priceBar .textButton {
+  margin-left: auto;
+}
+
+/* Alternância Editar / Ver meu site (celular e tablet) */
 .viewSwitch {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -240,6 +286,7 @@
 .previewLabel {
   font-size: 15px;
   font-weight: 800;
+  white-space: nowrap;
 }
 .device {
   display: flex;
@@ -275,6 +322,236 @@
   padding: 12px;
   border-radius: var(--radius-sm);
   background: var(--bg);
+}
+/* Celular: o site em largura real, com rolagem própria (nada de miniatura) */
+.screen {
+  height: min(72dvh, 640px);
+  overflow: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fff;
+  overscroll-behavior: contain;
+}
+
+/* Tela cheia */
+.full {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bg);
+  color: var(--navy);
+}
+.full::backdrop {
+  background: rgb(8 27 92 / 0.6);
+}
+.full[open] {
+  display: flex;
+  flex-direction: column;
+}
+.fullHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px calc(8px) max(12px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+.fullHead h2 {
+  margin-right: auto;
+  font-size: 17px;
+}
+.fullBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+}
+.fullMobile {
+  max-width: 430px;
+  margin: 0 auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* Janela "O que está incluído" */
+.pkgDialog {
+  max-width: 980px;
+}
+.pkgDialog h2 {
+  font-size: 20px;
+}
+.pkgBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 16px 20px;
+}
+.pkgList {
+  display: grid;
+  gap: 10px;
+}
+.pkgCard {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.pkgCard[data-current] {
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+.pkgHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pkgHead h3 {
+  font-size: 18px;
+}
+.pkgHead strong {
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.pkgFlags {
+  margin-top: 6px;
+}
+.flagCurrent,
+.flagRec {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.flagCurrent {
+  background: var(--navy);
+  color: #fff;
+}
+.flagRec {
+  background: #e3f5ea;
+  color: var(--ok);
+}
+.pkgChoose {
+  width: 100%;
+  margin-top: 12px;
+}
+.removed {
+  margin: 8px 0 0 18px;
+  list-style: disc;
+  font-size: 14px;
+}
+.recReason {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.pkgExtra {
+  margin-top: 16px;
+}
+.pkgExtra h3 {
+  font-size: 15px;
+}
+
+/* Etapa 1: respostas rápidas */
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.quick button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 600;
+}
+.quick button[aria-pressed='true'] {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+
+/* Etapa 2: o que o objetivo define */
+.outcome {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.outcomeTitle {
+  font-size: 15px;
+  font-weight: 750;
+}
+.outcome dl {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+}
+.outcome dl div {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 14px;
+}
+.outcome dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.outcome dd {
+  margin: 0;
+  font-weight: 650;
+}
+.outcome .muted + .muted {
+  margin-top: 4px;
+}
+.suggestion {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--tint);
+  font-size: 14px;
+}
+.suggestion p {
+  display: flex;
+  gap: 8px;
+}
+.suggestion svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--blue-ink);
+}
+
+/* Etapa 3 */
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.labelRow .label {
+  margin-bottom: 0;
+}
+.included {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: #e3f5ea;
+  color: var(--ok);
+  font-size: 14px;
+  font-weight: 650;
 }
 
 /* Estilos (miniaturas) */
@@ -314,12 +591,6 @@
   padding: 0 3px;
   font-size: clamp(13px, 3.6vw, 15px);
   font-weight: 700;
-}
-.stylePrice {
-  padding: 0 3px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
 }
 
 /* Estilo fora da lista: abre o WhatsApp, não seleciona nada */
@@ -480,62 +751,171 @@
   border-color: var(--blue);
 }
 
-/* Etapa 4: investimento, resumo e pedido */
-.estimate {
-  margin-top: 16px;
+/* Etapa 4: nome, investimento, incluído e pedido */
+.projectName {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 650;
+}
+.invest {
+  margin-top: 14px;
   padding: 18px;
   border-radius: var(--radius);
   background: var(--navy);
   color: #fff;
 }
-.estimateLabel {
+.investLabel {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  opacity: 0.85;
+  opacity: 0.88;
 }
-.estimateValue {
+.investValue {
   display: block;
   margin-top: 2px;
-  font-size: 28px;
+  font-size: 32px;
+  line-height: 1.15;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
-.estimateNote {
+.investNote {
   display: block;
   margin-top: 6px;
   font-size: 14px;
-  opacity: 0.9;
+  opacity: 0.92;
 }
-.estimate details {
-  margin-top: 10px;
+.investRec {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.2);
+  font-size: 14px;
 }
-.estimate summary {
-  display: inline-flex;
-  align-items: center;
+.investRecButton {
   min-height: 44px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.includedList {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 15px;
+}
+.includedList li {
+  display: flex;
+  gap: 8px;
+}
+.includedList li::before {
+  content: '✓';
+  color: var(--blue-ink);
+  font-weight: 800;
+}
+.secondaryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.toolButton {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--muted);
   font-size: 14px;
   font-weight: 650;
   text-decoration: underline;
   text-underline-offset: 3px;
-  cursor: pointer;
 }
-.estimate table {
-  width: 100%;
-  border-collapse: collapse;
+.toolButton:hover {
+  color: var(--navy);
+}
+.formTitle {
+  font-size: 18px;
+}
+
+/* Personalizar meu site */
+.personalize {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.personalize h2 {
+  font-size: 19px;
+}
+.personalize h2:focus {
+  outline: none;
+}
+.personalize fieldset {
+  min-width: 0;
+}
+.personalize legend {
+  padding: 0;
+}
+.order {
+  display: grid;
+  gap: 6px;
+}
+.order li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 15px;
+  font-weight: 600;
+}
+.order li span {
+  flex: 1;
+  min-width: 0;
+}
+.order button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--navy);
+  font-size: 13px;
+  font-weight: 650;
+}
+.order button:disabled {
+  opacity: 0.4;
+}
+.order svg {
+  width: 14px;
+  height: 14px;
+}
+.saveNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  color: var(--muted);
   font-size: 13px;
 }
-.estimate td {
-  padding: 6px 0;
-  border-top: 1px solid rgb(255 255 255 / 0.18);
-  vertical-align: top;
+.saveNote svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ok);
 }
-.estimate td:last-child {
-  padding-left: 10px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  white-space: nowrap;
-}
+
 .rows {
   margin: 16px 0 0;
 }
@@ -564,14 +944,11 @@
   grid-column: 2;
 }
 .request {
-  margin-top: 18px;
+  margin-top: 16px;
   padding: 16px;
   border: 1px solid #c9dafb;
   border-radius: var(--radius);
   background: var(--tint);
-}
-.request h3 {
-  font-size: 17px;
 }
 .wide {
   width: 100%;
@@ -629,7 +1006,45 @@
 }
 .bottomBar .next {
   flex: 1;
-  padding-inline: 12px;
+  min-width: 0;
+  gap: 8px;
+  padding-inline: 10px;
+}
+.bottomBar .next svg {
+  width: 20px;
+  height: 20px;
+}
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  padding: 0;
+}
+.bottomBar .iconButton {
+  padding-inline: 0;
+}
+.iconButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 759px) {
+  /* No celular o título da etapa já diz onde a pessoa está. */
+  .stepNames {
+    display: none;
+  }
+}
+
+/* Telas estreitas: só ícones no seletor de aparelho (os botões têm nome acessível). */
+@media (max-width: 419px) {
+  .previewTop .device span {
+    display: none;
+  }
+}
+@media (max-width: 379px) {
+  .bottomBar .next svg {
+    display: none;
+  }
 }
 
 @media (max-width: 1079px) {
@@ -656,6 +1071,12 @@
 @media (min-width: 760px) {
   .styleThumb {
     height: 128px;
+  }
+  .pkgList {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .pkgBody {
+    padding-inline: 22px;
   }
 }
 

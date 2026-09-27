@@ -17,21 +17,25 @@ import { normalizeValue, type Origin } from './origin';
 
 /** Eventos permitidos e as propriedades que cada um pode carregar. */
 export const EVENTS = {
+  /** Clique num botão que leva à criação (apresentação, cabeçalho, final...). */
+  start_click: { once: false, props: ['context'] },
   configurator_start: { once: 'session', props: [] },
   step_complete: { once: 'per-value', props: ['step'] },
-  recommendation_applied: { once: false, props: ['plan'] },
-  plan_selected: { once: false, props: ['plan', 'source'] },
   example_opened: { once: false, props: ['segment'] },
   example_applied: { once: false, props: ['segment'] },
   /** Troca entre computador e celular na demonstração de um exemplo. */
   example_view_mode: { once: false, props: ['segment', 'device'] },
-  summary_view: { once: 'session', props: [] },
-  /** Prévia aberta: ao chegar em "Sua prévia" ou ao tocar em "Ver prévia" no celular. */
+  /** Prévia aberta: ao chegar em "Seu site", em "Ver meu site" ou em tela cheia. */
   preview_view: { once: false, props: ['source', 'step'] },
-  /** Clique em "Solicitar orçamento" (intenção). Confirmação só com generate_lead. */
-  quote_request: { once: false, props: ['mode'] },
+  /** Pacote escolhido pela primeira vez na sessão (confirmação do atual ou troca). */
+  package_selected: { once: 'per-value', props: ['package', 'source'] },
+  /** Troca de pacote confirmada pelo visitante. */
+  package_changed: { once: false, props: ['from', 'to', 'source'] },
+  /** Clique em "Solicitar desenvolvimento" (intenção). Confirmação só com generate_lead. */
+  request_click: { once: false, props: ['mode', 'package'] },
+  /** Abertura de conversa no WhatsApp — não é pedido recebido nem contratação. */
   whatsapp_open: { once: false, props: ['context'] },
-  share_link: { once: false, props: [] },
+  layout_share: { once: false, props: [] },
   pdf_save: { once: false, props: [] },
   help_open: { once: false, props: ['step'] },
   lead_submit_attempt: { once: false, props: [] },

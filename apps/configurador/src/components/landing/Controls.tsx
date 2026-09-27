@@ -84,7 +84,10 @@ export function Radios({
               ) : variant === 'tile' ? (
                 <>
                   {o.lead}
-                  <span>{o.label}</span>
+                  <span>
+                    {o.label}
+                    {o.badge && <small className={s.tileBadge}>{o.badge}</small>}
+                  </span>
                 </>
               ) : (
                 <>
@@ -140,14 +143,24 @@ export function Check({
   );
 }
 
-export type Pending = { title: string; changes: string[]; confirmLabel: string; apply: () => void };
+export type Pending = {
+  title: string;
+  /** Explicação curta. Sem ela, lista o que muda em `changes`. */
+  detail?: string;
+  changes?: string[];
+  confirmLabel: string;
+  cancelLabel?: string;
+  apply: () => void;
+  /** Onde a caixa aparece (perto do controle que a abriu). */
+  anchor?: string;
+};
 
 export function ConfirmBox({ pending, onCancel }: { pending: Pending; onCancel: () => void }) {
   return (
     <div className={s.confirmBox} role="alertdialog" aria-labelledby="confirmar-titulo" aria-describedby="confirmar-detalhe">
       <p id="confirmar-titulo">{pending.title}</p>
       <p id="confirmar-detalhe" className={s.hint}>
-        Isso substitui: {pending.changes.join(', ')}. Nome, textos, orçamento e contato continuam como estão.
+        {pending.detail ?? `Isso substitui: ${(pending.changes ?? []).join(', ')}. Nome, textos e observações continuam como estão.`}
       </p>
       <div className={s.actionRow}>
         <button
@@ -162,7 +175,7 @@ export function ConfirmBox({ pending, onCancel }: { pending: Pending; onCancel: 
           {pending.confirmLabel}
         </button>
         <button type="button" className={`${s.secondary} ${s.small}`} onClick={onCancel}>
-          Manter minhas escolhas
+          {pending.cancelLabel ?? 'Manter minhas escolhas'}
         </button>
       </div>
     </div>

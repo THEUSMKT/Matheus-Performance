@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { revisionRounds } from '@/config/offer';
+import { priceRange, revisionRounds } from '@/config/packages';
 import { LegalPage } from '@/components/LegalPage';
 
 export const metadata: Metadata = {
@@ -10,14 +10,15 @@ export const metadata: Metadata = {
 export default function Termos() {
   return (
     <LegalPage title="Termos de Uso" updated="setembro de 2026">
-      <h2>Sobre a prévia e a estimativa</h2>
+      <h2>Sobre a prévia e os pacotes</h2>
       <p>
-        A prévia é demonstrativa e os valores e prazos exibidos são estimativas calculadas a partir das opções escolhidas. Eles não constituem
-        proposta comercial. Escopo, investimento e prazo são definidos por escrito, depois da conversa sobre o projeto.
+        A prévia é gratuita e demonstrativa: textos e imagens são sugestões ilustrativas. O desenvolvimento é oferecido em pacotes de valor
+        fixo ({priceRange}), conforme as seções e os recursos escolhidos. Escopo, materiais e prazo são confirmados por escrito antes da
+        contratação.
       </p>
       <p>
-        Projetos com necessidades que dependem de levantamento — como loja virtual, integrações, sistemas ou várias unidades — não recebem valor
-        automático: o investimento é definido após o diagnóstico.
+        Necessidades fora dos pacotes — como loja virtual com pagamento, integrações, sistemas, área de login, agenda em tempo real ou mais de
+        uma página — seguem como projeto personalizado, com orçamento separado.
       </p>
 
       <h2>Custos externos</h2>

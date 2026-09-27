@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Serviços para casa: ferramentas sobre bancada (ilustração própria) -->
+  <defs>
+    <linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1ede6"/><stop offset="1" stop-color="#e5ddd1"/></linearGradient>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b98a5e"/><stop offset="1" stop-color="#9c7049"/></linearGradient>
+  </defs>
+  <rect width="480" height="360" fill="url(#w)"/>
+  <!-- painel perfurado -->
+  <rect x="60" y="40" width="360" height="170" rx="10" fill="#dcd3c5"/>
+  <g fill="#cbbfae">
+    <circle cx="90" cy="70" r="4"/><circle cx="150" cy="70" r="4"/><circle cx="210" cy="70" r="4"/><circle cx="270" cy="70" r="4"/><circle cx="330" cy="70" r="4"/><circle cx="390" cy="70" r="4"/>
+    <circle cx="90" cy="180" r="4"/><circle cx="150" cy="180" r="4"/><circle cx="210" cy="180" r="4"/><circle cx="270" cy="180" r="4"/><circle cx="330" cy="180" r="4"/><circle cx="390" cy="180" r="4"/>
+  </g>
+  <!-- chave inglesa -->
+  <path d="M100 90l90 90" stroke="#5b6773" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="96" cy="86" r="20" fill="#5b6773"/><circle cx="96" cy="86" r="9" fill="#dcd3c5"/>
+  <!-- martelo -->
+  <rect x="236" y="96" width="14" height="100" rx="6" fill="#a8743f"/>
+  <rect x="212" y="82" width="62" height="26" rx="6" fill="#39424c"/>
+  <!-- chave de fenda -->
+  <rect x="330" y="80" width="18" height="52" rx="8" fill="#e0a526"/>
+  <rect x="336" y="130" width="6" height="64" fill="#8d97a1"/>
+  <!-- bancada -->
+  <rect x="30" y="236" width="420" height="28" rx="6" fill="url(#b)"/>
+  <rect x="50" y="264" width="20" height="96" fill="#8a6343"/><rect x="410" y="264" width="20" height="96" fill="#8a6343"/>
+  <!-- caixa de ferramentas -->
+  <rect x="110" y="190" width="120" height="48" rx="8" fill="#c94f3d"/>
+  <rect x="150" y="176" width="40" height="18" rx="6" fill="none" stroke="#8f3325" stroke-width="6"/>
+  <rect x="110" y="206" width="120" height="6" fill="#a63f30"/>
+  <!-- trena -->
+  <rect x="290" y="200" width="44" height="38" rx="10" fill="#e0a526"/><circle cx="312" cy="219" r="9" fill="#b58318"/>
+  <rect x="334" y="226" width="60" height="8" fill="#e8d27a"/>
+</svg>

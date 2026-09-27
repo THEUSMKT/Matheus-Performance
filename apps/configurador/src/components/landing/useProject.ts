@@ -34,6 +34,8 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
   const [ready, setReady] = useState(false);
   const [hasProgress, setHasProgress] = useState(false);
   const [resumable, setResumable] = useState(false);
+  /** Só verdadeiro depois que o navegador confirmou a gravação. */
+  const [saved, setSaved] = useState(false);
   const [notice, setNotice] = useState('');
   const [origin, setOrigin] = useState<Origin>({});
   const [variants, setVariants] = useState<Variants>({ hero: 'a', cta: 'a', fluxo: 'a' });
@@ -50,7 +52,7 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
     if (readHash) {
       try {
         loaded = fromShare(location.hash);
-        if (loaded) setNotice('Opções do link carregadas. Nome e textos não viajam no link.');
+        if (loaded) setNotice('Opções de layout carregadas do link. Nome, textos e logo não viajam no link.');
       } catch {
         setNotice('Este link não é válido. Suas respostas salvas foram mantidas.');
       }
@@ -60,7 +62,7 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
         const stored = readStored((k) => localStorage.getItem(k));
         if (stored) {
           loaded = stored.project;
-          if (stored.source !== 'v3') setNotice('Recuperamos a prévia que você montou na versão anterior. Confira as escolhas.');
+          if (stored.source !== 'v4') setNotice('Recuperamos a prévia que você montou na versão anterior. Confira as escolhas e o pacote.');
         }
       } catch {
         setNotice('Não foi possível recuperar o que estava salvo. Você pode continuar normalmente.');
@@ -83,7 +85,7 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
         if (linked) {
           setProject(linked);
           setHasProgress(true);
-          setNotice('Opções do link carregadas.');
+          setNotice('Opções de layout carregadas do link.');
         }
       } catch {
         setNotice('Link inválido. Suas respostas foram preservadas.');
@@ -100,10 +102,13 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
       setProject((p) => (p.id ? p : { ...p, id: newProjectId() }));
       return;
     }
-    if (persistNow(project)) saveFailed.current = false;
-    else {
-      if (!saveFailed.current) setNotice('O navegador não permitiu salvar. Mantenha esta aba aberta ou copie o link.');
+    if (persistNow(project)) {
+      saveFailed.current = false;
+      setSaved(true);
+    } else {
+      if (!saveFailed.current) setNotice('O navegador não permitiu salvar. Mantenha esta aba aberta até enviar o pedido.');
       saveFailed.current = true;
+      setSaved(false);
     }
   }, [project, ready, hasProgress]);
 
@@ -120,20 +125,21 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
   /** Aplica e grava na hora — usado antes de ir para outra página. */
   const commit = useCallback((next: Project) => {
     const normalized = normalizeProject(next);
-    const saved = persistNow(normalized) ?? normalized;
-    setProject(saved);
+    const stored = persistNow(normalized);
+    setProject(stored ?? normalized);
+    setSaved(Boolean(stored));
     setHasProgress(true);
-    return saved;
+    return stored ?? normalized;
   }, []);
 
   const reset = useCallback(() => {
     setProject(normalizeProject({ ...initialProject(), segment: origin.segment ?? initialProject().segment }));
     setHasProgress(false);
     setResumable(false);
+    setSaved(false);
     try {
       localStorage.removeItem(KEY);
-      localStorage.removeItem(LEGACY_KEYS.v2);
-      localStorage.removeItem(LEGACY_KEYS.v1);
+      for (const key of Object.values(LEGACY_KEYS)) localStorage.removeItem(key);
     } catch {
       /* nada salvo para apagar */
     }
@@ -142,7 +148,7 @@ export function useProject({ readHash = true }: { readHash?: boolean } = {}) {
     setNotice('Respostas apagadas. Você pode começar de novo.');
   }, [origin.segment]);
 
-  return { project, ready, hasProgress, resumable, notice, setNotice, origin, variants, update, replace, commit, reset };
+  return { project, ready, hasProgress, resumable, saved, notice, setNotice, origin, variants, update, replace, commit, reset };
 }
 
 export type ProjectState = ReturnType<typeof useProject>;

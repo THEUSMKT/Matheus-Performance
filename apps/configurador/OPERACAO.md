@@ -10,9 +10,11 @@ como ativar cada parte. Nenhum segredo aparece aqui nem no código da página.
 O site é estático (GitHub Pages) e não tem servidor. Por isso, sem receptor
 configurado:
 
-- O botão final, na etapa “Sua prévia”, é **“Solicitar orçamento”**. Ele abre
-  o WhatsApp com o resumo pronto; nada é enviado até o visitante tocar em
-  enviar.
+- O botão final, na etapa “Seu site”, é **“Solicitar desenvolvimento”**
+  (ou “Pedir orçamento personalizado”, quando o projeto sai dos pacotes). Ele
+  abre o WhatsApp com o resumo pronto — empresa, segmento, objetivo, serviço,
+  estilo e cores, pacote, valor, seções, recursos, prazo, observações e o
+  link das opções de layout; nada é enviado até o visitante tocar em enviar.
 - A página **nunca** diz que o pedido foi recebido e **nunca** emite
   `generate_lead`. Abrir o WhatsApp é registrado como `whatsapp_open`
   (intenção).
@@ -69,20 +71,38 @@ outra resposta é tratada como falha pela página.
 
 ## 3. Modelo de dados
 
-- **Projeto** (`src/lib/project.ts`, `version: 3`, `flow: etapas-4-v2`):
-  segmento, serviço principal, objetivo ou pedido de orientação, necessidades
-  complexas, caminho, seções, identidade, recursos, limite de orçamento e
-  dados de contato. Validado sempre que é lido. Versões anteriores (v1, v2)
-  são convertidas ao abrir; os dados antigos continuam no navegador até o
-  visitante usar “Começar novamente”. Projetos salvos com objetivos antigos
-  (horário, trabalhos, localização) continuam válidos.
+- **Pacotes** (`src/config/packages.ts`): Essencial R$ 500 (até 5 seções),
+  Profissional R$ 750 (até 7 seções, galeria de 8 imagens, formulário,
+  perguntas frequentes e depoimentos reais), Completo R$ 1.000 (até 8
+  seções, galeria de 15 imagens e vitrine de 10 itens). Mudar um valor ou
+  limite aqui muda a apresentação, o configurador, o PDF, a mensagem e o
+  receptor.
+- **Projeto** (`src/lib/project.ts`, `version: 4`, `flow: etapas-4-v3`):
+  nome, segmento (e “Outro”), serviço principal ou “Definir depois”,
+  objetivo, título/frase/serviços próprios (vazio = sugestão), seções em
+  ordem, formulário, tamanho da galeria, pacote, necessidades de projeto
+  personalizado, identidade, observações e dados de contato. O pacote nunca
+  fica abaixo do que as escolhas exigem. Validado sempre que é lido. Projetos
+  das versões anteriores (v1, v2, v3 — chaves `mb.configurador.v1…v3`) são
+  convertidos ao abrir, com aviso; os dados antigos continuam no navegador
+  até o visitante usar “Começar novamente”. Na conversão da v3, o antigo
+  catálogo vira vitrine (Completo), formulário por e-mail vira formulário
+  para WhatsApp, e página adicional ou agenda integrada viram projeto
+  personalizado; o limite de orçamento deixa de existir.
 - **Logo enviada** (`src/lib/logo.ts`, chave `bp.logo.v1`): reduzida no
   navegador e guardada só nele. Nunca vai no link, na mensagem nem no pedido —
-  a mensagem só avisa “Logo: tenho a logo e envio por aqui”.
-- **Pedido** (`src/lib/leads.ts`, `schema: 1`): contato, qualificação,
-  consentimentos, projeto completo, estimativa do navegador (só referência) e
-  origem normalizada.
-- **Registro no CRM** (`integrations/lead-receiver/crm.ts`, `schema: 1`).
+  a mensagem só avisa “Logo: tenho e envio por aqui”.
+- **Link “Compartilhar opções de layout”**: leva segmento, objetivo, seções,
+  pacote, estilo e cores. **Não** leva nome, textos, serviços, logo,
+  imagens, observações nem contato — por isso o sócio vê o layout, não a
+  prévia completa. Compartilhar a prévia completa exige armazenamento em
+  servidor (não existe hoje; ver seção 6).
+- **Pedido** (`src/lib/leads.ts`, `schema: 2`): contato, qualificação,
+  consentimentos, projeto completo, pacote e valor do navegador (só
+  referência) e origem normalizada.
+- **Registro no CRM** (`integrations/lead-receiver/crm.ts`, `schema: 2`):
+  o receptor recalcula pacote e valor (`price`) e marca `priceMismatch`
+  quando o navegador mandou outro valor.
 
 ### Etapas do CRM
 
@@ -101,7 +121,7 @@ outro). Pré-venda não vira produção: só se avança uma etapa por vez
 | Proposta sem resposta há 5 dias úteis | Follow-up; após 2 tentativas, Perdido / sem resposta |
 | Aprovação → Materiais | Enviar lista de materiais (textos, imagens, logo, acessos) |
 | Publicação concluída | Tarefa de acompanhamento em 30 dias |
-| `estimateMismatch = true` | Revisar a estimativa antes da proposta |
+| `priceMismatch = true` | Conferir pacote e valor antes da proposta |
 
 ## 4. Medição
 
@@ -111,19 +131,23 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 
 | Evento | Quando | Propriedades |
 |---|---|---|
-| `configurator_start` | “Criar minha prévia” ou abrir a página de criação (1× por sessão) | — |
+| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacotes`, `exemplo`) |
+| `configurator_start` | Abrir a página de criação (1× por sessão) | — |
 | `step_complete` | Avançar uma etapa (1× por etapa) | `step` |
-| `recommendation_applied` | Usar a estrutura sugerida para o objetivo | `plan` |
-| `plan_selected` | Escolher uma estrutura | `plan`, `source` (`investimento`, `conteudo`) |
-| `example_opened` / `example_applied` | Abrir a demonstração (ou trocar de exemplo nela) / usar como ponto de partida | `segment` |
-| `example_view_mode` | Trocar Computador/Celular na demonstração | `segment`, `device` |
-| `summary_view` | Chegar a “Sua prévia” (1× por sessão) | — |
-| `preview_view` | Ver a prévia: ao chegar em “Sua prévia” ou ao tocar em “Ver prévia” no celular | `source` (`etapa`, `alternancia`), `step` |
-| `quote_request` | Clique em “Solicitar orçamento” (**intenção**) | `mode` (`whatsapp`, `formulario`) |
-| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção**) | `context` (`hero`, `ajuda`, `estilo_diferente`, `resumo`, `resumo_alternativo`, `final`, `rodape`) |
-| `share_link` / `pdf_save` / `help_open` | Ferramentas do resumo e ajuda | `step` (ajuda) |
+| `example_opened` / `example_applied` | Abrir um exemplo / usar como ponto de partida | `segment` |
+| `example_view_mode` | Trocar Computador/Celular no exemplo | `segment`, `device` |
+| `preview_view` | Ver a prévia: chegar em “Seu site”, tocar em “Ver meu site” ou abrir a tela cheia | `source` (`etapa`, `alternancia`, `tela_cheia`), `step` |
+| `package_selected` | Escolher um pacote (1× por pacote e origem) | `package`, `source` |
+| `package_changed` | Trocar de pacote, sempre depois da confirmação | `from`, `to`, `source` (`objetivo`, `seu_site`, `secoes`, `imagens`, `incluido`) |
+| `request_click` | Clique em “Solicitar desenvolvimento” (**intenção**) | `mode` (`whatsapp`, `formulario`), `package` (ou `personalizado`) |
+| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção, não é pedido recebido**) | `context` (`pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `projeto_personalizado`, `final`, `rodape`) |
+| `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |
+
+Abrir o WhatsApp (`whatsapp_open`), pedido recebido (`generate_lead` ou card
+no CRM) e contratação (etapa *Aprovação* no CRM) são coisas diferentes e
+nunca se misturam nos relatórios.
 
 Todo evento leva `flow_version`, variantes ativas e UTMs normalizadas.
 Nunca levam nome, telefone, e-mail, textos digitados nem URL completa.
@@ -151,8 +175,9 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
 |---|---|
 | Início do configurador | `configurator_start` ÷ visitas |
 | Conclusão por etapa | `step_complete(n)` ÷ `configurator_start` |
-| Chegada à prévia final | `summary_view` ÷ `configurator_start` |
-| Pedido de orçamento | `quote_request` ÷ `summary_view` |
+| Chegada ao “Seu site” | `preview_view(source=etapa)` ÷ `configurator_start` |
+| Troca de pacote | `package_changed` ÷ `preview_view(source=etapa)` |
+| Pedido de desenvolvimento | `request_click` ÷ `preview_view(source=etapa)` |
 | Pedidos confirmados | `generate_lead` (modo receptor) ou cards criados no CRM (modo WhatsApp) |
 | Proposta, fechamento, perda | No CRM, por etapa e motivo de perda |
 | Custo por pedido | Verba da campanha ÷ pedidos confirmados da mesma origem |
@@ -171,14 +196,22 @@ todos os eventos (`var_hero`, `var_cta`). Defina antes a métrica principal
 e o volume mínimo; não declare vencedor com poucos pedidos e não teste mais
 de uma coisa na mesma área ao mesmo tempo. Nenhum resultado foi simulado.
 
-## 6. Decisões comerciais em aberto
+## 6. Decisões e dependências em aberto
 
-- **Identidade visual no pacote:** `pricing.identity.mode` está em
-  `'vigente'` (todos os estilos, menos o Minimalista, somam acréscimo). Trocar para
-  `'incluida'` inclui a aplicação básica da identidade no pacote e mantém
-  cobrados só trabalhos identificáveis (como adaptar cores próprias). Os
-  testes cobrem os dois modos.
+- **Compartilhar a prévia completa com um sócio** exige guardar o projeto
+  num servidor (banco ou armazenamento de arquivos com link privado). Hoje
+  não existe essa infraestrutura, então a função se chama “Compartilhar
+  opções de layout” e diz o que não leva. Ativar isso significa escolher e
+  pagar um serviço — decisão sua.
+- **Prazos por pacote:** os prazos antigos por complexidade (3–5, 5–8 e 7–12
+  dias úteis) foram associados, na ordem, a Essencial, Profissional e
+  Completo. Confirme se valem assim.
+- **Formas de pagamento, entrada e parcelamento** não existem na página
+  (nada foi inventado). Se houver condição definida, inclua em
+  `projectFaq.ts`.
+- **Projetos reais e depoimentos:** a seção fica oculta até existir
+  material autorizado em `src/config/proof.ts`.
 - **Indexação:** a página fica fora do Google até `indexarNoGoogle: true` em
-  `contact.ts`. O build publicado já roda como produção, então essa troca é a
-  única ação necessária.
+  `contact.ts` (decisão mantida). A página de criação nunca é indexada e
+  saiu do sitemap.
 - **Prazo de retorno:** nenhum é prometido até `RESPONSE_EXPECTATION` existir.

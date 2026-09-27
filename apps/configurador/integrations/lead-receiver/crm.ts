@@ -4,11 +4,11 @@
    só vira projeto em produção depois de aprovação e materiais recebidos.
    ========================================================================== */
 
-export const CRM_SCHEMA_VERSION = 1;
+export const CRM_SCHEMA_VERSION = 2;
 
 export const stages = [
   { id: 'novo_contato', name: 'Novo contato', next: 'Responder e confirmar o interesse' },
-  { id: 'qualificacao', name: 'Qualificação', next: 'Entender necessidade, prazo, orçamento e quem decide' },
+  { id: 'qualificacao', name: 'Qualificação', next: 'Entender necessidade, prazo e quem decide' },
   { id: 'proposta', name: 'Proposta', next: 'Enviar escopo, investimento e prazo por escrito' },
   { id: 'aprovacao', name: 'Aprovação', next: 'Aguardar aceite formal e condições de pagamento' },
   { id: 'materiais', name: 'Materiais', next: 'Receber textos, imagens, logo e acessos' },
@@ -32,6 +32,9 @@ export const lossReasons = [
   { id: 'outro', name: 'Outro (descrever)' },
 ] as const;
 
+/** Pacote escolhido e valor do desenvolvimento (null = orçamento personalizado). */
+export type PriceInfo = { package: string; value: number | null; custom: boolean; deadline: string };
+
 export type CrmLead = {
   schema: typeof CRM_SCHEMA_VERSION;
   leadId: string;
@@ -40,12 +43,12 @@ export type CrmLead = {
   stage: StageId;
   lossReason?: (typeof lossReasons)[number]['id'];
   contact: { name: string; channel: string; value: string };
-  qualification: { need: string; budget: unknown; deadline: string; decision: string };
+  qualification: { need: string; deadline: string; decision: string };
   consent: { commercial: true; marketing: boolean };
-  /** Estimativa recalculada no servidor — é a que vale para a proposta. */
-  estimate: { min: number; max: number; total: number; deadline: string; diagnosis: boolean };
+  /** Pacote e valor recalculados no servidor — são os que valem para a proposta. */
+  price: PriceInfo;
   /** Verdadeiro quando o valor mostrado no navegador não bate com o recalculado. */
-  estimateMismatch: boolean;
+  priceMismatch: boolean;
   flowVersion: string;
   projectId: string;
   project: unknown;

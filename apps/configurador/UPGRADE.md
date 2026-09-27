@@ -1,5 +1,148 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — reformulação: prévia em 5 minutos e pacotes de R$ 500 a R$ 1.000
+
+### O que mudou
+
+- **Oferta em pacotes de valor fixo**, configurados num único arquivo
+  (`src/config/packages.ts`): Essencial R$ 500 (até 5 seções), Profissional
+  R$ 750 (até 7 seções, galeria de 8 imagens, formulário que encaminha ao
+  WhatsApp, perguntas frequentes e depoimentos reais) e Completo R$ 1.000
+  (até 8 seções, galeria de 15 imagens, vitrine de 10 itens). Estilos, cores
+  da marca e logo **não têm mais cobrança avulsa**. O cálculo por itens
+  (faixa ±10%, acréscimos por estilo, categoria e recurso) e a ferramenta
+  “Comparar com meu orçamento” saíram.
+- **Teto por escopo, não por corte:** cada seção e recurso diz qual pacote
+  exige. A 9ª seção, loja com pagamento, estoque, sistemas, login,
+  integrações, agenda em tempo real, mais de uma página, várias unidades,
+  outros idiomas ou produção de conteúdo levam a “Preciso de um projeto
+  personalizado”, com orçamento separado — a prévia continua salva.
+- **Nenhuma troca de pacote sem escolha:** antes de aplicar uma opção de
+  outro pacote aparece “Disponível no Profissional — R$ 750 no total.”, com
+  “Mudar para o Profissional” e “Continuar no Essencial”. Para um pacote
+  menor, a janela “Ver o que está incluído” lista o que sai antes de trocar.
+  Nunca aparece “+ R$ …”.
+- **Preço sempre à vista** no configurador (“Desenvolvimento: R$ 750” +
+  “Ver o que está incluído”), igual na etapa final, no PDF, na mensagem do
+  WhatsApp e no receptor de pedidos, sempre com “Pagamento único pelo
+  desenvolvimento. Domínio e hospedagem à parte.”
+- **Apresentação:** título “Veja como o site da sua empresa pode ficar em até
+  5 minutos.”, “Crie sua prévia gratuitamente. Desenvolvimento profissional
+  de R$ 500 a R$ 1.000.”, nota “Valor do desenvolvimento. Domínio e
+  hospedagem à parte.”, botão “Criar minha prévia grátis” que **abre direto
+  a criação** (o cartão flutuante saiu), “Ver exemplos de sites” e “Sem
+  cadastro. Sem compromisso.”. Quem tem prévia salva vê “Continuar minha
+  prévia” e “Começar uma nova prévia” (com confirmação antes de apagar).
+  Ordem: exemplos → como funciona (3 passos + o que o cliente envia) → o que
+  está incluído (pacotes) → projetos reais (oculto sem material) → quem
+  cuida → perguntas (14) → chamada final. A lista de benefícios repetida
+  saiu, e os brilhos permanentes (selo “Clique aqui”, cartão pulsante)
+  também; só o botão principal mantém a passagem de luz discreta.
+- **Exemplos:** cinco segmentos com composições diferentes (topo dividido,
+  centralizado com foto em arco, faixa de imagem, foto de fundo e tema
+  escuro), seções diferentes e o pacote de cada um. “Usar este modelo” leva
+  estilo e segmento e preserva o que já foi digitado (com confirmação quando
+  substitui escolhas).
+- **Configurador em 4 etapas:** Seu negócio (nome e segmento obrigatórios;
+  “Outro” com campo livre; serviço principal com respostas rápidas ou
+  “Definir depois”) → Seu objetivo (“O que você quer que as pessoas façam no
+  seu site?”, seis opções, com as comuns do segmento marcadas; define botão,
+  contato e seções; agendamento deixa claro que não é agenda em tempo real)
+  → Sua identidade (três estilos sugeridos para o segmento, “Ver outros
+  estilos”, “Escolher por mim”, cores sugeridas ou da marca, logo opcional)
+  → Seu site (prévia primeiro, nome do projeto, investimento, o que está
+  incluído, observações e “Solicitar desenvolvimento”; “Personalizar meu
+  site” com título, frase, serviços, seções, ordem com Subir/Descer,
+  formulário, galeria e necessidades fora dos pacotes; tela cheia).
+- **Prévia personalizada:** o título usa o serviço (“Instalação de
+  ar-condicionado com orçamento pelo WhatsApp.”), a imagem acompanha o
+  segmento ou a palavra-chave (ilustrações próprias em `public/demo/`, sem
+  links externos) e os serviços sugeridos aparecem marcados como sugestão.
+  Sem depoimentos, notas, selos, números ou endereços inventados; botões da
+  prévia não abrem nada (“Prévia demonstrativa · botões sem ação”). No
+  celular a prévia aparece em largura real, com rolagem própria.
+- **Salvamento:** “Salvo neste dispositivo” só aparece depois que o navegador
+  confirmou a gravação; se falhar, aparece um aviso e o fluxo continua.
+  Projetos v1, v2 e v3 são convertidos (com aviso) sem apagar o original.
+- **Compartilhamento honesto:** “Compartilhar opções de layout” — o link leva
+  estilo, cores, objetivo, seções e pacote, não nome, textos, logo ou
+  imagens (dito na tela).
+- **Mensagem do WhatsApp** com empresa, segmento, objetivo, serviço, estilo e
+  cores, logo, pacote, valor, seções, recursos, prazo, ajustes, observações e
+  o link de opções de layout. Nenhum telefone é pedido para abrir o WhatsApp;
+  contato só é pedido no formulário direto (modo receptor), quando a pessoa
+  decide avançar.
+- **Medição revisada:** novos `start_click`, `package_selected`,
+  `package_changed` e `request_click`; saíram `quote_request`,
+  `plan_selected`, `recommendation_applied` e `summary_view` (duplicava
+  `preview_view`). Ver `OPERACAO.md`. Nenhuma ferramenta de análise está
+  instalada: os eventos saem para `dataLayer` só se houver um gerenciador de
+  tags.
+- **Metadados:** descrição e imagem de compartilhamento com a nova mensagem;
+  a página de criação ganhou `noindex` próprio e saiu do sitemap. A
+  apresentação continua fora do Google (`indexarNoGoogle: false`, decisão
+  mantida).
+- A landing de gestão de tráfego (raiz do repositório) não foi alterada.
+
+### Verificação
+
+- `npm test`: 34 testes (pacotes e limites, todas as combinações de seções
+  sem passar de R$ 1.000, troca de pacote, projeto personalizado, objetivos,
+  conteúdo sugerido sem fatos inventados, estilo que não apaga conteúdo,
+  ordem das seções, mensagem, mesmo valor em mensagem/pedido/receptor,
+  perguntas, migração v1/v2/v3, link sem dados pessoais, pedidos, receptor e
+  eventos).
+- Navegador (`tests/e2e.browser.mjs`): 24 cenários — serviços locais,
+  beleza, produtos, “Outro” sem logo nem textos, troca de estilo/objetivo/
+  pacote, recarregar e continuar, projeto personalizado, teto de 8 seções,
+  falha ao salvar, falha ao copiar, envio que falha e nova tentativa (modo
+  receptor), teclado, computador e celular em 360, 390 e 430px (sem rolagem
+  lateral, alvos de 44px, barra fixa sem cobrir conteúdo).
+- **Cronometragem interna, não validada com usuários:** o percurso básico
+  (nome de 22 caracteres, segmento, serviço com um toque, objetivo, cor e
+  pedido) levou **36 s** num roteiro automatizado com ritmo humano simulado
+  (digitação ~6 caracteres/s, 3 s de leitura por tela e 1,5 s por decisão),
+  com 10 toques. Isso indica que o fluxo cabe folgado em 5 minutos, mas não
+  substitui medir o tempo real de visitantes.
+
+### Inconsistências e condições preservadas
+
+- **Prazos por pacote:** não havia prazo por pacote. Os prazos existentes por
+  complexidade (3–5, 5–8 e 7–12 dias úteis, contados após o recebimento dos
+  materiais) foram associados a Essencial, Profissional e Completo. Confirme.
+- **Nome do estilo “Essencial”:** para não confundir com o pacote Essencial,
+  o estilo continua se chamando “Minimalista” (as sugestões são Moderno,
+  Elegante e Minimalista, variando por segmento).
+- **Formulário por e-mail** (plataforma externa) deixou de ser opção: o
+  escopo novo prevê formulário que encaminha ao WhatsApp. Projetos antigos
+  com e-mail foram convertidos para o formulário do WhatsApp.
+- Mantidos sem mudança: 2 rodadas de ajustes, custos externos à parte, site
+  do cliente após a quitação, sem mensalidade de desenvolvimento, alterações
+  depois da entrega orçadas à parte, nenhuma garantia de resultado, nenhuma
+  forma de pagamento anunciada (não havia).
+
+### Limitações e dependências
+
+- Compartilhar a prévia completa com um sócio (nome, textos, imagens) exige
+  armazenamento em servidor, que não existe no GitHub Pages. Não foi criado
+  nenhum serviço pago; a função ficou limitada e com o rótulo honesto.
+- O formulário direto só funciona com um receptor publicado
+  (`NEXT_PUBLIC_LEAD_ENDPOINT`); sem ele, o pedido segue pelo WhatsApp e
+  nada é dado como recebido.
+- As imagens da prévia são ilustrações de exemplo por segmento; as fotos
+  reais entram no site final.
+
+### Materiais reais ainda necessários
+
+- Projetos entregues com autorização por escrito (print do site, prévia
+  escolhida para comparar, link, segmento) → `src/config/proof.ts`.
+- Depoimentos reais autorizados (texto, nome e empresa).
+- Confirmação dos prazos por pacote e, se houver, das formas de pagamento.
+- E-mail e Instagram profissionais, se quiser que apareçam (`contact.ts`).
+- Prazo de retorno do atendimento, se quiser anunciá-lo
+  (`NEXT_PUBLIC_RESPONSE_EXPECTATION`).
+
+
 ## Edição — vitrine do serviço no topo
 
 - O quadrado com a frase grande virou uma vitrine: janela de navegador em
