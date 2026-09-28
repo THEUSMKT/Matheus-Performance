@@ -4,7 +4,7 @@ import { ImageResponse } from 'next/og';
 import { priceRange } from '@/config/packages';
 
 export const dynamic = 'force-static';
-export const alt = 'Beck Performance — veja como o site da sua empresa pode ficar em até 5 minutos';
+export const alt = 'Beck Performance — um site profissional para apresentar sua empresa e facilitar novos contatos';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -18,7 +18,7 @@ export default function OpengraphImage() {
           Beck Performance
         </div>
         <div style={{ marginTop: 48, fontSize: 64, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.08, maxWidth: 980 }}>
-          Veja como o site da sua empresa pode ficar em até 5 minutos.
+          Um site profissional para apresentar sua empresa e facilitar novos contatos.
         </div>
         <div style={{ marginTop: 36, fontSize: 30, color: '#c9dafb' }}>{`Prévia grátis, sem cadastro · Desenvolvimento de ${priceRange}`}</div>
       </div>

@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, ChevronLeft, ChevronRight, MessageCircle, Monitor, Smartphone, Sparkles, X } from 'lucide-react';
 import { contact } from '@/config/contact';
-import { brl, customNeeds, packageById, packages, priceNotes, priceRange } from '@/config/packages';
+import { brl, commonBenefits, packageById, packageDiffs, packages, priceNotes, priceRange, revisionRounds, type PackageId } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
 import { realProjects, testimonials } from '@/config/proof';
 import { ctaVariants, heroVariants } from '@/config/experiments';
@@ -25,21 +25,32 @@ import { SitePreview } from '../preview/SitePreview';
 import { PackageCompare } from '../builder/Packages';
 import { Carousel, type CarouselApi } from './Carousel';
 import { Footer, Header, asset, builderHref } from './Chrome';
-import { ConfirmBox, type Pending } from './Controls';
+import { ConfirmBox, LazyDetails, type Pending } from './Controls';
 import { DesktopFrame, PhoneFrame } from './DemoFrames';
 import { HeroShowcase } from './HeroShowcase';
-import { useProject, type ProjectState } from './useProject';
+import { useNarrow, useProject, type ProjectState } from './useProject';
 import s from './Landing.module.css';
 
 const demoSegments = segments.filter((x) => x.id !== 'outro');
 
 const processSteps = [
-  ['Conte sobre sua empresa.', 'Nome, segmento e o que você quer que as pessoas façam no site.'],
-  ['Personalize e veja seu investimento.', 'Escolha estilo e cores e veja o valor do pacote na hora.'],
-  ['Solicite o desenvolvimento.', 'O resumo vai pronto para o WhatsApp. Nada é contratado sem você aprovar.'],
+  ['Crie sua prévia', 'Conte sobre o negócio por texto ou áudio e veja o site montado. Grátis e sem cadastro.'],
+  ['Ajuste e escolha o pacote', 'Mude estilo, cores, textos e seções. O valor do pacote fica sempre à vista.'],
+  ['Converse e confirme', 'O resumo abre no WhatsApp. Escopo, prazo e valor são confirmados por escrito antes de começar.'],
 ] as const;
 
-const FAQ_PREVIEW = 5;
+/**
+ * O que o desenvolvimento entrega, em uso — só o que os pacotes incluem
+ * (config/packages.ts). Nada de promessa de venda ou de posição no Google.
+ */
+const valueItems = [
+  ['Apresentação organizada', 'Serviços, diferenciais e contato numa página clara, pensada primeiro para o celular.'],
+  ['Sua identidade visual', 'Sua logo, suas cores e o estilo que você escolheu na prévia.'],
+  ['Caminho de contato', 'Botão de WhatsApp em todos os pacotes; formulário que organiza o pedido a partir do Profissional.'],
+  ['Revisão antes de publicar', `${revisionRounds} rodadas de ajustes e acompanhamento da publicação no ambiente combinado.`],
+] as const;
+
+const FAQ_PREVIEW = 6;
 
 export default function Landing() {
   const state = useProject({ readHash: false });
@@ -63,11 +74,18 @@ export default function Landing() {
       <main id="conteudo">
         <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
           <div className={s.heroCopy}>
-            <h1 id="hero-titulo">{hero.title}</h1>
-            <p className={s.heroLead}>
-              Crie sua prévia gratuitamente. Desenvolvimento profissional de <strong>{priceRange}</strong>.
+            <h1 id="hero-titulo">
+              {/* No celular, o título curto (o longo continua para leitores de tela). */}
+              <span className={s.titleLong}>{hero.title}</span>
+              <span className={s.titleShort} aria-hidden="true">
+                {hero.short}
+              </span>
+            </h1>
+            <p className={s.heroLead}>Veja uma prévia grátis. Depois, a Beck Performance desenvolve seu site com a identidade e as informações do seu negócio.</p>
+            <p className={s.heroPrice}>
+              Desenvolvimento de <strong>{priceRange}</strong>.
             </p>
-            <p className={s.priceNote}>{priceNotes.landing}</p>
+            <p className={s.priceNote}>{priceNotes.payment}</p>
             <div className={s.heroActions}>
               <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')} data-main-cta="">
                 <span>{primaryLabel}</span>
@@ -88,7 +106,24 @@ export default function Landing() {
 
         <Examples state={state} />
 
-        <section className={`${s.section} ${s.band}`} id="como-funciona" aria-labelledby="processo-titulo">
+        <section className={s.valueBand} aria-labelledby="valor-titulo">
+          <div className={s.wrap}>
+            <h2 id="valor-titulo">O que a Beck Performance faz no seu site</h2>
+            <ul className={s.valueList}>
+              {valueItems.map(([t, d], i) => (
+                <li key={t}>
+                  <span className={s.valueNum} aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <h3>{t}</h3>
+                  <p>{d}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className={s.section} id="como-funciona" aria-labelledby="processo-titulo">
           <div className={s.wrap}>
             <div className={s.sectionHead}>
               <h2 id="processo-titulo">Como funciona</h2>
@@ -101,16 +136,6 @@ export default function Landing() {
                 </li>
               ))}
             </ol>
-            <p className={s.processNote}>O site final é desenvolvido depois que o escopo é confirmado e os materiais da empresa são recebidos.</p>
-            <div className={s.materials}>
-              <h3>Para o site final, você envia</h3>
-              <ul className={s.checkList}>
-                <li>A logo, se tiver</li>
-                <li>Fotos da empresa, dos produtos ou dos trabalhos</li>
-                <li>Serviços, horários e formas de contato</li>
-              </ul>
-              <p>Os textos sugeridos na prévia são revisados com você antes de entrar no site.</p>
-            </div>
           </div>
         </section>
 
@@ -122,7 +147,7 @@ export default function Landing() {
         <section className={s.final} aria-labelledby="final-titulo">
           <div className={s.wrap}>
             <h2 id="final-titulo">Veja o site da sua empresa antes de contratar.</h2>
-            <p>Prévia grátis em até 5 minutos. Desenvolvimento de {priceRange}.</p>
+            <p>Prévia grátis em poucos passos. Desenvolvimento de {priceRange}, com escopo confirmado por escrito.</p>
             <div className={s.finalActions}>
               <a className={s.primary} href={builderHref} onClick={start('final')} data-main-cta="">
                 {primaryLabel}
@@ -142,7 +167,8 @@ export default function Landing() {
 
 /**
  * Acesso persistente à criação. Fica escondido enquanto algum botão
- * principal da página estiver visível; sem IntersectionObserver, fica
+ * principal da página (topo, final ou "Criar prévia com o …" dos pacotes)
+ * estiver visível; sem IntersectionObserver, fica
  * sempre visível (nunca somem os dois ao mesmo tempo). Também sai da
  * frente enquanto controles que ele cobriria (setas e bolinhas do
  * carrossel, "Ver este exemplo") passam pela faixa de baixo da tela.
@@ -220,7 +246,17 @@ function FloatingStart({ label, onStart }: { label: string; onStart: () => void 
  */
 function startingPoint(state: ProjectState, id: string) {
   const p = state.project;
-  const next = { ...exampleProject(id), id: p.id, name: p.name, notes: p.notes, lead: p.lead, step: id === 'outro' ? STEP.negocio : STEP.pronta };
+  const example = exampleProject(id);
+  const next = {
+    ...example,
+    id: p.id,
+    name: p.name,
+    notes: p.notes,
+    lead: p.lead,
+    // Segmento que veio do modelo é sugestão: uma descrição nova pode trocá-lo.
+    aiFilled: { name: '', segment: example.segment, segmentOther: '' },
+    step: id === 'outro' ? STEP.negocio : STEP.pronta,
+  };
   const run = () => {
     state.replaceKeeping(next, 'modelo');
     track('example_applied', { segment: id });
@@ -256,7 +292,10 @@ function Examples({ state }: { state: ProjectState }) {
   const cards = useRef<(HTMLButtonElement | null)[]>([]);
   const applying = useRef(false);
   const [open, setOpen] = useState<number | null>(null);
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
+  // No celular, o exemplo abre primeiro na versão de celular.
+  const small = useNarrow('(max-width: 759px)');
+  const [deviceChoice, setDevice] = useState<'desktop' | 'mobile' | null>(null);
+  const device = deviceChoice ?? (small ? 'mobile' : 'desktop');
   const [dialogPending, setDialogPending] = useState<Pending | null>(null);
   const [otherPending, setOtherPending] = useState<Pending | null>(null);
   const tap = useTapGuard();
@@ -379,8 +418,9 @@ function Examples({ state }: { state: ProjectState }) {
                 </DesktopFrame>
               </span>
               <span className={s.exampleName}>{x.name}</span>
+              <span className={s.examplePurpose}>{x.purpose}</span>
               <span className={s.exampleDemo}>
-                {x.demo} · {packageNote(x.id)}
+                {x.demo} · <span className={s.keep}>{packageNote(x.id)}</span>
               </span>
               <span className={s.exampleOpen} data-float-avoid="">
                 Ver este exemplo <ChevronRight aria-hidden="true" />
@@ -423,6 +463,11 @@ function Examples({ state }: { state: ProjectState }) {
                 <DesktopFrame key={`d-${opened.id}`}>
                   <SitePreview project={exampleProject(opened.id)} demo />
                 </DesktopFrame>
+              ) : small ? (
+                // Celular de verdade: a versão móvel ocupa a tela, sem moldura nem rolagem dentro de rolagem.
+                <div key={`m-${opened.id}`} className={s.demoMobile}>
+                  <SitePreview project={exampleProject(opened.id)} bare mobile demo />
+                </div>
               ) : (
                 <PhoneFrame key={`m-${opened.id}`}>
                   <SitePreview project={exampleProject(opened.id)} bare demo />
@@ -444,9 +489,9 @@ function Examples({ state }: { state: ProjectState }) {
               </div>
               <div className={s.demoUse}>
                 <button type="button" className={s.primary} onClick={applyOpened}>
-                  Usar este modelo
+                  Usar este modelo <span className={s.keep}>· {packageNote(opened.id).replace('Pacote ', '')}</span>
                 </button>
-                <small>Leva estilo, cores, seções e o {packageNote(opened.id)} deste exemplo. Você pode mudar tudo depois.</small>
+                <small>Leva estilo, cores e seções deste exemplo, no {packageNote(opened.id)}. A prévia é grátis; você pode mudar tudo depois.</small>
               </div>
             </div>
           </>
@@ -456,63 +501,67 @@ function Examples({ state }: { state: ProjectState }) {
   );
 }
 
-/** Pacotes: valor total, o que cada um inclui e o caminho para projetos fora deles. */
+/** Rótulo factual do pacote em destaque (sem "mais vendido"). */
+const pkgTag: Partial<Record<PackageId, string>> = { profissional: 'Para apresentar trabalhos e organizar pedidos' };
+
+/**
+ * Pacotes: três cartões em sequência (no celular, um embaixo do outro), cada
+ * um com uso indicado, preço, diferenças e o botão que abre a criação já
+ * nesse pacote. O que é comum aos três aparece uma vez só.
+ */
 function Investment() {
   return (
-    <section className={s.section} id="investimento" aria-labelledby="investimento-titulo">
+    <section className={`${s.section} ${s.band}`} id="investimento" aria-labelledby="investimento-titulo">
       <div className={s.wrap}>
         <div className={s.sectionHead}>
-          <h2 id="investimento-titulo">O que está incluído</h2>
-          <p>Três pacotes de valor fixo. O preço é o total do desenvolvimento — sem cobrança por estilo ou cor.</p>
+          <h2 id="investimento-titulo">Pacotes de desenvolvimento</h2>
+          <p>Valor total do site, em pagamento único. Domínio e hospedagem à parte.</p>
         </div>
+        <p className={s.common}>
+          <strong>Em todos os pacotes:</strong> {commonBenefits.join(' · ')}.
+        </p>
         <ul className={s.packages}>
           {packages.map((pkg) => (
-            <li key={pkg.id} className={s.package}>
-              <h3>{pkg.name}</h3>
-              <strong className={s.packagePrice}>{brl(pkg.price)}</strong>
+            <li key={pkg.id} className={s.package} data-featured={pkgTag[pkg.id] ? '' : undefined}>
+              {pkgTag[pkg.id] && <span className={s.packageTag}>{pkgTag[pkg.id]}</span>}
+              <div className={s.packageHead}>
+                <h3>{pkg.name}</h3>
+                <strong className={s.packagePrice}>{brl(pkg.price)}</strong>
+              </div>
               <p className={s.packageFor}>{pkg.forWhom}</p>
               <ul className={s.checkList}>
-                {pkg.includes.map((item) => (
+                {packageDiffs(pkg).map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
+              <p className={s.packageDeadline}>
+                Prazo: {pkg.deadline}, {priceNotes.deadlineStart}.
+              </p>
+              <a
+                className={pkgTag[pkg.id] ? s.primary : s.secondary}
+                href={`${builderHref}?pacote=${pkg.id}`}
+                onClick={() => track('start_click', { context: 'pacote', package: pkg.id })}
+                data-main-cta=""
+              >
+                Criar prévia com o {pkg.name}
+              </a>
             </li>
           ))}
         </ul>
-        <p className={s.packagesNote}>
-          {priceNotes.payment} <a href="#perguntas">Ver o que é pago à parte</a>
-        </p>
-        <details className={s.details}>
-          <summary>Comparar pacotes</summary>
-          <div className={s.detailsBody}>
-            <PackageCompare caption="Comparação dos pacotes" />
-          </div>
-        </details>
-        <div className={s.customBox}>
-          <h3>Precisa de algo fora dos pacotes?</h3>
-          <p>
-            {customNeeds
-              .slice(0, 6)
-              .map((n) => n.name)
-              .join(' · ')}
-            . Esses projetos têm orçamento separado.
-          </p>
+        <LazyDetails className={`${s.details} ${s.compareDetails}`} summary="Comparar todos os recursos">
+          <PackageCompare caption="Comparação dos pacotes" />
+        </LazyDetails>
+        <p className={s.customLine}>
+          Precisa de loja virtual, sistema ou várias páginas? Isso é um projeto personalizado, com orçamento separado.{' '}
           <a
-            className={`${s.secondary} ${s.small}`}
             href={whatsappLink(contact.whatsappProjetoPersonalizado)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => track('whatsapp_open', { context: 'projeto_personalizado' })}
           >
-            Preciso de um projeto personalizado
+            Falar sobre um projeto personalizado
           </a>
-        </div>
-        <div className={s.investCta}>
-          <a className={s.primary} href={builderHref} onClick={() => track('start_click', { context: 'pacotes' })} data-main-cta="">
-            Criar minha prévia grátis
-          </a>
-          <small>Você vê o pacote que combina com o seu site antes de pedir.</small>
-        </div>
+        </p>
       </div>
     </section>
   );
@@ -583,7 +632,7 @@ function About() {
       <div className={`${s.wrap} ${s.about}`}>
         <img className={s.aboutPhoto} src={asset('/brand/matheus-beck.webp')} alt={`Foto de ${contact.owner}`} width={280} height={334} loading="lazy" />
         <div>
-          <h2 id="sobre-titulo">Quem cuida do seu projeto</h2>
+          <h2 id="sobre-titulo">Quem desenvolve seu site</h2>
           <p>Sou {contact.owner}, da Beck Performance. Conduzo seu site do escopo à publicação, com atendimento direto.</p>
           <ul className={`${s.checkList} ${s.aboutFacts}`}>
             <li>Escopo, valor e prazo por escrito antes do início</li>

@@ -4,7 +4,7 @@
    Grupo de opções: padrão ARIA radiogroup (setas movem e escolhem, Tab
    entra e sai do grupo). Confirmação: caixa inline, sem janela surpresa.
    ========================================================================== */
-import { useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import s from './Landing.module.css';
 
 export type RadioOption = {
@@ -179,5 +179,20 @@ export function ConfirmBox({ pending, onCancel }: { pending: Pending; onCancel: 
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Sanfona cujo conteúdo só é montado na primeira abertura (depois fica):
+ * evita manter na página, fechadas, árvores grandes como a comparação de
+ * pacotes (tabela no computador e blocos no celular).
+ */
+export function LazyDetails({ summary, className, children }: { summary: ReactNode; className?: string; children: ReactNode }) {
+  const [opened, setOpened] = useState(false);
+  return (
+    <details className={className} onToggle={(e) => e.currentTarget.open && setOpened(true)}>
+      <summary>{summary}</summary>
+      <div className={s.detailsBody}>{opened && children}</div>
+    </details>
   );
 }

@@ -284,6 +284,38 @@
   color: var(--muted);
   max-width: 40ch;
 }
+.heroPrice {
+  margin-top: 12px;
+  font-size: 18px;
+  font-weight: 650;
+}
+.heroPrice strong {
+  font-weight: 800;
+  white-space: nowrap;
+}
+/* Título: curto no celular (também deitado), completo a partir de 560px (o longo segue acessível). */
+.titleShort {
+  display: none;
+}
+@media (max-width: 559px), (orientation: landscape) and (max-height: 500px) {
+  .titleShort {
+    display: inline;
+  }
+  .titleLong {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+/* Celular deitado: título menor para o preço e o botão aparecerem mais cedo. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .hero h1 {
+    font-size: 30px;
+  }
+}
 .heroLead strong {
   color: var(--navy);
   font-weight: 750;
@@ -341,7 +373,7 @@
 }
 
 /* Botão principal com brilho: uma faixa de luz diagonal atravessa o botão
-   devagar a cada 7 s. A faixa fica atrás do texto, não muda o tamanho do
+   devagar a cada 7 s, só três vezes. A faixa fica atrás do texto, não muda o tamanho do
    botão, não recebe cliques e some com "reduzir movimento". */
 .shine {
   position: relative;
@@ -365,7 +397,8 @@
   background: linear-gradient(90deg, rgb(255 255 255 / 0), rgb(255 255 255 / 0.3) 50%, rgb(255 255 255 / 0));
   transform: translateX(-130%) skewX(-22deg);
   pointer-events: none;
-  animation: lightSweep 7s cubic-bezier(0.4, 0, 0.6, 1) 1.5s infinite;
+  /* Discreto e ocasional: três passagens e para. */
+  animation: lightSweep 7s cubic-bezier(0.4, 0, 0.6, 1) 1.5s 3;
 }
 .shine:hover {
   box-shadow: 0 16px 30px -14px rgb(7 97 253 / 0.85);
@@ -1026,35 +1059,22 @@ button.exampleCard:active .exampleOpen {
   color: #8c1d18;
 }
 
-/* Como funciona: nota e materiais */
-.processNote {
-  margin-top: 20px;
-  max-width: 62ch;
-  font-weight: 600;
-}
-.materials {
-  margin-top: 18px;
-  padding: 18px 20px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  max-width: 640px;
-}
-.materials h3 {
-  font-size: 16px;
-}
-.materials p {
-  margin-top: 10px;
+/* Pacotes: três cartões em sequência no celular, lado a lado no computador */
+.common {
+  max-width: 70ch;
+  margin-bottom: 16px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 15px;
 }
-
-/* Pacotes */
+.common strong {
+  color: var(--navy);
+}
 .packages {
   display: grid;
   gap: 12px;
 }
 .package {
+  position: relative;
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -1062,55 +1082,109 @@ button.exampleCard:active .exampleOpen {
   border-radius: var(--radius);
   background: var(--surface);
 }
+.package[data-featured] {
+  border: 2px solid var(--navy);
+  box-shadow: 0 18px 38px -26px rgb(8 27 92 / 0.6);
+}
+.packageTag {
+  align-self: flex-start;
+  margin-bottom: 10px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.packageHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
 .package h3 {
-  font-size: 18px;
+  font-size: 20px;
 }
 .packagePrice {
-  margin-top: 4px;
-  font-size: 34px;
+  font-size: 30px;
   line-height: 1.1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   color: var(--navy);
+  white-space: nowrap;
 }
 .packageFor {
   margin-top: 6px;
   color: var(--muted);
   font-size: 15px;
 }
-.packagesNote {
+.package .checkList {
+  margin-block: 14px 12px;
+}
+.packageDeadline {
+  margin-top: auto;
+  padding-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.package > a {
+  justify-content: center;
   margin-top: 14px;
-  font-weight: 600;
-  font-size: 15px;
+  min-height: 48px;
+  text-align: center;
 }
-.packagesNote a {
-  margin-left: 4px;
-  color: var(--blue-ink);
-  font-weight: 600;
+.compareDetails {
+  margin-top: 16px;
 }
-.customBox {
-  margin-top: 18px;
-  padding: 18px 20px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--radius);
-}
-.customBox h3 {
-  font-size: 16px;
-}
-.customBox p {
-  margin: 6px 0 12px;
+.customLine {
+  margin-top: 16px;
   color: var(--muted);
   font-size: 14px;
 }
-.investCta {
+.customLine a {
+  display: inline;
+  min-height: 0;
+  color: var(--blue-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Faixa de valor: o que o desenvolvimento entrega (azul-marinho) */
+.valueBand {
+  padding-block: 44px;
+  background: linear-gradient(160deg, var(--navy) 0%, #0b2a86 100%);
+  color: #fff;
+}
+.valueBand h2 {
+  max-width: 22ch;
+  font-size: clamp(24px, 4.2vw, 34px);
+  font-weight: 750;
+}
+.valueList {
   display: grid;
-  gap: 8px;
-  justify-items: start;
+  gap: 18px;
   margin-top: 22px;
 }
-.investCta small {
-  color: var(--muted);
+.valueList li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+}
+.valueNum {
+  grid-row: span 2;
+  color: #8fb8ff;
   font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+.valueList h3 {
+  font-size: 17px;
+}
+.valueList p {
+  margin-top: 2px;
+  color: rgb(255 255 255 / 0.82);
+  font-size: 15px;
 }
 
 /* Projetos reais (só com material autorizado) */
@@ -1401,6 +1475,9 @@ button.exampleCard:active .exampleOpen {
 .demoFoot .confirmBox {
   margin-top: 0;
 }
+.keep {
+  white-space: nowrap;
+}
 .demoUse {
   display: grid;
   gap: 6px;
@@ -1519,8 +1596,9 @@ button.exampleCard:active .exampleOpen {
 
 /* ── ≥ 760px ────────────────────────────────────────────────────────────── */
 @media (min-width: 760px) {
-  .packages {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .valueList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 32px;
   }
   .realList {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1858,4 +1936,47 @@ button.exampleCard:active .exampleOpen {
 .exampleThumb {
   content-visibility: auto;
   contain-intrinsic-size: auto 190px;
+}
+
+/* Pacotes lado a lado só com largura para ler; valor em quatro colunas no computador. */
+@media (min-width: 1000px) {
+  .packages {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+  .valueList {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 999px) {
+  .packages {
+    max-width: 620px;
+  }
+}
+
+/* Âncoras não ficam atrás do cabeçalho fixo. */
+.page section[id],
+.page [id='exemplos'],
+.page [id='perguntas'] {
+  scroll-margin-top: 72px;
+}
+
+/* Exemplo aberto no celular: a versão móvel ocupa a largura, sem moldura. */
+.demoMobile {
+  margin: -16px;
+  background: #fff;
+}
+.examplePurpose {
+  padding-inline: 16px;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 600;
+}
+/* Filtros: a borda esmaecida mostra que há mais opções ao deslizar. */
+@media (max-width: 1079px) {
+  .exampleFilter {
+    -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent);
+    mask-image: linear-gradient(90deg, #000 82%, transparent);
+    padding-right: 32px;
+  }
 }

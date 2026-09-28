@@ -48,6 +48,13 @@ const invest = (page) => page.getByTestId('investimento').innerText();
 const requestLink = (page) => page.locator('[class*=desktopOnly] a', { hasText: /Solicitar desenvolvimento|Pedir orçamento personalizado/ });
 const waHref = async (page) => new globalThis.URL(await requestLink(page).getAttribute('href'));
 const waMessage = async (page) => (await waHref(page)).searchParams.get('text');
+/** Escolha de pacote (seletor compacto: rádios com nome e preço). */
+const pkgRadio = (scope, name) => scope.getByRole('radiogroup', { name: 'Pacote' }).getByRole('radio', { name: new RegExp(`^${name}`) });
+/** Ferramentas da revisão ficam em "Salvar ou compartilhar projeto". */
+async function openSave(page) {
+  const d = page.locator('#salvar-compartilhar');
+  if (!(await d.evaluate((e) => e.open))) await d.locator('summary').click();
+}
 const scrollWidth = (page) => page.evaluate(() => document.documentElement.scrollWidth);
 const visible = (loc) => loc.filter({ visible: true }).first();
 const stored = (page) => page.evaluate(() => JSON.parse(localStorage.getItem('mb.configurador.v4') || 'null'));
@@ -97,10 +104,12 @@ async function toChoice(page, question) {
 
 await scenario('Apresentação: dois diferenciais, preço, botão que abre a criação e seções na ordem', async (page) => {
   await page.goto(URL);
-  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Veja como o site da sua empresa pode ficar em até 5 minutos.');
+  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Um site profissional para apresentar sua empresa e facilitar novos contatos.');
   const copy = page.locator('[class*=heroCopy]');
   const text = await copy.innerText();
-  for (const s of ['Crie sua prévia gratuitamente. Desenvolvimento profissional de R$ 500 a R$ 1.000.', 'Valor do desenvolvimento. Domínio e hospedagem à parte.', 'Sem cadastro. Sem compromisso.']) assert(text.includes(s), s);
+  for (const s of ['Veja uma prévia grátis. Depois, a Beck Performance desenvolve seu site com a identidade e as informações do seu negócio.', 'Desenvolvimento de R$ 500 a R$ 1.000.', 'Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'Sem cadastro. Sem compromisso.']) assert(text.includes(s), s);
+  assert(!/minutos/.test(await page.locator('main').innerText()), 'sem promessa de tempo');
+  assert(await page.getByRole('heading', { name: 'O que a Beck Performance faz no seu site' }).isVisible(), 'faixa de valor');
   assert.equal((await heroCta(page).innerText()).trim(), 'Criar minha prévia grátis');
   assert((await heroCta(page).getAttribute('href')).endsWith('/configurador/criar/'), 'botão principal abre a criação');
   assert.equal(await copy.getByRole('link', { name: 'Ver exemplos de sites' }).getAttribute('href'), '#exemplos');
@@ -109,9 +118,12 @@ await scenario('Apresentação: dois diferenciais, preço, botão que abre a cri
   const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
   assert.deepEqual(ids, ['exemplos', 'como-funciona', 'investimento', 'quem-atende', 'perguntas'], 'projetos reais ficam ocultos sem material');
   const steps = await page.locator('#como-funciona ol h3').allInnerTexts();
-  assert.deepEqual(steps, ['Conte sobre sua empresa.', 'Personalize e veja seu investimento.', 'Solicite o desenvolvimento.']);
+  assert.deepEqual(steps, ['Crie sua prévia', 'Ajuste e escolha o pacote', 'Converse e confirme']);
+  assert((await page.locator('#como-funciona').innerText()).includes('O resumo abre no WhatsApp. Escopo, prazo e valor são confirmados por escrito'));
   const pk = await page.locator('#investimento').innerText();
-  for (const s of ['Essencial', 'R$ 500', 'Profissional', 'R$ 750', 'Completo', 'R$ 1.000', 'Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'Preciso de um projeto personalizado']) assert(pk.includes(s), s);
+  for (const s of ['Essencial', 'R$ 500', 'Profissional', 'R$ 750', 'Completo', 'R$ 1.000', 'Valor total do site, em pagamento único. Domínio e hospedagem à parte.', 'Em todos os pacotes:', 'Para apresentar trabalhos e organizar pedidos', 'Falar sobre um projeto personalizado']) assert(pk.includes(s), s);
+  for (const n of ['Essencial', 'Profissional', 'Completo']) assert((await page.getByRole('link', { name: `Criar prévia com o ${n}` }).getAttribute('href')).endsWith(`/criar/?pacote=${n.toLowerCase()}`), n);
+  assert(!/mais vendido|mais escolhido|preferido/i.test(pk), 'sem selo sem dados');
   const body = await page.locator('body').innerText();
   for (const bad of [/\+ ?R\$/, /a partir de/i, /garant/i, /mais barato/i, /restam|últimas vagas|apenas hoje/i, /depoimento aqui/i]) assert(!bad.test(body), bad);
   await heroCta(page).click();
@@ -146,10 +158,12 @@ await scenario('Vitrine do topo: exemplo fictício identificado, nada clicável'
   const sc = page.locator('[data-showcase]');
   assert.equal(await sc.getAttribute('role'), 'img');
   const txt = await sc.textContent();
-  for (const s of ['Exemplo ilustrativo', 'Estúdio Forma', 'Sua prévia em até 5 minutos']) assert(txt.includes(s), s);
+  for (const s of ['Exemplo ilustrativo', 'Estúdio Forma', 'Prévia grátis em poucos passos']) assert(txt.includes(s), s);
   assert.equal(await sc.locator('a, button, input, form').count(), 0);
-  const imgs = await sc.locator('img').evaluateAll((els) => els.map((e) => [e.getAttribute('width'), e.getAttribute('height'), e.complete && e.naturalWidth > 0]));
-  for (const [w, h, ok] of imgs) assert(w && h && ok, 'imagem com dimensões reservadas e carregada');
+  // Imagens abaixo do recorte da vitrine ficam com carregamento adiado (nunca aparecem).
+  const imgs = await sc.locator('img').evaluateAll((els) => els.map((e) => [e.getAttribute('width'), e.getAttribute('height'), (e.complete && e.naturalWidth > 0) || e.loading === 'lazy']));
+  for (const [w, h, ok] of imgs) assert(w && h && ok, 'imagem com dimensões reservadas e carregada (ou adiada)');
+  assert.equal(await sc.locator('img:not([loading=lazy])').evaluateAll((els) => els.filter((e) => !(e.complete && e.naturalWidth > 0)).length), 0, 'imagem do topo carregada');
 }, { viewport: { width: 1280, height: 800 } });
 
 await scenario('Exemplos: composições diferentes, cartão fiel ao aberto, arrastar não abre, usar o modelo (A05, A07, A08)', async (page) => {
@@ -190,7 +204,7 @@ await scenario('Exemplos: composições diferentes, cartão fiel ao aberto, arra
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === 'Ver este exemplo: Consultoria e serviços profissionais');
   await page.getByRole('button', { name: 'Ver este exemplo: Beleza e estética' }).click();
-  assert((await dialog.innerText()).includes('Pacote Profissional · R$ 750 deste exemplo'));
+  assert((await dialog.getByRole('button', { name: /^Usar este modelo/ }).innerText()).includes('Profissional · R$ 750'), 'pacote e preço no botão');
   const cardClass = await dialog.locator('[aria-roledescription=prévia]').getAttribute('class');
   await dialog.getByRole('button', { name: 'Usar este modelo' }).click();
   await page.waitForURL(/\/criar\/$/);
@@ -235,12 +249,13 @@ await scenario('Exemplo com rascunho: abrir não mexe no rascunho; usar pede con
   assert.equal(await page.getByRole('button', { name: 'Recuperar minha versão anterior' }).count(), 0);
 });
 
-await scenario('Perguntas: 5 primeiras e todas as 14 pedidas', async (page) => {
+await scenario('Perguntas: 6 prioritárias primeiro e todas as 12', async (page) => {
   await page.goto(URL);
   const list = page.locator('#lista-perguntas summary');
-  assert.equal(await list.count(), 5);
+  assert.equal(await list.count(), 6);
+  assert.equal(await list.first().innerText(), 'A prévia grátis já é o meu site?');
   await page.getByRole('button', { name: /Ver todas as perguntas/ }).click();
-  assert.equal(await list.count(), 14);
+  assert.equal(await list.count(), 12);
   const all = await page.locator('#lista-perguntas').textContent();
   for (const s of ['Existe mensalidade?', 'Quem fica com o domínio e os acessos?', '3 a 12 dias úteis', 'Domínio (endereço do site)']) assert(all.includes(s), s);
 });
@@ -348,7 +363,10 @@ await scenario('Serviços locais (ar-condicionado): obrigatórios, prévia pront
   assert((await page.locator('[class*=where]').innerText()).includes('Escolha 1 de 6: Pacote'));
   assert.equal(await page.getByText('Selecionado', { exact: true }).count(), 1, 'o pacote atual marcado, em texto');
   assert((await page.locator('main').innerText()).includes('Sua prévia está no Essencial — R$ 500 no total.'), 'pacote inicial explícito');
-  for (const n of ['Essencial', 'Profissional', 'Completo']) assert(await page.getByRole('heading', { name: n, exact: true }).isVisible(), n);
+  assert((await page.locator('[class*=priceBar]').innerText()).includes('Pacote inicial: você pode mudar, e nada é contratado agora.'));
+  for (const n of ['Essencial', 'Profissional', 'Completo']) assert(await pkgRadio(page, n).isVisible(), n);
+  assert.equal(await pkgRadio(page, 'Essencial').getAttribute('aria-checked'), 'true', 'sem upgrade pago pré-selecionado');
+  assert.equal(await page.locator('[class*=pkgBenefits]').count(), 1, 'detalhes só do pacote selecionado');
   await next(page);
   assert.equal(await title(page), Q.estilo);
   assert.equal(await page.getByRole('radio', { name: /Sugerido|Moderno|Minimalista|Tecnológico/ }).count() >= 3, true);
@@ -453,7 +471,7 @@ await scenario('Beleza: agendamento, galeria pede o Profissional antes de mudar 
   await box.getByRole('button', { name: 'Mudar para o Profissional' }).click();
   assert.equal(await price(page), 'R$ 750');
   assert(await page.getByRole('checkbox', { name: /Galeria de fotos/ }).isChecked());
-  assert((await preview(page).innerText()).includes('até 8 imagens'));
+  assert((await preview(page).innerText()).includes('até 8 fotos'));
   await next(page);
   assert((await waMessage(page)).includes('Profissional — R$ 750'));
   const ch = (await allEvents(page)).find((e) => e.event === 'package_changed');
@@ -478,7 +496,7 @@ await scenario('Produtos: recomendação do Completo só com escolha; trocar par
   await page.getByRole('button', { name: 'Alterar pacote' }).first().click();
   const dlg = page.locator('dialog[open]');
   assert.equal(await dlg.getByText('Selecionado', { exact: true }).count(), 1);
-  await dlg.getByRole('button', { name: 'Escolher Essencial' }).click();
+  await pkgRadio(dlg, 'Essencial').click();
   const confirm = dlg.locator('[role=alertdialog]');
   assert((await confirm.innerText()).includes('Vitrine de produtos'));
   assert((await confirm.innerText()).includes('Trocar para o Essencial — R$ 500 no total?'), 'novo preço antes de confirmar');
@@ -494,10 +512,10 @@ await scenario('Produtos: recomendação do Completo só com escolha; trocar par
   assert.equal(await price(page), 'R$ 1.000', 'desfazer a troca de pacote');
   assert(await page.getByRole('checkbox', { name: /Vitrine de produtos/ }).isChecked());
   await page.getByRole('button', { name: 'Alterar pacote' }).first().click();
-  await dlg.getByRole('button', { name: 'Escolher Essencial' }).click();
+  await pkgRadio(dlg, 'Essencial').click();
   await dlg.locator('[role=alertdialog]').getByRole('button', { name: 'Trocar para o Essencial' }).click();
   await page.getByRole('button', { name: 'Alterar pacote' }).first().click();
-  await dlg.getByRole('button', { name: 'Escolher Completo' }).click();
+  await pkgRadio(dlg, 'Completo').click();
   assert.equal(await price(page), 'R$ 1.000');
   await page.getByRole('button', { name: 'Restaurar no Completo' }).click();
   assert(await page.getByRole('checkbox', { name: /Vitrine de produtos/ }).isChecked(), 'restaurado sem preencher de novo');
@@ -542,6 +560,7 @@ await scenario('Revisão: "Editar" volta para a escolha certa; objetivo muda sem
 await scenario('Revisão: copiar resumo, baixar o projeto e abrir o arquivo de volta (A20, A21)', async (page) => {
   await toSite(page);
   const msg = await waMessage(page);
+  await openSave(page);
   await page.getByRole('button', { name: 'Copiar resumo' }).click();
   await page.getByRole('status').filter({ hasText: 'Resumo copiado' }).waitFor({ timeout: 3000 }).catch(async () => {
     throw Error(`status: ${await page.getByRole('status').allInnerTexts()}`);
@@ -648,9 +667,11 @@ await scenario('Exemplos: filtro por segmento e composições próprias (imóvei
   await page.reload();
   await ready(page);
   const pv = (await preview(page).innerText()).toLowerCase();
-  assert(pv.includes('imóveis em destaque') && pv.includes('imóvel demonstrativo 1') && pv.includes('agendar visita pelo whatsapp'), 'o estilo pode deixar títulos em maiúsculas');
+  assert(pv.includes('imóveis em destaque') && pv.includes('casa com quintal') && pv.includes('agendar visita pelo whatsapp'), 'o estilo pode deixar títulos em maiúsculas');
+  assert(pv.includes('imóveis ilustrativos') && pv.includes('sem preços nem disponibilidade'), 'vitrine marcada como ilustrativa');
   assert(!/R\$\s?\d/.test(pv), 'sem preço de imóvel');
-  assert(pv.includes('foto do imóvel') && pv.includes('sua foto 1'), 'espaços de foto marcados');
+  for (const t of ['foto do imóvel', 'sua foto 1', 'item 1', 'foto do item']) assert(!pv.includes(t), `sem espaço vazio no exemplo: ${t}`);
+  assert(pv.includes('imagens ilustrativas') && pv.includes('até 8 fotos'), 'galeria ilustrativa com o tamanho escolhido no projeto');
 });
 
 await scenario('Projeto personalizado: orçamento separado e a prévia continua', async (page) => {
@@ -673,7 +694,7 @@ await scenario('Projeto personalizado: orçamento separado e a prévia continua'
 await scenario('Oito seções é o teto: a nona pede projeto personalizado, nunca passa de R$ 1.000', async (page) => {
   await toSite(page);
   await page.getByRole('button', { name: 'Alterar pacote' }).first().click();
-  await page.locator('dialog[open]').getByRole('button', { name: 'Escolher Completo' }).click();
+  await pkgRadio(page.locator('dialog[open]'), 'Completo').click();
   await toChoice(page, Q.secoes);
   for (const n of ['Informações de atendimento', 'Como funciona', 'Perguntas frequentes']) await page.getByRole('checkbox', { name: new RegExp(`^${n}`) }).check();
   assert.equal(await page.locator('main [role=alertdialog]').count(), 0);
@@ -709,6 +730,7 @@ await scenario('Compartilhar opções de layout: rótulo honesto, sem dados pess
     window.print = () => { window.__printed = true; };
   });
   await toSite(page);
+  await openSave(page);
   await page.getByRole('button', { name: 'Compartilhar opções de layout' }).click();
   assert((await page.getByRole('status').filter({ hasText: 'copiar' }).innerText()).includes('Não foi possível copiar'));
   const link = await page.getByLabel('Link das opções de layout').inputValue();
@@ -779,9 +801,10 @@ await scenario('Teclado: setas no grupo de opções e foco no título ao avança
   await next(page);
   await page.getByRole('button', { name: 'Personalizar meu site' }).click();
   assert.equal(await title(page), Q.pacote);
-  await page.getByRole('button', { name: 'Escolher Profissional' }).focus();
-  await page.keyboard.press('Enter');
-  assert.equal(await price(page), 'R$ 750', 'pacote escolhido pelo teclado');
+  await pkgRadio(page, 'Essencial').focus();
+  await page.keyboard.press('ArrowRight');
+  assert.equal(await price(page), 'R$ 750', 'pacote escolhido pelo teclado (setas)');
+  assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-checked')), 'true');
   await next(page);
   await next(page);
   assert.equal(await title(page), Q.cores);
@@ -834,14 +857,14 @@ for (const width of [360, 390, 430, 768]) {
     assert(!(await preview(page).isVisible()), 'nas escolhas, a prévia só abre quando a pessoa pede');
     // Os três nomes e preços à vista, sem rolagem lateral escondida.
     for (const [n, v] of [['Essencial', 'R$ 500'], ['Profissional', 'R$ 750'], ['Completo', 'R$ 1.000']]) {
-      const card = page.locator('li[class*=pkgOption]').filter({ has: page.getByRole('heading', { name: n, exact: true }) });
+      const card = pkgRadio(page, n);
       assert((await card.innerText()).includes(v), n);
       const cb = await card.boundingBox();
-      assert(cb.x >= 0 && cb.x + cb.width <= width, `${n} inteiro na largura`);
+      assert(cb.x >= 0 && cb.x + cb.width <= width && cb.height >= 44, `${n} inteiro na largura e fácil de tocar`);
     }
     await page.locator('main summary', { hasText: 'Comparar pacotes' }).click();
-    const table = await page.locator('main table').boundingBox();
-    assert(table.x + table.width <= width + 1, 'comparação cabe na tela');
+    const cmp = await page.locator(width < 560 ? 'main dl[class*=compareBlocks]' : 'main table').boundingBox();
+    assert(cmp.x + cmp.width <= width + 1, 'comparação cabe na tela (em blocos no celular)');
     await next(page);
     assert.equal(await title(page), Q.estilo);
     await next(page);
@@ -969,7 +992,7 @@ await scenario('IA digitando: gera direto do texto; falha preserva a descrição
   const edited = await preview(page).innerText();
   assert(!edited.includes('Detalhe dois da IA') && edited.includes('Detalhe um da IA'), 'descrição do serviço editado sai; as outras ficam');
   const ev = await allEvents(page);
-  assert.deepEqual(ev.filter((e) => e.event === 'ai_generate').map((e) => e.result), ['erro', 'ok']);
+  assert.deepEqual(ev.filter((e) => e.event === 'ai_generate').map((e) => e.result), ['iniciada', 'erro', 'iniciada', 'ok']);
   assert(!JSON.stringify(ev).match(/ar-condicionado|Clima/), 'eventos sem texto');
   await page.goto(URL_AI + 'privacidade/');
   assert((await page.locator('main').innerText()).includes('Google Gemini'));
@@ -993,7 +1016,7 @@ await scenario('Áudio: gravar, encerrar, revisar e gerar; nada de gerar durante
 
   // Gravação curta demais: nada é enviado; o texto continua disponível.
   await page.getByRole('button', { name: 'Gravar minha ideia' }).click();
-  await page.getByRole('button', { name: 'Encerrar gravação' }).click();
+  await page.getByRole('button', { name: 'Parar gravação' }).click();
   await page.locator('#erro-descricao').waitFor();
   assert((await page.locator('#erro-descricao').innerText()).includes('pelo menos 2 segundos'));
   assert.equal(bodies.length, 0);
@@ -1001,22 +1024,24 @@ await scenario('Áudio: gravar, encerrar, revisar e gerar; nada de gerar durante
   // Cancelar: descarta e volta, sem enviar.
   await page.locator('#descricao-ia').fill('Empresa Clima Sul.');
   await page.getByRole('button', { name: 'Gravar minha ideia' }).click();
-  await page.getByRole('button', { name: 'Encerrar gravação' }).waitFor();
+  await page.getByRole('button', { name: 'Parar gravação' }).waitFor();
   await page.getByRole('button', { name: 'Cancelar gravação' }).click();
   assert.equal(await page.locator('#descricao-ia').inputValue(), 'Empresa Clima Sul.', 'texto anterior preservado');
   assert.equal(bodies.length, 0, 'cancelar não envia');
 
   await page.getByRole('button', { name: 'Gravar minha ideia' }).click();
-  const stop = page.getByRole('button', { name: 'Encerrar gravação' });
+  const stop = page.getByRole('button', { name: 'Parar gravação' });
   await page.getByText('Gravando sua ideia…').waitFor();
-  assert.equal(await page.getByRole('button', { name: /Gerar minha prévia/ }).count(), 0, 'sem "Gerar" durante a gravação');
+  const waitGen = page.getByRole('button', { name: /Gerar minha prévia/ });
+  assert(await waitGen.isDisabled(), '"Gerar" desabilitado durante a gravação');
+  assert((await page.locator('#motivo-gerar').innerText()).includes('depois que você parar a gravação'), 'motivo ao lado do botão');
   assert.equal(await page.locator('#descricao-ia').count(), 0, 'um estado de cada vez');
   assert.equal(await page.locator('[data-bar=configurador]').count(), 0, 'nenhuma barra competindo');
   await page.waitForTimeout(2600);
   assert(/0:0[2-3]/.test(await page.locator('[class*=recClock]').innerText()), 'cronômetro');
   await stop.click();
   await page.getByText('Transcrevendo seu áudio…').waitFor();
-  assert.equal(await page.getByRole('button', { name: /Gerar minha prévia/ }).count(), 0, 'sem "Gerar" durante a transcrição');
+  assert(await page.getByRole('button', { name: /Gerar minha prévia/ }).isDisabled(), '"Gerar" desabilitado durante a transcrição');
   const micOn = await page.evaluate(() => window.__micLive ?? null);
   releaseTranscript();
   await page.waitForFunction(() => document.querySelector('#descricao-ia')?.value.includes('ar-condicionado'));
@@ -1171,6 +1196,221 @@ await scenario('IA: gerar de novo troca o segmento que a IA sugeriu, mas não o 
   assert.equal(replies.length, 0, 'a terceira resposta chegou');
   assert(await savedSegment('alimentacao'), 'segmento escolhido à mão continua');
 });
+
+/* ── Evolução comercial (landing mobile-first, exemplos preenchidos, correções) ── */
+
+await scenario('Pacote na apresentação: sem rascunho começa nele; com rascunho pergunta e não troca sozinho', async (page) => {
+  await page.goto(URL);
+  await page.getByRole('link', { name: 'Criar prévia com o Completo' }).click();
+  await page.waitForURL(/\/criar\//);
+  await ready(page);
+  const note = page.locator('[class*=notice][role=status]');
+  await note.waitFor();
+  assert((await note.innerText()).includes('Sua prévia começa no Completo — R$ 1.000. Nada é contratado agora'));
+  assert(!page.url().includes('pacote='), 'o endereço fica limpo (recarregar não repete)');
+  assert.equal((await stored(page)).pkg, 'completo');
+  let ev = await allEvents(page);
+  assert(ev.some((e) => e.event === 'start_click' && e.context === 'pacote' && e.package === 'completo'));
+  assert(ev.some((e) => e.event === 'package_selected' && e.package === 'completo' && e.source === 'apresentacao'));
+  await business(page);
+  await next(page); await next(page);
+  assert.equal(await title(page), Q.pronta);
+  const before = await stored(page);
+  // Com uma prévia em andamento: pergunta; "Continuar no Completo" não muda nada.
+  await page.goto(B + '?pacote=essencial');
+  await ready(page);
+  await page.getByRole('button', { name: 'Continuar no Completo' }).click();
+  const kept = await stored(page);
+  assert.equal(kept.pkg, 'completo'); assert.deepEqual(kept.sections, before.sections);
+  assert.equal(kept.name, 'Clima Sul');
+  // Aplicar o outro pacote só com confirmação.
+  await page.goto(B + '?pacote=profissional');
+  await ready(page);
+  assert(await page.getByText('Você já tem uma prévia no Completo. Aplicar o Profissional (R$ 750) a ela?').isVisible());
+  await page.getByRole('button', { name: 'Aplicar o Profissional' }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('mb.configurador.v4') || '{}').pkg === 'profissional');
+  assert.equal((await stored(page)).name, 'Clima Sul', 'nada do que foi feito se perde');
+});
+
+await scenario('Exemplos públicos preenchidos: sem "Sua foto", "Item 1" ou "Foto do item"; galeria no limite do pacote', async (page) => {
+  await page.goto(URL);
+  const cards = page.locator('#exemplos button[class*=exampleCard]');
+  const dialog = page.locator('dialog[open]');
+  const bad = ['sua foto', 'item 1', 'foto do item', 'foto do imóvel', 'imóvel demonstrativo'];
+  for (let i = 0; i < (await cards.count()); i++) {
+    const card = await cards.nth(i).innerText();
+    assert(/Pacote (Essencial|Profissional|Completo)/.test(card) && card.includes('Ver este exemplo'), 'cartão com pacote e ação');
+    assert((await cards.nth(i).locator('[class*=examplePurpose]').innerText()).length > 10, 'cartão com a finalidade');
+    await cards.nth(i).evaluate((e) => e.click());
+    for (const device of ['Computador', 'Celular']) {
+      await dialog.getByRole('group', { name: 'Ver o exemplo no' }).getByRole('button', { name: device }).click();
+      const t = (await dialog.locator('[aria-roledescription=prévia]').innerText()).toLowerCase();
+      for (const b of bad) assert(!t.includes(b), `${card.split('\n')[0]} (${device}): sem "${b}"`);
+    }
+    await page.keyboard.press('Escape');
+  }
+  await page.getByRole('button', { name: 'Ver este exemplo: Alimentação' }).click();
+  const food = (await dialog.innerText()).toLowerCase();
+  assert(food.includes('pacote completo') && food.includes('até 15 fotos') && !food.includes('até 8'), 'Completo com a galeria do Completo');
+  assert((await dialog.getByRole('button', { name: /^Usar este modelo/ }).innerText()).includes('Completo · R$ 1.000'));
+});
+
+await scenario('Celular 390px: exemplo abre na versão de celular de verdade, sem moldura nem rolagem lateral', async (page) => {
+  await page.goto(URL);
+  await page.getByRole('button', { name: 'Ver este exemplo: Imóveis e corretores' }).click();
+  const dialog = page.locator('dialog[open]');
+  assert.equal(await dialog.getByRole('button', { name: 'Celular' }).getAttribute('aria-pressed'), 'true', 'no celular abre a versão de celular');
+  const mob = dialog.locator('[class*=demoMobile] [aria-roledescription=prévia]');
+  await mob.waitFor();
+  const box = await mob.boundingBox();
+  assert(box.width >= 300 && box.width <= 390, `ocupa a largura da tela (${box.width})`);
+  assert.equal(await dialog.locator('[class*=phoneFrame], [class*=PhoneFrame]').count(), 0, 'sem moldura de celular dentro do celular');
+  assert.equal(await dialog.evaluate((d) => d.scrollWidth <= d.clientWidth + 1), true, 'sem rolagem lateral no exemplo');
+  assert(await dialog.getByRole('button', { name: /^Usar este modelo/ }).isVisible());
+  assert.equal(await scrollWidth(page), 390);
+}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+for (const [width, height] of [[360, 740], [390, 844], [430, 932]]) {
+  await scenario(`Apresentação ${width}px: título, preço e botão principal na primeira tela`, async (page) => {
+    await page.goto(URL);
+    const cta = await heroCta(page).boundingBox();
+    assert(cta.y + cta.height <= height, `botão principal visível sem rolar (${Math.round(cta.y + cta.height)} de ${height})`);
+    assert(cta.height >= 44, 'toque confortável');
+    assert(await page.getByText('Desenvolvimento de R$ 500 a R$ 1.000.').isVisible());
+    assert.equal(await scrollWidth(page), width);
+    const ev = await allEvents(page);
+    assert(ev.every((e) => e.device === 'celular'), 'eventos com a categoria do aparelho');
+    // Com um "Criar prévia com o …" à vista, o botão flutuante não duplica nem cobre.
+    await page.getByRole('link', { name: 'Criar prévia com o Profissional' }).scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => !document.querySelector('[data-float]')?.hasAttribute('data-shown'));
+  }, { viewport: { width, height }, isMobile: true, hasTouch: true });
+}
+
+for (const [width, height, label] of [[768, 1024, 'tablet'], [1024, 768, 'computador'], [1440, 900, 'computador'], [844, 390, 'celular deitado']]) {
+  await scenario(`${width}×${height} (${label}): apresentação e criação sem rolagem lateral`, async (page) => {
+    await page.goto(URL);
+    assert(await page.getByRole('heading', { level: 1 }).isVisible());
+    assert.equal(await scrollWidth(page), width);
+    assert.equal(await page.getByRole('link', { name: /^Criar prévia com o/ }).count(), 3);
+    await page.goto(B);
+    await ready(page);
+    assert.equal(await scrollWidth(page), width);
+    await business(page);
+    await next(page); await next(page);
+    assert.equal(await title(page), Q.pronta);
+    assert(await visible(page.getByRole('button', { name: 'Gostei assim — revisar e solicitar' })).isVisible());
+    assert.equal(await scrollWidth(page), width);
+  }, { viewport: { width, height }, isMobile: width === 844, hasTouch: width === 844 });
+}
+
+await scenario('Celular 390px: etapa em uma linha, pacote compacto e revisão com "Salvar ou compartilhar projeto"', async (page) => {
+  await page.goto(B);
+  await ready(page);
+  const menu = page.locator('[class*=stepMenu] summary');
+  assert(await menu.isVisible(), 'progresso compacto');
+  assert((await menu.innerText()).startsWith('Etapa 1 de 4'));
+  await business(page);
+  await next(page); await next(page);
+  await visible(page.getByRole('button', { name: 'Personalizar meu site' })).click();
+  assert.equal(await title(page), Q.pacote);
+  assert((await menu.innerText()).includes('Etapa 3 de 4'));
+  assert(await page.getByText('Pacote inicial: você pode mudar, e nada é contratado agora.').first().isVisible());
+  const group = page.getByRole('radiogroup', { name: 'Pacote' });
+  const gb = await group.boundingBox();
+  assert(gb.height < 200, `seletor compacto (${Math.round(gb.height)}px)`);
+  // Continuar sem mudar confirma o pacote inicial.
+  await next(page);
+  assert.equal(await title(page), Q.estilo);
+  assert.equal((await stored(page)).pkgChosen, true, 'continuar da etapa do pacote confirma a escolha');
+  assert.equal(await page.getByText('Pacote inicial: você pode mudar').count(), 0, 'depois da escolha, sem o aviso de pacote inicial');
+  await page.getByRole('button', { name: 'Voltar', exact: true }).click();
+  assert.equal(await title(page), Q.pacote);
+  await pkgRadio(page, 'Profissional').click();
+  assert.equal(await pkgRadio(page, 'Profissional').getAttribute('aria-checked'), 'true');
+  await menu.click();
+  await page.locator('[class*=stepMenu] ol ol button', { hasText: 'Seções' }).click();
+  await next(page);
+  assert.equal(await title(page), Q.revisao);
+  const save = page.locator('#salvar-compartilhar');
+  assert.equal(await save.evaluate((e) => e.open), false, 'ferramentas agrupadas e recolhidas');
+  await save.locator('summary').click();
+  for (const n of ['Copiar resumo', 'Baixar meu projeto', 'Salvar resumo em PDF']) assert(await save.getByRole('button', { name: n }).isVisible(), n);
+  assert.equal(await scrollWidth(page), 390);
+}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+await scenario('Reduzir e restaurar o pacote mantém a ordem das seções', async (page) => {
+  await page.goto(B);
+  const order = ['apresentacao', 'galeria', 'servicos', 'faq', 'vitrine', 'contato'];
+  await page.evaluate((sections) => localStorage.setItem('mb.configurador.v4', JSON.stringify({ version: 4, flow: 'guiado-v2', name: 'Ordem', segment: 'local', pkg: 'completo', pkgChosen: true, structureEdited: true, sections, step: 3 })), order);
+  await page.reload();
+  await ready(page);
+  await pkgRadio(page, 'Essencial').click();
+  await page.getByRole('button', { name: /^Trocar para o Essencial/ }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('mb.configurador.v4')).pkg === 'essencial');
+  assert.deepEqual((await stored(page)).sections, ['apresentacao', 'servicos', 'contato']);
+  await pkgRadio(page, 'Completo').click();
+  const restoreBtn = page.getByRole('button', { name: 'Restaurar no Completo' });
+  if (await restoreBtn.count()) await restoreBtn.click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('mb.configurador.v4')).sections.length === 6);
+  assert.deepEqual((await stored(page)).sections, order, 'mesma ordem de antes');
+});
+
+await scenario('WhatsApp: textos gerados não aparecem como escritos pela pessoa; referência igual à do arquivo', async (page) => {
+  await page.goto(B);
+  await page.evaluate(() => localStorage.setItem('mb.configurador.v4', JSON.stringify({ version: 4, flow: 'guiado-v2', name: 'Clima', segment: 'local', headline: 'Título que veio da IA', description: 'Frase da IA', services: ['A', 'B'], aiFilled: { name: 'Clima', segment: 'local', segmentOther: '' }, step: 9 })));
+  await page.reload();
+  await ready(page);
+  const msg = await waMessage(page);
+  assert(msg.includes('TEXTOS ESCOLHIDOS PARA A PRÉVIA'));
+  assert(!/QUE EU ESCREVI|EDITEI|Código do projeto/.test(msg));
+  const id = (await stored(page)).id;
+  assert(msg.includes(`Referência (a mesma do arquivo do projeto): ${id}`));
+});
+
+await scenario('Modelo de estética + descrição de imobiliária: o segmento acompanha a descrição', async (page) => {
+  const answer = { name: 'Clara Imóveis', segment: 'imoveis', segmentOther: '', service: 'Compra e venda de imóveis', objective: 'agendamento', headline: 'Encontre seu imóvel com orientação', description: 'Converse sobre compra e venda de imóveis.', services: ['Compra', 'Venda', 'Avaliação'], sections: ['servicos', 'sobre', 'processo'], extraSections: [], direction: 'sofisticado', palette: 'azul', brandColor: null, needs: [], previewCopy: { about: 'Corretora com atendimento próximo.', serviceDetails: ['a', 'b', 'c'], differentials: [], processSteps: [], faqQuestions: [] } };
+  await page.route('https://ia.test/preview', (route) => route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion: answer }) }));
+  await page.goto(URL_AI);
+  await page.getByRole('button', { name: 'Ver este exemplo: Beleza e estética' }).click();
+  await page.locator('dialog[open]').getByRole('button', { name: /^Usar este modelo/ }).click();
+  await page.waitForURL(/criar/);
+  await ready(page);
+  await visible(page.getByRole('button', { name: 'Editar minha descrição' })).click();
+  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
+  await page.locator('#descricao-ia').fill('Sou corretora de imóveis, ajudo famílias a comprar e vender imóveis e quero agendar visitas.');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('mb.configurador.v4') || '{}').segment === 'imoveis');
+  assert((await preview(page).innerText()).toLowerCase().includes('imóveis'), 'selo da prévia coerente');
+  assert(!(await waMessage(page).catch(() => '')).includes('Beleza e estética'));
+});
+
+await scenario('Segmento escolhido à mão diferente da descrição: a tela pergunta, sem trocar sozinha', async (page) => {
+  const reply = { name: '', segment: 'consultoria', segmentOther: '', service: '', objective: 'orcamento', headline: '', description: '', services: [], sections: [], extraSections: [], direction: 'essencial', palette: 'azul', brandColor: null, needs: [], previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] } };
+  await page.route('https://ia.test/preview', (route) => route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion: reply }) }));
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  await page.getByRole('button', { name: 'Prefiro escolher tudo passo a passo' }).click();
+  await page.getByRole('radio', { name: 'Alimentação' }).click();
+  await page.getByRole('button', { name: /Prefiro descrever/ }).click();
+  await page.getByRole('button', { name: 'Prefiro digitar' }).click().catch(() => {});
+  await page.locator('#descricao-ia').fill('Faço consultoria financeira para pequenas empresas e quero receber pedidos de diagnóstico.');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
+  const box = page.getByText(/Sua descrição parece de Consultoria/);
+  await box.waitFor();
+  assert.equal((await stored(page)).segment, 'alimentacao', 'não troca sozinho');
+  await page.getByRole('button', { name: 'Usar Consultoria' }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('mb.configurador.v4') || '{}').segment === 'consultoria');
+  assert.equal(await box.count(), 0);
+});
+
+await scenario('Navegador do Instagram: aviso sobre o microfone e opção de digitar', async (page) => {
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  assert(await page.getByText('No navegador do Instagram ou do Facebook, o microfone pode não funcionar.').isVisible());
+  assert(await page.getByRole('button', { name: 'Prefiro digitar' }).isVisible());
+}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 330.0.0.0' });
 
 /* ── Com receptor de pedidos ────────────────────────────────────────────── */
 

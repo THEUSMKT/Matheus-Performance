@@ -47,7 +47,7 @@ export function HeroShowcase() {
       data-showcase=""
       data-play={play ? '' : undefined}
       role="img"
-      aria-label="Exemplo ilustrativo montado pelo configurador: o site do Estúdio Forma no computador e no celular. Sua prévia em até 5 minutos."
+      aria-label="Exemplo ilustrativo montado pelo configurador: o site do Estúdio Forma no computador e no celular. Prévia grátis em poucos passos."
     >
       <noscript>
         <style>{'[data-showcase] *{animation-play-state:running!important}'}</style>
@@ -81,7 +81,7 @@ export function HeroShowcase() {
         </div>
 
         <span className={v.badge}>
-          <Clock3 /> Sua prévia em até 5 minutos
+          <Clock3 /> Prévia grátis em poucos passos
         </span>
       </div>
     </div>

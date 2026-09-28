@@ -24,7 +24,7 @@ export default function Privacidade() {
       <p>
         As escolhas da sua prévia — e o que você digitar, como nome da empresa, serviço, textos, observações e seu nome — ficam salvas apenas no
         armazenamento do seu próprio navegador, para você continuar de onde parou. A logo que você enviar para a prévia é reduzida e guardada
-        também só no navegador; ela não entra no link, na mensagem nem no pedido. Esses dados não são enviados a nenhum servidor pela página.
+        também só no navegador; ela não entra no link, na mensagem nem no pedido. A página só envia algo quando você pede: a descrição do negócio para montar a prévia (veja abaixo) e, se houver formulário de pedido, os dados que você preencher nele.
       </p>
       <p>
         Também guardamos no navegador, durante a visita, os parâmetros de campanha do endereço (como utm_source), já normalizados e sem dados

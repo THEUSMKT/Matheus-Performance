@@ -1774,47 +1774,6 @@
 }
 
 /* ── Pacotes: escolha, comparação, itens guardados, desfazer ───────────── */
-.pkgChoose {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-}
-@media (min-width: 760px) {
-  .pkgDialog .pkgChoose {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-.pkgOption {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  cursor: pointer;
-  transition: border-color 0.2s var(--ease, ease), box-shadow 0.2s ease, transform 0.2s ease;
-}
-.pkgOption:hover {
-  border-color: var(--line-strong);
-  box-shadow: 0 10px 26px -20px rgb(8 27 92 / 0.55);
-}
-.pkgOption[data-current] {
-  border-color: var(--blue);
-  box-shadow: inset 0 0 0 1px var(--blue), 0 14px 30px -22px rgb(7 97 253 / 0.8);
-  background: linear-gradient(180deg, #f3f7ff, #fff 60%);
-  cursor: default;
-}
-.pkgOption[data-current]::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.7) 50%, transparent 70%) no-repeat;
-  background-size: 250% 100%;
-  animation: pkgShine 0.9s ease-out 1;
-  pointer-events: none;
-}
 @keyframes pkgShine {
   from {
     background-position: 120% 0;
@@ -1834,7 +1793,6 @@
   gap: 6px;
 }
 .pkgBenefits svg,
-.pkgSelected svg,
 .avail svg,
 .compareCheck {
   flex: none;
@@ -1851,26 +1809,6 @@
   color: var(--ok);
   font-size: 13px;
   font-weight: 650;
-}
-.pkgPick {
-  width: 100%;
-  margin-top: 12px;
-}
-.pkgSelected {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 44px;
-  margin-top: 12px;
-  border-radius: var(--radius-sm);
-  background: var(--navy);
-  color: #fff;
-  font-weight: 700;
-}
-.pkgSelected svg {
-  margin-top: 0;
-  color: #fff;
 }
 .keepPick {
   display: grid;
@@ -2043,15 +1981,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pkgOption,
   .undo,
   .keptEdits {
     transition: none;
     animation: none;
-  }
-  .pkgOption[data-current]::after {
-    animation: none;
-    display: none;
   }
 }
 
@@ -2163,4 +2096,252 @@
   .priceMain strong {
     font-size: 16px;
   }
+}
+
+/* Comparação no celular: um bloco por recurso, pacotes em linhas. */
+.compareBlocks {
+  display: none;
+  margin: 0;
+}
+@media (max-width: 559px) {
+  .compareWrap {
+    display: none;
+  }
+  .compareBlocks {
+    display: grid;
+    gap: 10px;
+  }
+}
+.compareBlock {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.compareBlock dt {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 750;
+}
+.compareBlock dd {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 3px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.compareBlock dd span {
+  color: var(--muted);
+}
+.compareBlock dd b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-align: right;
+}
+.compareBlock dd[data-off] b {
+  color: var(--muted);
+  font-weight: 500;
+}
+.compareBlock dd[data-current] span,
+.compareBlock dd[data-current] b {
+  color: var(--navy);
+  font-weight: 800;
+}
+.compareBlock .compareCheck {
+  margin: 0;
+}
+
+/* Gerar desabilitado durante gravação e transcrição, com o motivo ao lado. */
+.waitGenerate {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+}
+.waitGenerate button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Seletor compacto de pacotes ────────────────────────────────────────── */
+.pkgPicker {
+  margin-top: 14px;
+}
+.pkgSeg {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: var(--tint);
+}
+.pkgSeg button {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: 68px;
+  padding: 8px 4px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--navy);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.pkgSeg button:hover {
+  background: rgb(255 255 255 / 0.7);
+}
+.pkgSeg button[aria-checked='true'] {
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 8px 18px -12px rgb(8 27 92 / 0.8);
+}
+.pkgSeg button[data-pending] {
+  border-color: var(--blue);
+  background: #fff;
+}
+.pkgSegName {
+  font-size: 14px;
+  font-weight: 750;
+}
+.pkgSegPrice {
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.pkgSegCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+.pkgSegCheck svg {
+  width: 12px;
+  height: 12px;
+}
+.pkgDetail {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.pkgDetailFor {
+  font-size: 15px;
+}
+.pkgInitial {
+  flex-basis: 100%;
+  padding-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pkgSeg button {
+    transition: none;
+  }
+}
+
+/* ── Progresso no celular: uma linha que abre a lista de etapas ─────────── */
+.stepMenu {
+  display: none;
+}
+@media (max-width: 559px) {
+  .phases,
+  .choices,
+  .where {
+    display: none;
+  }
+  .progress {
+    justify-content: flex-end;
+  }
+  .stepMenu {
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+  }
+  .stepMenu summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: 14px;
+    list-style: none;
+    cursor: pointer;
+  }
+  .stepMenu summary::-webkit-details-marker {
+    display: none;
+  }
+  .stepMenuHint {
+    flex: none;
+    color: var(--blue-ink);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .stepMenu[open] .stepMenuHint {
+    visibility: hidden;
+  }
+  .stepMenu > ol {
+    display: grid;
+    gap: 2px;
+    padding: 0 12px 10px;
+  }
+  .stepMenu li > ol {
+    display: grid;
+    padding-left: 18px;
+  }
+  .stepMenu button,
+  .stepMenu li > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    border: 0;
+    background: none;
+    color: var(--navy);
+    font: inherit;
+    font-size: 15px;
+    text-align: left;
+  }
+  .stepMenu button {
+    color: var(--blue-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .stepMenu [aria-current='step'] {
+    font-weight: 800;
+    text-decoration: none;
+    color: var(--navy);
+  }
+  .stepMenu svg {
+    width: 16px;
+    height: 16px;
+    color: var(--ok);
+  }
+}
+
+.projectGoal {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.saveGroup {
+  margin-top: 16px;
+}
+.saveGroup .tools {
+  margin-top: 0;
 }

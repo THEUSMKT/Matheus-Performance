@@ -6,14 +6,17 @@
    Estados explícitos — um de cada vez, com uma ação principal por vez:
    escolher  → "Gravar minha ideia" ou "Prefiro digitar"
    iniciando → pedindo o microfone (só depois do clique em gravar)
-   gravando  → "Encerrar gravação" (vermelho) e "Cancelar gravação"; nada de
-               "Gerar" nesta hora
-   transcrevendo → "Transcrevendo seu áudio…", sem botões
+   gravando  → tempo, "Parar gravação" e "Cancelar gravação"; "Gerar minha
+               prévia" aparece desabilitado, com o motivo ao lado
+   transcrevendo → "Transcrevendo seu áudio…"; gerar continua desabilitado
    texto     → campo editável + "Gerar minha prévia" (e "Gravar novamente")
    A geração em si mora no Builder (sobrevive à troca de etapa); aqui só se
    mostra "Montando sua prévia…" e o erro, sem perder o texto.
-   O áudio não é guardado; o microfone é liberado ao encerrar, cancelar,
-   sair da etapa ou fechar a página.
+   O áudio não é guardado; o microfone é liberado ao parar, cancelar, sair
+   da etapa ou fechar a página. Se a pessoa troca de aplicativo no meio da
+   gravação (comum no celular), a gravação para e o que foi gravado segue
+   para a transcrição. Nos navegadores internos do Instagram e do Facebook,
+   um aviso explica que o microfone pode não funcionar e oferece digitar.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, LoaderCircle, Mic, Sparkles, Square } from 'lucide-react';
@@ -27,6 +30,8 @@ import b from './Builder.module.css';
 
 /** Descrição em rascunho, só nesta aba (sessionStorage). */
 export const DRAFT_KEY = 'bp.descricao.v1';
+/** Navegador interno de app (Instagram, Facebook): o microfone costuma falhar ali. */
+const inAppBrowser = () => typeof navigator !== 'undefined' && /Instagram|FBAN|FBAV|FB_IAB|FBIOS/i.test(navigator.userAgent);
 const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 type AudioProblem = keyof typeof audioReasonText;
 export type DescribePhase = 'escolher' | 'iniciando' | 'gravando' | 'transcrevendo' | 'texto';
@@ -53,6 +58,7 @@ export function Describe({
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [seconds, setSeconds] = useState(0);
+  const [inApp, setInApp] = useState(false);
   const field = useRef<HTMLTextAreaElement>(null);
   const mainButton = useRef<HTMLButtonElement>(null);
   const textNow = useRef(text);
@@ -75,6 +81,7 @@ export function Describe({
   useEffect(() => {
     const ok = audioSupported();
     setAudioOk(ok);
+    setInApp(inAppBrowser());
     let draft = '';
     try {
       draft = sessionStorage.getItem(DRAFT_KEY) ?? '';
@@ -86,10 +93,18 @@ export function Describe({
     alive.current = true;
     const onHide = () => cancelRecording();
     window.addEventListener('pagehide', onHide);
+    // Trocou de aplicativo no meio da gravação: para e aproveita o que foi gravado.
+    const onVisibility = () => {
+      if (document.visibilityState !== 'hidden' || recorder.current?.state !== 'recording') return;
+      setStatus('A gravação parou quando você saiu da página. Confira o texto antes de gerar.');
+      stopRecording();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       // Saiu da etapa no meio da gravação: descarta e libera o microfone.
       alive.current = false;
       window.removeEventListener('pagehide', onHide);
+      document.removeEventListener('visibilitychange', onVisibility);
       cancelRecording();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,6 +276,12 @@ export function Describe({
             <Keyboard aria-hidden="true" /> Prefiro digitar
           </button>
           <p className={b.micNote}>O microfone só é usado depois que você tocar em gravar.</p>
+          {inApp && (
+            <p className={b.micNote} role="note">
+              No navegador do Instagram ou do Facebook, o microfone pode não funcionar. Se não funcionar, toque em “Prefiro digitar” ou abra esta página no
+              navegador do celular (menu ⋯ → Abrir no navegador).
+            </p>
+          )}
         </div>
       )}
 
@@ -283,8 +304,8 @@ export function Describe({
             Fale o que a empresa faz, para quem e o que as pessoas devem fazer no site.
             {text.trim() ? ' O novo áudio entra depois do texto que você já tem.' : ''}
           </p>
-          <button ref={mainButton} type="button" id="encerrar-gravacao" className={b.stopButton} onClick={stopRecording} disabled={phase === 'iniciando'}>
-            <Square aria-hidden="true" /> Encerrar gravação
+          <button ref={mainButton} type="button" id="parar-gravacao" className={b.stopButton} onClick={stopRecording} disabled={phase === 'iniciando'}>
+            <Square aria-hidden="true" /> Parar gravação
           </button>
           <button type="button" className={b.textButton} onClick={cancelByUser}>
             Cancelar gravação
@@ -295,6 +316,18 @@ export function Describe({
       {phase === 'transcrevendo' && (
         <div className={b.working} role="status">
           <LoaderCircle aria-hidden="true" className={b.spin} /> Transcrevendo seu áudio…
+        </div>
+      )}
+
+      {(phase === 'iniciando' || phase === 'gravando' || phase === 'transcrevendo') && (
+        // Gerar fica à vista, mas só funciona com o texto pronto — e diz por quê.
+        <div className={b.waitGenerate}>
+          <button type="button" className={`${s.primary} ${b.wideBtn}`} disabled aria-describedby="motivo-gerar">
+            <Sparkles aria-hidden="true" /> Gerar minha prévia
+          </button>
+          <p id="motivo-gerar" className={b.micNote}>
+            {phase === 'transcrevendo' ? 'Disponível quando o texto do áudio aparecer para você conferir.' : 'Disponível depois que você parar a gravação e conferir o texto.'}
+          </p>
         </div>
       )}
 
@@ -360,8 +393,8 @@ export function Describe({
         </p>
       )}
       <p className={b.privacy} id="dica-descricao">
-        {audioOk ? 'O texto (e o áudio, que só serve para virar texto) é enviado' : 'O texto é enviado'} ao Google Gemini só para montar a prévia e não fica guardado em
-        nenhum servidor. Não inclua telefone, e-mail ou dados pessoais. <a href={asset('/privacidade/')}>Privacidade</a>
+        {audioOk ? 'O texto (e o áudio, que só serve para virar texto) passa' : 'O texto passa'} pelo nosso servidor, que não o guarda, e vai ao Google Gemini só para
+        montar a prévia, conforme os termos do Google. Não inclua telefone, e-mail ou dados pessoais. <a href={asset('/privacidade/')}>Privacidade</a>
       </p>
     </section>
   );

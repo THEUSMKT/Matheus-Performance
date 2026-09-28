@@ -208,6 +208,7 @@ export function StepSite({
   return (
     <>
       <p className={b.projectName}>Site de {content.name}</p>
+      <p className={b.projectGoal}>Objetivo: {objectiveOf(p).name}</p>
 
       <div className={b.invest}>
         <span className={b.investLabel}>Desenvolvimento</span>
@@ -285,14 +286,9 @@ export function StepSite({
                     Seu projeto tem muitos textos: a mensagem leva um resumo e avisa que o resto está no arquivo. Use “Baixar meu projeto” e anexe o arquivo na conversa.
                   </p>
                 )}
-                <div className={b.requestTools}>
-                  <button type="button" className={b.toolButton} onClick={copySummary}>
-                    <Copy aria-hidden="true" /> Copiar resumo
-                  </button>
-                  <button type="button" className={b.toolButton} onClick={downloadProject}>
-                    <Download aria-hidden="true" /> Baixar meu projeto
-                  </button>
-                </div>
+                <p className={b.muted} style={{ marginTop: 4 }}>
+                  Se o WhatsApp não abrir, use “Copiar resumo” em “Salvar ou compartilhar projeto”, abaixo.
+                </p>
                 <details className={s.details}>
                   <summary>Ver a mensagem</summary>
                   <div className={s.detailsBody}>
@@ -319,26 +315,34 @@ export function StepSite({
         </button>
       </div>
 
-      <div className={b.tools}>
-        {leadMode !== 'whatsapp' && (
-          <button type="button" className={b.toolButton} onClick={downloadProject}>
-            <Download aria-hidden="true" /> Baixar meu projeto
-          </button>
-        )}
-        <button type="button" className={b.toolButton} onClick={savePdf}>
-          Salvar resumo em PDF
-        </button>
-        <button type="button" className={b.toolButton} onClick={copyLink}>
-          Compartilhar opções de layout
-        </button>
-        <label className={b.toolButton}>
-          <FolderOpen aria-hidden="true" /> Abrir arquivo de projeto
-          <input type="file" accept="application/json,.json" className={s.srOnly} style={{ fontSize: 16 }} onChange={(ev) => (openFile(ev.target.files?.[0]), (ev.target.value = ''))} />
-        </label>
-      </div>
-      <p className={b.muted} style={{ marginTop: 6 }}>
-        O link leva estilo, cores, objetivo e seções. Nome, textos, logo e imagens ficam só neste dispositivo.
-      </p>
+      {/* Ferramentas secundárias num só lugar, para não competir com "Solicitar desenvolvimento". */}
+      <details className={`${s.details} ${b.saveGroup}`} id="salvar-compartilhar" open={lean || undefined}>
+        <summary>Salvar ou compartilhar projeto</summary>
+        <div className={s.detailsBody}>
+          <div className={b.tools}>
+            <button type="button" className={b.toolButton} onClick={copySummary}>
+              <Copy aria-hidden="true" /> Copiar resumo
+            </button>
+            <button type="button" className={b.toolButton} onClick={downloadProject}>
+              <Download aria-hidden="true" /> Baixar meu projeto
+            </button>
+            <button type="button" className={b.toolButton} onClick={savePdf}>
+              Salvar resumo em PDF
+            </button>
+            <button type="button" className={b.toolButton} onClick={copyLink}>
+              Compartilhar opções de layout
+            </button>
+            <label className={b.toolButton}>
+              <FolderOpen aria-hidden="true" /> Abrir arquivo de projeto
+              <input type="file" accept="application/json,.json" className={s.srOnly} style={{ fontSize: 16 }} onChange={(ev) => (openFile(ev.target.files?.[0]), (ev.target.value = ''))} />
+            </label>
+          </div>
+          <p className={b.muted} style={{ marginTop: 6 }}>
+            O projeto fica salvo só neste aparelho. “Baixar meu projeto” gera um arquivo com tudo, para anexar na conversa se precisar. O link de opções leva
+            estilo, cores, objetivo e seções — nome, textos, logo e imagens não.
+          </p>
+        </div>
+      </details>
       {status && (
         <p className={`${s.status} ${status.ok ? s.statusOk : s.statusError}`} role="status">
           {status.text}

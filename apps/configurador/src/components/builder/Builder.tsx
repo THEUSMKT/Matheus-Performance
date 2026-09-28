@@ -16,7 +16,7 @@
    ========================================================================== */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowRight, Check, ChevronLeft, Eye, LoaderCircle, Maximize2, MessageCircle, Monitor, Pencil, Smartphone, X } from 'lucide-react';
-import { brl, customNeeds, packageById, rank, type PackageId } from '@/config/packages';
+import { brl, customNeeds, packageById, packageOrder, rank, type PackageId } from '@/config/packages';
 import { aiEnabled, integrations } from '@/config/integrations';
 import {
   CHOICE_STEPS,
@@ -46,7 +46,7 @@ import { Brand, asset } from '../landing/Chrome';
 import { ConfirmBox, type Pending } from '../landing/Controls';
 import { DesktopFrame, PhoneFrame } from '../landing/DemoFrames';
 import { useTyping } from '../landing/hooks';
-import { useNarrow, useProject } from '../landing/useProject';
+import { canResume, useNarrow, useProject } from '../landing/useProject';
 import { SitePreview } from '../preview/SitePreview';
 import { PackageDialog, PriceBar, StepPackage } from './Packages';
 import { PrintSummary, RequestButton, StepSite } from './Site';
@@ -97,6 +97,10 @@ export default function Builder() {
   const [undo, setUndo] = useState<{ label: string; project: Project } | null>(null);
   /** Nova geração que manteve textos editados à mão: permite usar os novos. */
   const [keptEdits, setKeptEdits] = useState<{ base: Project; sug: Suggestion } | null>(null);
+  /** A descrição parece de outro segmento que o escolhido à mão: a pessoa decide. */
+  const [segConflict, setSegConflict] = useState<{ suggested: string; other: string } | null>(null);
+  /** Lista de etapas do celular: fecha ao trocar de etapa. */
+  const stepMenu = useRef<HTMLDetailsElement>(null);
   /** Seção sendo gerada de novo (só ela muda) e o erro, se houver. */
   const [regen, setRegen] = useState<{ field: RegenField | null; error: string }>({ field: null, error: '' });
   /** Valor da escolha ao entrar na etapa: sem mudança, o botão diz "Manter sugestão". */
@@ -123,8 +127,42 @@ export default function Builder() {
     }
   }, []);
 
+  // Botão de um pacote na apresentação (?pacote=profissional): começa nele. Com
+  // uma prévia em andamento, pergunta antes — nada é apagado nem trocado sozinho.
+  const pkgParam = useRef(false);
+  useEffect(() => {
+    if (!ready || pkgParam.current) return;
+    pkgParam.current = true;
+    const params = new URLSearchParams(location.search);
+    const want = packageOrder.find((id) => id === params.get('pacote'));
+    if (!params.has('pacote')) return;
+    params.delete('pacote');
+    history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
+    if (!want || want === p.pkg) {
+      if (want) replace({ ...p, pkgChosen: true });
+      return;
+    }
+    const target = packageById(want);
+    if (!hasProgress || !canResume(p)) {
+      replace({ ...switchPackage(p, want).project, step: p.step });
+      track('package_selected', { package: want, source: 'apresentacao' });
+      setNotice(`Sua prévia começa no ${target.name} — ${brl(target.price)}. Nada é contratado agora; você pode mudar depois.`);
+      return;
+    }
+    const current = currentPackage(p);
+    setPending({
+      title: `Você já tem uma prévia no ${current.name}. Aplicar o ${target.name} (${brl(target.price)}) a ela?`,
+      detail: 'Nada do que você fez é apagado. Se o pacote for menor, o que não couber fica guardado no rascunho e dá para desfazer.',
+      confirmLabel: `Aplicar o ${target.name}`,
+      cancelLabel: `Continuar no ${current.name}`,
+      apply: () => applyPackage(want, switchPackage(pNow.current, want).project, 'apresentacao'),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+
   // Ao trocar de etapa: topo da página e foco no título (teclado e leitor de tela).
   useEffect(() => {
+    if (stepMenu.current) stepMenu.current.open = false;
     const target = focusAfter.current;
     if (!target) return;
     focusAfter.current = null;
@@ -202,7 +240,8 @@ export default function Builder() {
     const ready = narrow && to === STEP.pronta;
     setView(ready ? 'preview' : 'edit');
     focusAfter.current = ready ? 'ready' : 'heading';
-    replace({ ...p, step: to });
+    // Avançar da etapa do pacote confirma a escolha (deixa de ser "pacote inicial").
+    replace({ ...p, step: to, ...(p.step === STEP.pacote && to > p.step ? { pkgChosen: true } : {}) });
   }
 
   const back = () => {
@@ -215,7 +254,7 @@ export default function Builder() {
   /** Troca de pacote escolhida pelo visitante. */
   function applyPackage(to: PackageId, next: Project, source: string) {
     const from = p.pkg;
-    replace({ ...next, step: p.step });
+    replace({ ...next, step: p.step, pkgChosen: true });
     track('package_selected', { package: to, source });
     if (from !== to) track('package_changed', { from, to, source });
     setNotice('');
@@ -258,6 +297,9 @@ export default function Builder() {
     const text = result.suggestion.previewCopy[field];
     if (!text || (Array.isArray(text) && !text.length)) return setRegen({ field: null, error: 'A sugestão veio vazia. Tente de novo.' });
     const now = pNow.current;
+    // Editou esta seção enquanto a sugestão era gerada: a edição mais recente vale.
+    if (JSON.stringify(now.previewCopy[field]) !== JSON.stringify(before.previewCopy[field]))
+      return setRegen({ field: null, error: 'Você mudou este texto enquanto a sugestão era gerada. Mantivemos o seu texto.' });
     setUndo({ label: `Nova sugestão para “${label}”.`, project: now });
     replace({ ...now, previewCopy: { ...now.previewCopy, [field]: text }, edited: now.edited.filter((f) => f !== field) });
     setRegen({ field: null, error: '' });
@@ -349,6 +391,7 @@ export default function Builder() {
     setGenerating(true);
     setGenError('');
     setLate(null);
+    track('ai_generate', { result: 'iniciada' });
     const result = await requestSuggestion(withDetails(text, pNow.current.details), pNow.current.pkg, integrations.aiEndpoint);
     setGenerating(false);
     if (!result.ok) {
@@ -378,15 +421,19 @@ export default function Builder() {
     setAiNotes(notes);
     // Textos editados à mão ficaram; a pessoa pode trocar pelos novos.
     setKeptEdits(before.edited.length ? { base: before, sug } : null);
+    // Segmento escolhido à mão foi mantido, mas a descrição aponta outro: pergunta, sem trocar sozinho.
+    setSegConflict(sug.segment && next.segment !== sug.segment ? { suggested: sug.segment, other: sug.segmentOther } : null);
     // Uma nova geração sobre uma prévia existente pode ser desfeita.
     setUndo(before.aiFilled.segment || before.identitySet ? { label: 'Nova prévia montada.', project: before } : null);
     setLate(null);
     setErrors({});
     setPending(null);
     setNotice('');
-    setView(narrow ? 'preview' : 'edit');
+    // Com uma decisão pendente (segmento), fica na tela do resultado para o aviso não se perder.
+    const direct = narrow && !(sug.segment && next.segment !== sug.segment);
+    setView(direct ? 'preview' : 'edit');
     // Foco no aviso "Sua prévia está pronta" (no celular, dentro da prévia), depois de renderizar.
-    focusAfter.current = narrow ? 'ready' : 'heading';
+    focusAfter.current = direct ? 'ready' : 'heading';
     replace(next);
     track('preview_view', { source: 'ia', step: next.step + 1 });
   }
@@ -504,6 +551,19 @@ export default function Builder() {
         narrow={narrow}
         onPersonalize={() => go(STEP.pacote)}
         keptEdits={keptEdits ? keptEdits.base.edited : []}
+        segConflict={
+          segConflict && p.segment !== segConflict.suggested
+            ? {
+                suggested: segConflict.suggested,
+                onUse: () => {
+                  setUndo({ label: 'Segmento trocado.', project: p });
+                  replace({ ...p, segment: segConflict.suggested, segmentOther: segConflict.other, aiFilled: { ...p.aiFilled, segment: segConflict.suggested } });
+                  setSegConflict(null);
+                },
+                onKeep: () => setSegConflict(null),
+              }
+            : null
+        }
         onUseNewTexts={() => {
           if (!keptEdits) return;
           const next = applySuggestion(keptEdits.base, keptEdits.sug, { replaceEdited: true });
@@ -602,7 +662,7 @@ export default function Builder() {
       bar = (
         <>
           <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={showPreview}>
-            <Eye aria-hidden="true" /> Ver meu site
+            <Eye aria-hidden="true" /> Ver minha prévia
           </button>
           <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.pacote)}>
             Personalizar meu site
@@ -700,6 +760,42 @@ export default function Builder() {
                 </span>
               )}
             </div>
+            {/* Celular: uma linha com a etapa, que abre a lista de etapas (sem fileiras espremidas). */}
+            <details className={b.stepMenu} ref={stepMenu}>
+              <summary>
+                <span>
+                  Etapa {phase + 1} de {phases.length}: <strong>{phases[phase].name}</strong>
+                  {choiceIndex >= 0 && ` · ${steps[step]} (${choiceIndex + 1} de ${CHOICE_STEPS.length})`}
+                </span>
+                <span className={b.stepMenuHint}>Ver etapas</span>
+              </summary>
+              <ol>
+                {phases.map((ph, i) => (
+                  <li key={ph.name}>
+                    {i < phase && !busy ? (
+                      <button type="button" onClick={() => go(phaseTarget[i], { validate: false })}>
+                        <Check aria-hidden="true" /> {ph.name}
+                      </button>
+                    ) : (
+                      <span aria-current={i === phase ? 'step' : undefined}>
+                        {i + 1}. {ph.name}
+                      </span>
+                    )}
+                    {i === 2 && (choiceIndex >= 0 || step === STEP.revisao) && (
+                      <ol>
+                        {CHOICE_STEPS.map((cs, j) => (
+                          <li key={cs}>
+                            <button type="button" aria-current={cs === step ? 'step' : undefined} onClick={() => go(cs, { validate: false })}>
+                              {j + 1}. {steps[cs]}
+                            </button>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            </details>
             <p className={b.where} aria-live="polite">
               {phases[phase].name}
               {choiceIndex >= 0 && ` · Escolha ${choiceIndex + 1} de ${CHOICE_STEPS.length}: ${steps[step]}`}
@@ -845,7 +941,10 @@ export default function Builder() {
                   <h2 ref={readyHeading} tabIndex={-1} id="pronta-titulo">
                     <Check aria-hidden="true" /> Sua prévia está pronta
                   </h2>
-                  <p>Role para ver o site inteiro. Depois, personalize.</p>
+                  <p>Role para ver o site inteiro. Depois, personalize — ou siga direto para o pedido.</p>
+                  <button type="button" className={b.textButton} onClick={() => go(STEP.revisao)}>
+                    Gostei assim — revisar e solicitar
+                  </button>
                 </div>
               )}
               <div className={b.previewTop}>

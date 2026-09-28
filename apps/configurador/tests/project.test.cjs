@@ -216,7 +216,7 @@ test('Nome e imagem de exemplo só aparecem quando combinam com o serviço', () 
   assert.equal(at('local', 'Manutenção automotiva').image, 'auto');
   assert.equal(at('local', 'Serviços para veículos').image, 'auto');
   assert.equal(at('local', 'Atendimento', { services: ['Revisão', 'Troca de óleo', 'Freios'] }).image, 'auto', 'a lista de serviços também indica o ramo');
-  assert.equal(at('local', 'Pintura', { services: ['Banho e tosa'] }).image, 'reparos', 'o serviço principal tem prioridade');
+  assert.equal(at('local', 'Pintura', { services: ['Banho e tosa'] }).image, 'servico-pintura', 'o serviço principal tem prioridade');
   assert(/NÃO é agenda/.test(ai.systemPrompt()) && /NÃO é loja/.test(ai.systemPrompt()), 'agendar pelo WhatsApp não vira agenda própria');
   for (const seg of model.segments) {
     for (const q of seg.quick) assert.equal(at(seg.id, q).name, seg.demo, `${seg.id}: "${q}" combina com o exemplo`);
@@ -257,7 +257,7 @@ test('Ordem das seções: Subir e Descer, com apresentação e contato fixos', (
 test('Mensagem do WhatsApp traz tudo o que o atendimento precisa (§17)', () => {
   const p = withLead(model.normalizeProject({ ...base(), service: 'Instalação de ar-condicionado', pkg: 'profissional', form: true, sections: ['apresentacao', 'servicos', 'galeria', 'faq', 'contato'], notes: 'Já tenho domínio', direction: 'elegante', custom: '#112233' }), { name: 'Ana', deadline: 'mes', decision: 'junto' });
   const msg = model.projectMessage(p, 'google/cpc', { logo: true });
-  for (const s of ['Olá, Matheus! Quero solicitar o desenvolvimento do meu site pela Beck Performance.', 'MEU NEGÓCIO\nEmpresa: Clima Sul', 'Segmento: Serviços locais', 'Objetivo do site: Pedir um orçamento', 'Serviço principal: Instalação de ar-condicionado', 'PACOTE ESCOLHIDO\nProfissional — R$ 750\nPagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'COMO IMAGINEI O SITE\nEstilo: Elegante', 'Cores: Cor da marca (#112233)', 'Fonte dos títulos: Sugerida pelo estilo', 'Logo: tenho e envio por aqui', 'Seções, na ordem escolhida: Apresentação, Serviços, Galeria de fotos, Perguntas frequentes, Contato', 'Formulário que encaminha o pedido ao WhatsApp', 'Galeria com até 8 imagens suas', 'Prazo: 5–8 dias úteis', 'Ajustes: 2 rodadas', 'OBSERVAÇÕES\nJá tenho domínio', 'SOBRE MIM\nMeu nome: Ana', 'Quando quero começar: No próximo mês', 'Gostaria de alinhar os próximos passos para desenvolver este projeto.', 'Código do projeto: bp-abcdef1234 · Origem: google/cpc']) assert(msg.includes(s), s);
+  for (const s of ['Olá, Matheus! Quero solicitar o desenvolvimento do meu site pela Beck Performance.', 'MEU NEGÓCIO\nEmpresa: Clima Sul', 'Segmento: Serviços locais', 'Objetivo do site: Pedir um orçamento', 'Serviço principal: Instalação de ar-condicionado', 'PACOTE ESCOLHIDO\nProfissional — R$ 750\nPagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'COMO IMAGINEI O SITE\nEstilo: Elegante', 'Cores: Cor da marca (#112233)', 'Fonte dos títulos: Sugerida pelo estilo', 'Logo: tenho e envio por aqui', 'Seções, na ordem escolhida: Apresentação, Serviços, Galeria de fotos, Perguntas frequentes, Contato', 'Formulário que encaminha o pedido ao WhatsApp', 'Galeria com até 8 imagens suas', 'Prazo: 5–8 dias úteis', 'Ajustes: 2 rodadas', 'OBSERVAÇÕES\nJá tenho domínio', 'SOBRE MIM\nMeu nome: Ana', 'Quando quero começar: No próximo mês', 'Gostaria de alinhar os próximos passos para desenvolver este projeto.', 'Referência (a mesma do arquivo do projeto): bp-abcdef1234 · Origem: google/cpc']) assert(msg.includes(s), s);
   assert(!msg.includes('undefined')); assert(!/\+ ?R\$/.test(msg), 'nunca "+ R$"');
   // Sem estado serializado nem ids internos no texto (o problema do link com JSON codificado).
   for (const bad of ['%22', '%7B', '{', '"', 'identitySet', 'direction', 'palette', 'complex', '#projeto=', 'null']) assert(!msg.includes(bad), bad);
@@ -275,8 +275,11 @@ test('Mesmo valor na mensagem, no pedido e no receptor para todo pacote', () => 
 
 test('Perguntas frequentes pedidas, com valores vindos dos pacotes', () => {
   const qs = projectFaq.map(([q]) => q);
-  for (const q of ['A prévia é gratuita?', 'O que fica pronto em cinco minutos?', 'O que está incluído no valor?', 'Por que existem três pacotes?', 'O que é pago à parte?', 'Existe mensalidade?', 'Qual é o prazo de desenvolvimento?', 'Preciso ter logo e fotos para criar a prévia?', 'Quem fornece os textos?', 'Quantos ajustes estão incluídos?', 'O site funciona no celular?', 'Posso contratar algo mais complexo?', 'Quem fica com o domínio e os acessos?', 'Posso alterar o site depois?']) assert(qs.includes(q), q);
+  // As 6 primeiras são as dúvidas que decidem a compra, nesta ordem.
+  assert.deepEqual(qs.slice(0, 6), ['A prévia grátis já é o meu site?', 'O que está incluído no valor?', 'Domínio e hospedagem estão incluídos?', 'Qual é o prazo de desenvolvimento?', 'O que preciso enviar para o site final?', 'Posso alterar o site depois da entrega?']);
+  for (const q of ['Por que existem três pacotes?', 'Existe mensalidade?', 'Quem fornece os textos?', 'O site funciona no celular?', 'Posso contratar algo mais complexo?', 'Quem fica com o domínio e os acessos?']) assert(qs.includes(q), q);
   const text = JSON.stringify(projectFaq);
+  assert(!/minutos/.test(text), 'sem promessa de tempo da prévia');
   for (const s of ['R$ 500', 'R$ 750', 'R$ 1.000', '3 a 12 dias úteis', '2 rodadas']) assert(text.includes(s), s);
   for (const bad of [/parcel/i, /cartão/i, /pix/i, /garantia de/i, /\+ R\$/]) assert(!bad.test(text), bad);
 });
@@ -886,7 +889,7 @@ test('A03: reduzir e aumentar o pacote guarda e restaura o que saiu, sem apagar'
   assert.deepEqual(down.removed, ['Galeria de fotos', 'Perguntas frequentes', 'Vitrine de produtos', 'Formulário para WhatsApp']);
   const e = down.project;
   assert.deepEqual(e.sections, ['apresentacao', 'servicos', 'contato']); assert.equal(e.form, false); assert.equal(e.pkg, 'essencial');
-  assert.deepEqual(e.parked, { sections: ['galeria', 'faq', 'vitrine'], form: true, gallery: 15 });
+  assert.deepEqual(e.parked, { sections: ['galeria', 'faq', 'vitrine'], form: true, gallery: 15, order: ['apresentacao', 'servicos', 'galeria', 'faq', 'vitrine', 'contato'] });
   // Guardado não entra na mensagem nem no resumo.
   const msg = model.projectMessage(e);
   assert(!msg.includes('Galeria') && !msg.includes('Vitrine') && !msg.includes('Formulário')); assert(msg.includes('Essencial — R$ 500'));
@@ -895,9 +898,17 @@ test('A03: reduzir e aumentar o pacote guarda e restaura o que saiu, sem apagar'
   assert.deepEqual(model.restorable(pro), ['Galeria de fotos', 'Perguntas frequentes', 'Formulário para WhatsApp']);
   const back = model.restoreParked(pro).project;
   assert.deepEqual(back.sections, ['apresentacao', 'servicos', 'galeria', 'faq', 'contato']); assert.equal(back.form, true); assert.equal(back.gallery, 8);
-  assert.deepEqual(back.parked, { sections: ['vitrine'], form: false, gallery: 15 }, 'vitrine e galeria de 15 esperam o Completo');
+  assert.deepEqual(back.parked, { sections: ['vitrine'], form: false, gallery: 15, order: ['apresentacao', 'servicos', 'galeria', 'faq', 'vitrine', 'contato'] }, 'vitrine e galeria de 15 esperam o Completo');
   const top = model.restoreParked(model.normalizeProject({ ...back, pkg: 'completo' })).project;
-  assert(top.sections.includes('vitrine')); assert.equal(top.gallery, 15); assert.deepEqual(top.parked, { sections: [], form: false, gallery: 0 });
+  assert(top.sections.includes('vitrine')); assert.equal(top.gallery, 15); assert.deepEqual(top.parked, { sections: [], form: false, gallery: 0, order: [] });
+  // Ordem original de volta, sem duplicar (caso relatado: galeria antes de serviços).
+  const ordered = model.normalizeProject({ ...base(), pkg: 'completo', structureEdited: true, sections: ['apresentacao', 'galeria', 'servicos', 'faq', 'vitrine', 'contato'] });
+  const low = model.switchPackage(ordered, 'essencial').project;
+  const again = model.restoreParked(model.normalizeProject({ ...low, pkg: 'completo' })).project;
+  assert.deepEqual(again.sections, ordered.sections, 'mesma ordem de antes');
+  const mid = model.restoreParked(model.normalizeProject({ ...low, pkg: 'profissional' })).project;
+  assert.deepEqual(mid.sections, ['apresentacao', 'galeria', 'servicos', 'faq', 'contato'], 'restauração parcial também na ordem');
+  assert.deepEqual(model.restoreParked(model.normalizeProject({ ...mid, pkg: 'completo' })).project.sections, ordered.sections);
   // Guardado sobrevive a salvar e ler de novo.
   assert.deepEqual(model.normalizeProject(JSON.parse(JSON.stringify(e))).parked, e.parked);
 });
@@ -947,7 +958,7 @@ test('A19/A20: mensagem usa só o ativo; longa demais vira resumo enxuto que apo
   assert(model.projectMessage(big).length > model.MESSAGE_LIMIT);
   const r = model.requestMessage(big);
   assert.equal(r.lean, true); assert(r.text.length <= model.MESSAGE_LIMIT);
-  assert(r.text.includes('Os textos que escrevi estão no arquivo do projeto'), 'avisa em vez de cortar calado');
+  assert(r.text.includes('Os textos escolhidos para a prévia estão no arquivo do projeto'), 'avisa em vez de cortar calado');
   assert(r.text.includes('n'.repeat(500)), 'observações nunca são cortadas');
   assert.equal(model.requestMessage(base()).lean, false);
 });
@@ -999,6 +1010,54 @@ test('A13/A14: nova geração mantém textos editados à mão, a não ser que a 
   assert.equal(ai.withDetails('Faço pintura residencial.', d), 'Faço pintura residencial.\nQuem atendo: famílias. Onde atendo: Porto Alegre.');
   assert.equal(ai.withDetails('x'.repeat(ai.DESCRIPTION_MAX), d), 'x'.repeat(ai.DESCRIPTION_MAX), 'sem estourar o limite');
   assert.equal(model.normalizeProject({ ...base(), details: { region: 'a'.repeat(500) } }).details.region.length, 120);
+});
+
+/* ── Evolução comercial (28/09): regressões relatadas ──────────────────── */
+
+test('Exemplos: galeria no limite do próprio pacote (Casa Oliva/Completo = 15) e ilustrações existentes', () => {
+  for (const seg of model.segments) {
+    const ex = model.exampleProject(seg.id);
+    if (ex.sections.includes('galeria')) assert.equal(ex.gallery, pk.packageById(ex.pkg).galleryImages, `${seg.id}: galeria do ${ex.pkg}`);
+    assert.equal(ex.pkgChosen, true, 'exemplo tem pacote definido');
+    for (const [img] of [...seg.art.gallery, ...seg.art.items]) assert(fs.existsSync(path.join(__dirname, `../public/demo/${img}.svg`)), `${seg.id}: ${img}`);
+    assert(seg.purpose && seg.purpose.length < 60, `${seg.id}: finalidade curta`);
+  }
+  assert.equal(model.exampleProject('alimentacao').gallery, 15);
+  assert.equal(model.initialProject().pkgChosen, false, 'pacote inicial não conta como escolha');
+  assert.equal(model.normalizeProject({ ...base(), pkgChosen: undefined, step: 9 }).pkgChosen, true, 'rascunho antigo já na revisão: pacote escolhido');
+  assert.equal(model.normalizeProject({ ...base(), pkgChosen: undefined, step: 2 }).pkgChosen, false, 'antes da etapa do pacote: ainda inicial');
+  assert.equal(model.switchPackage(base(), 'profissional').project.pkgChosen, true);
+  assert(fs.existsSync(path.join(__dirname, '../public/demo/README.md')), 'origem e licença das ilustrações registradas');
+});
+
+test('Modelo de estética + descrição de corretora: o segmento do modelo cede; o escolhido à mão, não', () => {
+  const template = { ...model.exampleProject('beleza'), aiFilled: { name: '', segment: 'beleza', segmentOther: '' } };
+  const realEstate = ai.sanitizeSuggestion({ ...goodAnswer, name: 'Clara Imóveis', segment: 'imoveis', service: 'Compra e venda de imóveis' });
+  const fromTemplate = ai.applySuggestion(model.normalizeProject(template), realEstate);
+  assert.equal(fromTemplate.segment, 'imoveis', 'segmento do modelo é sugestão');
+  assert.equal(model.siteContent(fromTemplate).segmentName, 'Imóveis e corretores', 'selo coerente');
+  assert(model.projectMessage(fromTemplate).includes('Segmento: Imóveis e corretores'), 'WhatsApp coerente');
+  const manual = ai.applySuggestion(model.normalizeProject({ ...template, aiFilled: { name: '', segment: '', segmentOther: '' } }), realEstate);
+  assert.equal(manual.segment, 'beleza', 'escolha à mão não troca sozinha (a tela pergunta)');
+});
+
+test('WhatsApp: textos "escolhidos para a prévia", sem atribuir à pessoa o que veio da IA; referência honesta', () => {
+  const p = withLead(model.normalizeProject({ ...base(), headline: 'Título da IA', services: ['A', 'B'] }), {});
+  const msg = model.projectMessage(p);
+  assert(msg.includes('TEXTOS ESCOLHIDOS PARA A PRÉVIA\nTítulo: Título da IA'));
+  assert(!/QUE EU ESCREVI|EDITEI/.test(msg));
+  assert(msg.includes('Referência (a mesma do arquivo do projeto): bp-abcdef1234'));
+  assert(!msg.includes('Código do projeto'), 'não parece recuperável pela equipe');
+});
+
+test('Pacotes: diferenças em uso, comuns uma vez só, Essencial sem lista inflada', () => {
+  const [e, pr, c] = pk.packages.map(pk.packageDiffs);
+  assert(e.length < pr.length && pr.length <= 4 && c.length <= 4);
+  assert(pr.some((x) => /Galeria com até 8 fotos para apresentar trabalhos/.test(x)) && pr.some((x) => /Formulário que organiza a solicitação/.test(x)));
+  assert(c.some((x) => /Vitrine com até 10 itens, com pedido pelo WhatsApp/.test(x)) && c.some((x) => /Galeria com até 15 fotos/.test(x)));
+  assert.equal(pk.commonBenefits.length, 4);
+  for (const d of [...e, ...pr, ...c]) assert(!pk.commonBenefits.some((cb) => d.toLowerCase().includes(cb.slice(0, 12))), `sem repetir o comum: ${d}`);
+  assert.equal(analytics.deviceCategory(390), 'celular'); assert.equal(analytics.deviceCategory(900), 'tablet'); assert.equal(analytics.deviceCategory(1440), 'computador');
 });
 
 Promise.all(pending).then(() => console.log(`${count} testes passaram.`)).catch((e) => { console.error(e); process.exit(1); });
