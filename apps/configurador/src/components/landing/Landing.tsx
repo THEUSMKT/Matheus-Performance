@@ -260,6 +260,9 @@ function Examples({ state }: { state: ProjectState }) {
   const [dialogPending, setDialogPending] = useState<Pending | null>(null);
   const [otherPending, setOtherPending] = useState<Pending | null>(null);
   const tap = useTapGuard();
+  /** Filtro por segmento ("todos" mostra também o cartão "Outro segmento"). */
+  const [filter, setFilter] = useState('todos');
+  const shown = demoSegments.map((_, i) => i).filter((i) => filter === 'todos' || demoSegments[i].id === filter);
 
   // Campanha de um segmento: o carrossel começa no exemplo dele.
   const campaign = state.origin.segment;
@@ -285,7 +288,9 @@ function Examples({ state }: { state: ProjectState }) {
       return;
     }
     if (index === null) return;
-    carousel.current?.goTo(index, false);
+    // O exemplo pode ter mudado com Anterior/Próximo: volta ao cartão dele, mostrando todos se preciso.
+    if (!shown.includes(index)) setFilter('todos');
+    carousel.current?.goTo(shown.includes(index) ? shown.indexOf(index) : index, false);
     // Depois da devolução de foco do próprio <dialog>, que volta ao card que o abriu.
     requestAnimationFrame(() => cards.current[index]?.focus({ preventScroll: true }));
   }
@@ -338,9 +343,25 @@ function Examples({ state }: { state: ProjectState }) {
           <small className={s.sectionNote}>Exemplos demonstrativos, com nomes fictícios.</small>
         </div>
       </div>
-      <Carousel id="carrossel-exemplos" label="Exemplos de sites" itemLabel={(i, n) => `Exemplo ${i + 1} de ${n}`} start={startAt} apiRef={carousel}>
+      <div className={s.wrap}>
+        <div className={s.exampleFilter} role="group" aria-label="Filtrar exemplos por segmento">
+          {[{ id: 'todos', short: 'Todos' }, ...demoSegments].map((x) => (
+            <button key={x.id} type="button" className={s.chip} aria-pressed={filter === x.id} onClick={() => setFilter(x.id)}>
+              {x.short}
+            </button>
+          ))}
+        </div>
+      </div>
+      <Carousel
+        key={filter}
+        id="carrossel-exemplos"
+        label="Exemplos de sites"
+        itemLabel={(i, n) => `Exemplo ${i + 1} de ${n}`}
+        start={filter === 'todos' ? startAt : 0}
+        apiRef={carousel}
+      >
         {[
-          ...demoSegments.map((x, i) => (
+          ...shown.map((i) => [demoSegments[i], i] as const).map(([x, i]) => (
             <button
               key={x.id}
               ref={(el) => {
@@ -354,7 +375,7 @@ function Examples({ state }: { state: ProjectState }) {
             >
               <span className={s.exampleThumb} aria-hidden="true">
                 <DesktopFrame width={900}>
-                  <SitePreview project={exampleProject(x.id)} compact demo />
+                  <SitePreview project={exampleProject(x.id)} compact demo lazy />
                 </DesktopFrame>
               </span>
               <span className={s.exampleName}>{x.name}</span>
@@ -366,7 +387,7 @@ function Examples({ state }: { state: ProjectState }) {
               </span>
             </button>
           )),
-          <div key="outro" className={`${s.exampleCard} ${s.otherCard}`}>
+          filter === 'todos' && <div key="outro" className={`${s.exampleCard} ${s.otherCard}`}>
             <h3>Outro segmento</h3>
             <p>Comece por um modelo neutro e conte qual é o seu negócio.</p>
             {otherPending && <ConfirmBox pending={otherPending} onCancel={() => setOtherPending(null)} />}

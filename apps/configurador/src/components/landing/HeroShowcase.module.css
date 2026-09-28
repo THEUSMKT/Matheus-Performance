@@ -115,125 +115,10 @@
   white-space: nowrap;
 }
 
-/* Site demonstrativo: Atelier Norte, arquitetura e interiores */
-.site {
-  background: #fbf8f4;
-  color: #1f2522;
-}
-.nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2.4cqw 3.4cqw;
-}
-.logo,
-.pNav {
-  display: inline-flex;
-  align-items: center;
-  gap: 1.2cqw;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(10px, 2.7cqw, 15px);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-.logo b,
-.pNav b {
-  display: grid;
-  place-items: center;
-  width: 1.9em;
-  aspect-ratio: 1;
-  border-radius: 0.4em;
-  background: #232a26;
-  color: #f3e7d8;
-  font-size: 0.8em;
-}
-.links {
-  display: flex;
-  gap: 2.6cqw;
-  color: #5f655f;
-  font-size: clamp(9px, 2.1cqw, 12px);
-}
-.heroRow {
-  display: grid;
-  grid-template-columns: 1fr 1.05fr;
-  align-items: center;
-  gap: 3cqw;
-  padding: 0.6cqw 3.4cqw 3cqw;
-}
-.heroText {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1.6cqw;
-}
-.eyebrow {
-  color: #9a7452;
-  font-size: clamp(8.5px, 1.8cqw, 10px);
-  font-weight: 750;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.title {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(14px, 4.5cqw, 25px);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-.btn,
-.pBtn {
-  padding: 1.3cqw 2.4cqw;
-  border-radius: 0.9cqw;
-  background: #232a26;
-  color: #fbf8f4;
-  font-size: clamp(9px, 2cqw, 12px);
-  font-weight: 700;
-  white-space: nowrap;
-}
-.photo {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 1.6cqw;
-}
-.cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2cqw;
-  padding: 0 3.4cqw 3.4cqw;
-}
-.card {
-  display: flex;
-  align-items: center;
-  gap: 1.2cqw;
-  padding: 1.6cqw 1.8cqw;
-  border: 1px solid #ece3d7;
-  border-radius: 1.4cqw;
-  background: #fff;
-  font-size: clamp(9px, 2.1cqw, 12px);
-  font-weight: 700;
-  white-space: nowrap;
-  animation: rise 0.4s ease-out both;
-}
-.card svg {
-  flex: none;
-  width: clamp(11px, 2.8cqw, 16px);
-  height: auto;
-  color: #9a7452;
-}
-
 /* Montagem em sequência */
-.step1 {
-  animation: rise 0.4s ease-out 0.55s both;
-}
 .step2 {
   animation: rise 0.4s ease-out 0.7s both;
 }
-.step2b {
-  animation: fadeScale 0.45s ease-out 0.8s both;
-}
-
 /* Celular com a mesma página em uma coluna */
 .phone {
   position: absolute;
@@ -261,44 +146,6 @@
   background: #fbf8f4;
   color: #1f2522;
 }
-.pNav {
-  font-size: clamp(8.5px, 2cqw, 12px);
-}
-.pPhoto {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 1.4cqw;
-}
-.pTitle {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(9.5px, 2.7cqw, 15px);
-  line-height: 1.12;
-}
-.pBtn {
-  align-self: flex-start;
-  padding: 1cqw 1.8cqw;
-  font-size: clamp(8px, 1.7cqw, 10px);
-}
-.pCard {
-  display: flex;
-  align-items: center;
-  gap: 1cqw;
-  padding: 1.2cqw 1.4cqw;
-  border: 1px solid #ece3d7;
-  border-radius: 1.2cqw;
-  background: #fff;
-  font-size: clamp(8px, 1.7cqw, 10px);
-  font-weight: 700;
-}
-.pCard svg {
-  width: clamp(9px, 2.2cqw, 13px);
-  height: auto;
-  color: #9a7452;
-}
-
 /* Selo de tempo */
 .badge {
   position: absolute;
@@ -384,9 +231,6 @@
   }
 }
 @container (max-width: 440px) {
-  .links {
-    display: none;
-  }
   /* Selo em duas linhas para não encostar no celular. */
   .badge {
     max-width: 50cqw;
@@ -396,10 +240,21 @@
     line-height: 1.2;
     white-space: normal;
   }
-  .cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .card:nth-child(3) {
-    display: none;
-  }
+}
+
+/* Prévia real (SitePreview) dentro da janela e do celular */
+.real {
+  overflow: hidden;
+  aspect-ratio: 16 / 10.4;
+  background: #fff;
+}
+.realScreen {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+}
+.realFrame {
+  border-radius: 0;
+  box-shadow: none;
 }

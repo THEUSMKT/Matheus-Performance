@@ -1033,3 +1033,38 @@
   background: linear-gradient(160deg, rgb(255 255 255 / 0.06), color-mix(in srgb, var(--acc) 22%, transparent));
   color: rgb(255 255 255 / 0.75);
 }
+
+/* ── Composições por segmento ───────────────────────────────────────────── */
+.meta {
+  color: #6b7385;
+  font-size: 11px;
+}
+.escuro .meta {
+  color: rgb(255 255 255 / 0.65);
+}
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.categories span {
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--acc) 30%, #dfe3ea);
+  border-radius: 99px;
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 700;
+}
+.categories span[data-on] {
+  background: var(--acc);
+  color: var(--on);
+}
+/* Portfólio: um projeto em destaque e os demais menores. */
+.portfolio .tile:first-child {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.card .pill {
+  margin-top: 4px;
+}

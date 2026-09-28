@@ -168,7 +168,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 | `package_changed` | Trocar de pacote, sempre depois da confirmação | `from`, `to`, `source` (`objetivo`, `seu_site`, `secoes`, `imagens`, `incluido`) |
 | `request_click` | Clique em “Solicitar desenvolvimento” (**intenção**) | `mode` (`whatsapp`, `formulario`), `package` (ou `personalizado`) |
 | `whatsapp_open` | Clique para abrir o WhatsApp (**intenção, não é pedido recebido**) | `context` (`pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `projeto_personalizado`, `final`, `rodape`) |
-| `ai_generate` | Resultado de “Gerar minha prévia” (só com a IA ligada) | `result` (`ok`, `erro`), `reason` |
+| `ai_generate` | Resultado de “Gerar minha prévia” ou de “Gerar outra sugestão para esta seção” (só com a IA ligada) | `result` (`ok`, `erro`), `reason` (`secao` quando é só uma seção) |
 | `ai_audio` | Resultado de “Gravar minha ideia” (transcrição; cancelar não conta) | `result` (`ok`, `erro`), `reason` (`microfone`, `curto`, `sem-fala`…) |
 | `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
 | `summary_copy` / `project_export` / `project_import` | "Copiar resumo", "Baixar meu projeto", "Abrir arquivo de projeto" (sem conteúdo) | — |

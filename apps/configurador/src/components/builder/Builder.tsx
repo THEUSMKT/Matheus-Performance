@@ -37,7 +37,7 @@ import {
   switchPackage,
   type Project,
 } from '@/lib/project';
-import { aiReasonText, applySuggestion, requestSuggestion, withDetails, type Suggestion } from '@/lib/aiPreview';
+import { DESCRIPTION_MIN, aiReasonText, applySuggestion, requestSuggestion, withDetails, type Suggestion } from '@/lib/aiPreview';
 import { track } from '@/lib/analytics';
 import { originTag } from '@/lib/origin';
 import { clearLogo, readLogo, saveLogo } from '@/lib/logo';
@@ -52,9 +52,18 @@ import { PackageDialog, PriceBar, StepPackage } from './Packages';
 import { PrintSummary, RequestButton, StepSite } from './Site';
 import { StepBusiness, StepObjective, type StepErrors } from './Steps';
 import { StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle } from './Choices';
-import { Describe, type DescribePhase } from './Describe';
+import { DRAFT_KEY, Describe, type DescribePhase } from './Describe';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
+
+type RegenField = 'about' | 'differentials' | 'processSteps' | 'faqQuestions';
+
+/** O que conta como "a escolha" de cada etapa, para saber se a pessoa mudou algo. */
+const choiceValue = (p: Project, step: number) =>
+  step === STEP.estilo ? p.direction : step === STEP.cores ? `${p.palette}${p.custom ?? ''}` : step === STEP.titulos ? p.font : '';
+
+/** Para onde leva cada fase concluída no topo. */
+const phaseTarget = [STEP.negocio, STEP.pronta, STEP.pacote, STEP.revisao];
 
 const hints: Partial<Record<number, string>> = {
   [STEP.objetivo]: 'Isso define o botão principal e a ordem das seções.',
@@ -88,6 +97,10 @@ export default function Builder() {
   const [undo, setUndo] = useState<{ label: string; project: Project } | null>(null);
   /** Nova geração que manteve textos editados à mão: permite usar os novos. */
   const [keptEdits, setKeptEdits] = useState<{ base: Project; sug: Suggestion } | null>(null);
+  /** Seção sendo gerada de novo (só ela muda) e o erro, se houver. */
+  const [regen, setRegen] = useState<{ field: RegenField | null; error: string }>({ field: null, error: '' });
+  /** Valor da escolha ao entrar na etapa: sem mudança, o botão diz "Manter sugestão". */
+  const entry = useRef<{ step: number; value: string }>({ step: -1, value: '' });
   const heading = useRef<HTMLHeadingElement>(null);
   const readyHeading = useRef<HTMLHeadingElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -123,7 +136,8 @@ export default function Builder() {
   useEffect(() => {
     const before = prevP.current;
     prevP.current = p;
-    if (!narrow || view !== 'edit' || before === p || before.step !== p.step || !CHOICE_STEPS.includes(p.step)) return;
+    // Ganhar o identificador ao salvar pela primeira vez não é mudança no site.
+    if (!narrow || view !== 'edit' || before === p || before.id !== p.id || before.step !== p.step || !CHOICE_STEPS.includes(p.step)) return;
     setUpdated(true);
     window.clearTimeout(updatedTimer.current);
     updatedTimer.current = window.setTimeout(() => setUpdated(false), 1400);
@@ -214,6 +228,39 @@ export default function Builder() {
     if (!r.restored.length) return;
     replace({ ...r.project, step: p.step });
     setUndo({ label: `Restaurado: ${r.restored.join(', ')}.`, project: p });
+  }
+
+  /** Mudança ampla feita pela pessoa (textos de volta à sugestão): pode ser desfeita. */
+  function broadEdit(label: string, patch: Partial<Project>) {
+    setUndo({ label, project: p });
+    update(patch);
+  }
+
+  /**
+   * Nova sugestão da IA só para uma seção: usa a mesma descrição (guardada
+   * nesta aba) e troca só aquele texto. As outras seções ficam intactas, e
+   * a versão anterior fica no "Desfazer".
+   */
+  async function regenerateSection(field: RegenField, label: string) {
+    if (regen.field) return;
+    let draft = '';
+    try {
+      draft = sessionStorage.getItem(DRAFT_KEY) ?? '';
+    } catch {
+      /* sem a descrição, não há como pedir */
+    }
+    if (draft.trim().length < DESCRIPTION_MIN) return setRegen({ field: null, error: 'Para gerar outra sugestão, descreva o negócio de novo em “Editar minha descrição”.' });
+    setRegen({ field, error: '' });
+    const before = pNow.current;
+    const result = await requestSuggestion(withDetails(draft, before.details), before.pkg, integrations.aiEndpoint);
+    track('ai_generate', { result: result.ok ? 'ok' : 'erro', reason: result.ok ? 'secao' : result.reason });
+    if (!result.ok) return setRegen({ field: null, error: aiReasonText[result.reason] });
+    const text = result.suggestion.previewCopy[field];
+    if (!text || (Array.isArray(text) && !text.length)) return setRegen({ field: null, error: 'A sugestão veio vazia. Tente de novo.' });
+    const now = pNow.current;
+    setUndo({ label: `Nova sugestão para “${label}”.`, project: now });
+    replace({ ...now, previewCopy: { ...now.previewCopy, [field]: text }, edited: now.edited.filter((f) => f !== field) });
+    setRegen({ field: null, error: '' });
   }
 
   function undoLast() {
@@ -388,7 +435,10 @@ export default function Builder() {
   const busy = capturing || (describing && generating);
   /** Já existe uma prévia montada para voltar (depois de gerar ou do passo a passo). */
   const hasPreview = Boolean(p.segment) && (p.aiFilled.segment !== '' || p.objectiveSet || p.identitySet);
-  const nextLabel = step === STEP.objetivo ? 'Ver minha prévia' : step === STEP.secoes ? 'Revisar e solicitar' : 'Continuar';
+  if (entry.current.step !== step) entry.current = { step, value: choiceValue(p, step) };
+  const keeping = (step === STEP.estilo || step === STEP.cores || step === STEP.titulos) && choiceValue(p, step) === entry.current.value;
+  const nextLabel = step === STEP.objetivo ? 'Ver minha prévia' : step === STEP.secoes ? 'Revisar e solicitar' : keeping ? 'Manter sugestão' : 'Continuar';
+  const canRegen = aiEnabled && !manual;
   const editLabel = backFromReady() === STEP.negocio ? 'Editar minha descrição' : 'Voltar ao objetivo';
 
   const preview = (mode: 'mobile' | 'desktop', inFull = false) =>
@@ -471,7 +521,17 @@ export default function Builder() {
   else if (step === STEP.estilo) body = <StepStyle p={p} edit={edit} />;
   else if (step === STEP.cores) body = <StepColors p={p} edit={edit} />;
   else if (step === STEP.titulos) body = <StepFonts p={p} edit={edit} />;
-  else if (step === STEP.conteudo) body = <StepContent p={p} edit={edit} logo={logo} setLogo={setLogo} />;
+  else if (step === STEP.conteudo)
+    body = (
+      <StepContent
+        p={p}
+        edit={edit}
+        logo={logo}
+        setLogo={setLogo}
+        broadEdit={broadEdit}
+        regen={canRegen ? { busy: regen.field, error: regen.error, run: regenerateSection } : null}
+      />
+    );
   else if (step === STEP.secoes) body = <StepSections p={p} edit={edit} scope={scope} gate={gate} onSeePackages={() => setIncluded(true)} onRestore={restore} />;
   else if (step === STEP.revisao)
     body = (
@@ -612,14 +672,27 @@ export default function Builder() {
           <div className={b.top}>
             <div className={b.progress}>
               <ol className={b.phases} aria-label="Etapas">
-                {phases.map((ph, i) => (
-                  <li key={ph.name} aria-current={i === phase ? 'step' : undefined} data-done={i < phase || undefined}>
-                    <span className={b.phaseDot} aria-hidden="true">
-                      {i < phase ? <Check /> : i + 1}
-                    </span>
-                    <span className={b.phaseName}>{ph.name}</span>
-                  </li>
-                ))}
+                {phases.map((ph, i) => {
+                  const inner = (
+                    <>
+                      <span className={b.phaseDot} aria-hidden="true">
+                        {i < phase ? <Check /> : i + 1}
+                      </span>
+                      <span className={b.phaseName}>{ph.name}</span>
+                    </>
+                  );
+                  return (
+                    <li key={ph.name} aria-current={i === phase ? 'step' : undefined} data-done={i < phase || undefined}>
+                      {i < phase && !busy ? (
+                        <button type="button" className={b.phaseLink} onClick={() => go(phaseTarget[i], { validate: false })} aria-label={`Voltar para ${ph.name} (concluída)`}>
+                          {inner}
+                        </button>
+                      ) : (
+                        inner
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
               {saved && (
                 <span className={b.saved}>
@@ -631,6 +704,20 @@ export default function Builder() {
               {phases[phase].name}
               {choiceIndex >= 0 && ` · Escolha ${choiceIndex + 1} de ${CHOICE_STEPS.length}: ${steps[step]}`}
             </p>
+            {(choiceIndex >= 0 || step === STEP.revisao) && (
+              <ol className={b.choices} aria-label="Escolhas da personalização">
+                {CHOICE_STEPS.map((cs, i) => (
+                  <li key={cs}>
+                    <button type="button" aria-current={cs === step ? 'step' : undefined} onClick={() => go(cs, { validate: false })} aria-label={`Escolha ${i + 1}: ${steps[cs]}`}>
+                      <b aria-hidden="true">{i + 1}</b>
+                      <span className={b.choiceName} aria-hidden="true">
+                        {steps[cs]}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
             <PriceBar p={p} onChange={() => setIncluded(true)} />
             {notice && (
               <p className={b.notice} role="status">

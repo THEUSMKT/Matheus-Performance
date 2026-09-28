@@ -158,7 +158,30 @@ export function StepFonts({ p, edit }: { p: Project; edit: Edit }) {
 
 /* ── Conteúdo ──────────────────────────────────────────────────────────── */
 
-export function StepContent({ p, edit, logo, setLogo }: { p: Project; edit: Edit; logo: string | null; setLogo: (v: string | null) => void }) {
+type Regen = {
+  busy: string | null;
+  error: string;
+  run: (field: 'about' | 'differentials' | 'processSteps' | 'faqQuestions', label: string) => void;
+} | null;
+type BroadEdit = (label: string, patch: Partial<Project>) => void;
+
+export function StepContent({
+  p,
+  edit,
+  logo,
+  setLogo,
+  broadEdit,
+  regen,
+}: {
+  p: Project;
+  edit: Edit;
+  logo: string | null;
+  setLogo: (v: string | null) => void;
+  /** Mudança ampla que pode ser desfeita. */
+  broadEdit: BroadEdit;
+  /** Gerar outra sugestão só para uma seção (com a IA ligada). */
+  regen: Regen;
+}) {
   const content = siteContent(p);
   const suggested = suggestedServices(p);
   const services = [0, 1, 2].map((i) => p.services[i] ?? '');
@@ -206,12 +229,12 @@ export function StepContent({ p, edit, logo, setLogo }: { p: Project; edit: Edit
           ))}
         </div>
         {content.servicesSuggested && (
-          <button type="button" className={b.textButton} onClick={() => edit({ services: suggested })}>
+          <button type="button" className={b.textButton} onClick={() => broadEdit('Sugestões de serviços aplicadas.', { services: suggested })}>
             Usar as sugestões
           </button>
         )}
       </fieldset>
-      <SectionTexts p={p} edit={edit} />
+      <SectionTexts p={p} edit={edit} broadEdit={broadEdit} regen={regen} />
       <MoreSpecific p={p} edit={edit} />
       <p className={b.muted} style={{ marginTop: 14 }}>
         A prévia usa ilustrações de exemplo. No site final entram as suas fotos.
@@ -228,7 +251,7 @@ type ListField = 'serviceDetails' | 'differentials' | 'processSteps' | 'faqQuest
  * texto que está na prévia; o que a pessoa muda fica marcado como dela e
  * uma nova geração não o substitui sem ela pedir.
  */
-function SectionTexts({ p, edit }: { p: Project; edit: Edit }) {
+function SectionTexts({ p, edit, broadEdit, regen }: { p: Project; edit: Edit; broadEdit: BroadEdit; regen: Regen }) {
   const shown = previewTexts(p);
   const own = (field: keyof Copy) => p.edited.includes(field);
   const has = (id: string) => p.sections.includes(id);
@@ -238,8 +261,8 @@ function SectionTexts({ p, edit }: { p: Project; edit: Edit }) {
     const base = shown[field].map((_, j) => listValue(field, j));
     edit({ previewCopy: { ...p.previewCopy, [field]: base.map((t, j) => (j === i ? v : t)) } });
   };
-  const reset = (field: keyof Copy) =>
-    edit({ previewCopy: { ...p.previewCopy, [field]: field === 'about' ? '' : [] }, edited: p.edited.filter((f) => f !== field) });
+  const reset = (field: keyof Copy, title: string) =>
+    broadEdit(`Texto sugerido de volta em “${title}”.`, { previewCopy: { ...p.previewCopy, [field]: field === 'about' ? '' : [] }, edited: p.edited.filter((f) => f !== field) });
   const services = siteContent(p).services;
   const groups: { id: string; field: keyof Copy; title: string }[] = [
     { id: 'servicos', field: 'serviceDetails', title: `${sectionName(p, 'servicos')}: uma frase para cada item` },
@@ -255,6 +278,11 @@ function SectionTexts({ p, edit }: { p: Project; edit: Edit }) {
       <summary>Editar os textos das seções</summary>
       <div className={s.detailsBody}>
         <p className={b.muted}>Os campos mostram o texto que está na prévia. O que você mudar fica como seu.</p>
+        {regen?.error && (
+          <p className={b.fieldNote} role="alert">
+            {regen.error}
+          </p>
+        )}
         {active.map((g) => (
           <fieldset key={g.id} className={b.group}>
             <legend className={b.label}>{g.title}</legend>
@@ -277,11 +305,24 @@ function SectionTexts({ p, edit }: { p: Project; edit: Edit }) {
                 ))
               )}
             </div>
-            {own(g.field) && (
-              <button type="button" className={b.textButton} onClick={() => reset(g.field)}>
-                Voltar ao texto sugerido
-              </button>
-            )}
+            <div className={b.textActions}>
+              {own(g.field) && (
+                <button type="button" className={b.textButton} onClick={() => reset(g.field, g.title)}>
+                  Voltar ao texto sugerido
+                </button>
+              )}
+              {regen && g.field !== 'serviceDetails' && (
+                <button
+                  type="button"
+                  className={b.textButton}
+                  disabled={Boolean(regen.busy)}
+                  aria-busy={regen.busy === g.field}
+                  onClick={() => regen.run(g.field as 'about', g.title)}
+                >
+                  {regen.busy === g.field ? 'Gerando outra sugestão…' : 'Gerar outra sugestão para esta seção'}
+                </button>
+              )}
+            </div>
           </fieldset>
         ))}
       </div>

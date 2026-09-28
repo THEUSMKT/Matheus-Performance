@@ -2054,3 +2054,113 @@
     display: none;
   }
 }
+
+/* ── Progresso clicável e escolhas da personalização ───────────────────── */
+.phaseLink {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 44px;
+  margin: -11px 0 -8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.phaseLink:hover .phaseName {
+  color: var(--navy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.choices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 12px 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s, color 0.18s;
+}
+.choices b {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--tint);
+  color: var(--blue-ink);
+  font-size: 12px;
+}
+.choices button:hover {
+  border-color: var(--line-strong);
+  color: var(--navy);
+}
+.choices button[aria-current='step'] {
+  border-color: var(--blue);
+  background: #eef4ff;
+  color: var(--navy);
+  font-weight: 800;
+}
+.choices button[aria-current='step'] b {
+  background: var(--blue);
+  color: #fff;
+}
+@media (max-width: 559px) {
+  .choices {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+  .choices button {
+    justify-content: center;
+    padding: 0;
+  }
+  .choiceName {
+    display: none;
+  }
+}
+.textActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+}
+.textButton:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.fieldNote {
+  margin-top: 8px;
+  color: var(--warn);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Celular: topo mais compacto para sobrar tela para a escolha. */
+@media (max-width: 559px) {
+  .top {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .priceBar {
+    padding: 2px 2px 2px 12px;
+  }
+  .priceMain strong {
+    font-size: 16px;
+  }
+}

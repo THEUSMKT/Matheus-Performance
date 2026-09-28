@@ -1829,3 +1829,33 @@ button.exampleCard:active .exampleOpen {
     width: 19pt;
   }
 }
+
+/* Filtro dos exemplos por segmento: uma linha rolável no celular. */
+.exampleFilter {
+  display: flex;
+  gap: 8px;
+  margin: -4px 0 14px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.exampleFilter::-webkit-scrollbar {
+  display: none;
+}
+.exampleFilter .chip {
+  flex: none;
+  min-height: 40px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+@media (min-width: 1080px) {
+  .exampleFilter {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+}
+/* Miniaturas fora da tela não custam desenho até chegarem perto. */
+.exampleThumb {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 190px;
+}
