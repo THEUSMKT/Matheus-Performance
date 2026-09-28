@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Bolo da casa (ilustração própria, criada para os exemplos do configurador) -->
+  <defs><linearGradient id="t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3e3d3"/><stop offset="1" stop-color="#e0c7ad"/></linearGradient></defs>
+<rect width="480" height="360" fill="url(#t)"/><ellipse cx="240" cy="272" rx="150" ry="30" fill="#000" opacity=".1"/><ellipse cx="240" cy="262" rx="150" ry="30" fill="#fbf7ef" stroke="#e4dccf" stroke-width="3"/><path d="M150 250V150l110-40 80 40v100z" fill="#7a4a2e"/><path d="M150 150l110-40 80 40-110 36z" fill="#fff4e6"/><path d="M150 185h190M150 218h190" stroke="#f3dcc1" stroke-width="9"/><path d="M230 186v64M340 150v100" stroke="#5f3822" stroke-width="3" opacity=".4"/><g fill="#c8303a"><circle cx="232" cy="128" r="10"/><circle cx="268" cy="136" r="9"/></g><path d="M232 118c4-10 10-14 16-14" stroke="#4f8a3c" stroke-width="4" fill="none"/>
+</svg>

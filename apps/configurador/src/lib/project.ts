@@ -283,7 +283,12 @@ export type Project = {
    * fora da prévia, do resumo e do pedido, e podem ser restaurados num
    * pacote que os comporte.
    */
-  parked: { sections: string[]; form: boolean; gallery: number };
+  parked: { sections: string[]; form: boolean; gallery: number; order: string[] };
+  /**
+   * O visitante escolheu o pacote (na etapa, na janela ou pelo botão de um
+   * pacote na apresentação). Falso = pacote inicial, sem compromisso.
+   */
+  pkgChosen: boolean;
   /** O visitante mexeu nas seções: trocar o objetivo não reorganiza mais sozinho. */
   structureEdited: boolean;
   /** Formulário que organiza o pedido e encaminha ao WhatsApp. */
@@ -309,7 +314,7 @@ export type Project = {
 export const editableTexts = ['headline', 'description', 'services', 'about', 'serviceDetails', 'differentials', 'processSteps', 'faqQuestions'] as const;
 export type EditableText = (typeof editableTexts)[number];
 
-export const emptyParked: Project['parked'] = { sections: [], form: false, gallery: 0 };
+export const emptyParked: Project['parked'] = { sections: [], form: false, gallery: 0, order: [] };
 export const emptyDetails: Project['details'] = { audience: '', region: '', highlights: '' };
 
 export const emptyLead: Lead = { name: '', channel: 'whatsapp', contact: '', deadline: '', decision: '', marketing: false };
@@ -334,7 +339,8 @@ export function initialProject(): Project {
     edited: [],
     details: { ...emptyDetails },
     sections: [...objectives[0].structure],
-    parked: { ...emptyParked },
+    parked: { ...emptyParked, order: [] },
+    pkgChosen: false,
     structureEdited: false,
     form: false,
     gallery: 8,
@@ -431,7 +437,9 @@ export function normalizeProject(input: unknown): Project {
       sections: [...new Set(strings(record(x.parked).sections).filter((id) => sectionById(id) && !sectionById(id)!.fixed))],
       form: record(x.parked).form === true,
       gallery: GALLERY_SIZES.includes(record(x.parked).gallery as number) ? (record(x.parked).gallery as number) : 0,
+      order: [...new Set(strings(record(x.parked).order).filter((id) => sectionById(id)))],
     },
+    pkgChosen: x.pkgChosen === true,
     structureEdited: x.structureEdited === true,
     form: x.form === true,
     gallery: GALLERY_SIZES.includes(x.gallery as number) ? (x.gallery as number) : 8,
@@ -452,6 +460,10 @@ export function normalizeProject(input: unknown): Project {
   p.parked.sections = p.parked.sections.filter((id) => !p.sections.includes(id));
   if (p.form) p.parked.form = false;
   if (p.parked.gallery <= (p.sections.includes('galeria') ? p.gallery : 0)) p.parked.gallery = 0;
+  // A ordem original só serve enquanto há seção guardada.
+  if (!p.parked.sections.length) p.parked.order = [];
+  // Rascunho salvo antes deste campo e já depois da etapa do pacote: a escolha foi feita.
+  if (x.pkgChosen === undefined && p.step > STEP.pacote) p.pkgChosen = true;
   return p;
 }
 
@@ -639,7 +651,7 @@ export type PackageSwitch = {
 export function switchPackage(p: Project, to: PackageId, keep?: string[]): PackageSwitch {
   const target = packageById(to);
   const removed: string[] = [];
-  const parked = { ...p.parked, sections: [...p.parked.sections] };
+  const parked = { ...p.parked, sections: [...p.parked.sections], order: mergeOrder(p.parked.order, p.sections) };
   const park = (id: string) => {
     removed.push(sectionName(p, id));
     if (!parked.sections.includes(id)) parked.sections.push(id);
@@ -668,7 +680,32 @@ export function switchPackage(p: Project, to: PackageId, keep?: string[]): Packa
     removed.push(`Galeria acima de ${gallery} imagens`);
     parked.gallery = p.gallery;
   } else if (p.sections.includes('galeria') && !list.includes('galeria') && p.gallery > 8) parked.gallery = p.gallery;
-  return { project: normalizeProject({ ...p, pkg: to, sections: list, form, gallery, parked }), removed, overLimit };
+  return { project: normalizeProject({ ...p, pkg: to, sections: list, form, gallery, parked, pkgChosen: true }), removed, overLimit };
+}
+
+/**
+ * Ordem de referência para restaurar: a ordem atual, com as seções já
+ * guardadas de volta nas posições que tinham na ordem anterior.
+ */
+function mergeOrder(old: string[], current: string[]): string[] {
+  let list = [...current];
+  for (const id of old) if (!list.includes(id)) list = insertByOrder(list, id, old);
+  return list;
+}
+
+/** Põe `id` logo depois da seção que vinha antes dele em `order` (nunca depois do contato). */
+function insertByOrder(list: string[], id: string, order: string[]): string[] {
+  const at = order.indexOf(id);
+  let after = 0;
+  for (let i = at - 1; i >= 0; i--) {
+    const j = list.indexOf(order[i]);
+    if (j >= 0) {
+      after = j;
+      break;
+    }
+  }
+  const pos = Math.min(after + 1, list.indexOf('contato') < 0 ? list.length : list.indexOf('contato'));
+  return [...list.slice(0, pos), id, ...list.slice(pos)];
 }
 
 /** Itens guardados que cabem no pacote atual (nomes legíveis). */
@@ -683,15 +720,18 @@ export function restorable(p: Project): string[] {
 export function restoreParked(p: Project): { project: Project; restored: string[] } {
   const pkg = currentPackage(p);
   const restored: string[] = [];
-  const middle = p.sections.slice(1, -1);
+  let list = [...p.sections];
   const left: string[] = [];
-  for (const id of p.parked.sections) {
-    const fits = rank(sectionById(id)!.min) <= rank(p.pkg) && middle.length < pkg.maxSections - 2;
+  // Na ordem original: o que volta entra onde estava antes da troca.
+  const byOrder = [...p.parked.sections].sort((a, b) => p.parked.order.indexOf(a) - p.parked.order.indexOf(b));
+  for (const id of byOrder) {
+    const fits = rank(sectionById(id)!.min) <= rank(p.pkg) && list.length - 2 < pkg.maxSections - 2;
     if (fits) {
-      middle.push(id);
+      list = insertByOrder(list, id, p.parked.order);
       restored.push(sectionName(p, id));
     } else left.push(id);
   }
+  const middle = list.slice(1, -1);
   const form = p.form || (p.parked.form && pkg.form);
   if (form && !p.form) restored.push('Formulário para WhatsApp');
   const galleryBack = p.parked.gallery > p.gallery && pkg.galleryImages >= p.parked.gallery && middle.includes('galeria');
@@ -701,7 +741,7 @@ export function restoreParked(p: Project): { project: Project; restored: string[
     sections: ['apresentacao', ...middle, 'contato'],
     form,
     gallery: galleryBack ? p.parked.gallery : p.gallery,
-    parked: { sections: left, form: p.parked.form && !form, gallery: galleryBack ? 0 : p.parked.gallery },
+    parked: { sections: left, form: p.parked.form && !form, gallery: galleryBack ? 0 : p.parked.gallery, order: left.length ? p.parked.order : [] },
   });
   return { project, restored };
 }
@@ -921,13 +961,17 @@ export function exampleProject(id: string): Project {
     outro: {},
   };
   const base = withObjective({ ...initialProject(), segment: seg.id }, seg.objectives[0], { chosen: false });
+  const pkg = packageById(extras[seg.id]?.pkg ?? 'essencial');
   return normalizeProject({
     ...base,
     direction: seg.styles[0],
     palette: seg.palette,
     ...extras[seg.id],
+    // A galeria do exemplo usa o limite do próprio pacote (Completo: 15, não 8).
+    gallery: pkg.galleryImages || 8,
     structureEdited: Boolean(extras[seg.id]?.sections),
     identitySet: true,
+    pkgChosen: true,
   });
 }
 
@@ -1068,7 +1112,7 @@ export function colorLabel(p: Project): string {
  */
 export const MESSAGE_LIMIT = 1800;
 
-/** Textos escritos ou editados pelo visitante, para o atendimento. */
+/** Textos escolhidos para a prévia (escritos pelo visitante ou sugeridos e mantidos), para o atendimento. */
 function ownTexts(p: Project): string[] {
   const lines: string[] = [];
   const own = (field: EditableText) => p.edited.includes(field);
@@ -1132,8 +1176,9 @@ export function projectMessage(p: Project, origin?: string, opts: { logo?: boole
   ]);
 
   const texts = ownTexts(p);
-  if (!opts.lean) block('TEXTOS QUE EU ESCREVI OU EDITEI', texts);
-  else if (texts.length) block('TEXTOS', ['Os textos que escrevi estão no arquivo do projeto, que envio em seguida.']);
+  // "Escolhidos", não "escritos": parte dos textos pode ter vindo da sugestão da IA.
+  if (!opts.lean) block('TEXTOS ESCOLHIDOS PARA A PRÉVIA', texts);
+  else if (texts.length) block('TEXTOS', ['Os textos escolhidos para a prévia estão no arquivo do projeto, que envio em seguida.']);
 
   block('OBSERVAÇÕES', [p.notes.trim()]);
 
@@ -1143,7 +1188,8 @@ export function projectMessage(p: Project, origin?: string, opts: { logo?: boole
   block('SOBRE MIM', [lead.name.trim() && `Meu nome: ${lead.name.trim()}`, quando && `Quando quero começar: ${quando.name}`, decisao && `Decisão: ${decisao.name}`]);
 
   const intro = custom ? contact.whatsappPersonalizado : contact.whatsappIntro;
-  const ref = [p.id && `Código do projeto: ${p.id}`, origin && `Origem: ${origin}`].filter(Boolean).join(' · ');
+  // A referência só liga esta mensagem ao arquivo exportado: o projeto fica salvo no aparelho do visitante.
+  const ref = [p.id && `Referência (a mesma do arquivo do projeto): ${p.id}`, origin && `Origem: ${origin}`].filter(Boolean).join(' · ');
   return [intro, ...blocks.map((b) => b.join('\n')), contact.whatsappClosing, ...(ref ? [ref] : [])].join('\n\n');
 }
 

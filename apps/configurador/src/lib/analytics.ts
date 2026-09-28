@@ -18,7 +18,7 @@ import { normalizeValue, type Origin } from './origin';
 /** Eventos permitidos e as propriedades que cada um pode carregar. */
 export const EVENTS = {
   /** Clique num botão que leva à criação (apresentação, cabeçalho, final...). */
-  start_click: { once: false, props: ['context'] },
+  start_click: { once: false, props: ['context', 'package'] },
   configurator_start: { once: 'session', props: [] },
   step_complete: { once: 'per-value', props: ['step'] },
   example_opened: { once: false, props: ['segment'] },
@@ -96,9 +96,18 @@ export function sanitize(name: EventName, props: Props = {}): Props {
 
 let context: Props = { flow_version: FLOW_VERSION };
 
-/** Contexto comum: versão do fluxo, variantes e origem resumida. */
+/**
+ * Categoria do aparelho pela largura da janela (sem identificar o aparelho):
+ * serve para comparar o funil no celular e no computador.
+ */
+export function deviceCategory(width: number): 'celular' | 'tablet' | 'computador' {
+  return width < 760 ? 'celular' : width < 1080 ? 'tablet' : 'computador';
+}
+
+/** Contexto comum: versão do fluxo, variantes, categoria do aparelho e origem resumida. */
 export function setContext(origin: Origin, variants: Partial<Record<ExperimentId, string>>) {
   context = { flow_version: FLOW_VERSION };
+  if (typeof window !== 'undefined' && typeof window.innerWidth === 'number') context.device = deviceCategory(window.innerWidth);
   for (const [id, v] of Object.entries(variants)) if (v) context[`var_${id}`] = v;
   if (origin.utm_source) context.utm_source = origin.utm_source;
   if (origin.utm_medium) context.utm_medium = origin.utm_medium;

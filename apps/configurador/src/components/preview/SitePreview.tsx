@@ -10,7 +10,7 @@
    ========================================================================== */
 import type { CSSProperties, ReactNode } from 'react';
 import { Clock, HelpCircle, ImageIcon, MapPin, MessageCircle, Quote } from 'lucide-react';
-import { contrastInk, headFont, objectiveOf, palettes, sectionName, siteContent, type Project } from '@/lib/project';
+import { contrastInk, headFont, objectiveOf, palettes, sectionName, segmentOf, siteContent, type Project } from '@/lib/project';
 import { asset } from '../landing/Chrome';
 import s from './Preview.module.css';
 
@@ -102,6 +102,27 @@ export function previewTexts(p: Project): Project['previewCopy'] {
   };
 }
 
+/**
+ * Ilustrações do segmento para galeria e itens, quando a prévia é mesmo
+ * desse segmento (a imagem do topo é dele). Sem repetir a imagem do topo.
+ */
+function artFor(p: Project, heroImage: string) {
+  const seg = segmentOf(p);
+  const own = heroImage === seg.image || [...seg.art.gallery, ...seg.art.items].some(([img]) => img === heroImage);
+  if (!own) return { gallery: [] as [string, string][], items: [] as [string, string][] };
+  return { gallery: seg.art.gallery.filter(([img]) => img !== heroImage), items: seg.art.items.filter(([img]) => img !== heroImage) };
+}
+
+/** Foto ilustrativa com legenda curta (exemplo, não trabalho real). */
+function Illustration({ src, caption, className }: { src: string; caption?: string; className: string }) {
+  return (
+    <figure className={`${className} ${s.illus}`}>
+      <img src={asset(`/demo/${src}.svg`)} alt="" loading="lazy" width={480} height={360} />
+      {caption && <figcaption>{caption}</figcaption>}
+    </figure>
+  );
+}
+
 /** Espaço de foto, claramente marcado: nunca a mesma ilustração repetida como se fossem trabalhos diferentes. */
 function PhotoSlot({ label, className }: { label: string; className: string }) {
   return (
@@ -154,6 +175,7 @@ export function SitePreview({
   const texts = previewTexts(p);
   const serviceDetails = texts.serviceDetails;
   const region = p.details.region.trim();
+  const art = artFor(p, c.image);
 
   // Composição por segmento: títulos e blocos próprios, só com o que o pacote cobre.
   const seg = isRealEstate ? 'imoveis' : p.segment;
@@ -169,7 +191,11 @@ export function SitePreview({
           {c.services.map((sv, i) =>
             showcase ? (
               <div key={`${sv}-${i}`} className={s.product}>
-                <PhotoSlot className={s.productImg} label={p.objective === 'trabalhos' ? 'Foto do trabalho' : 'Foto do produto'} />
+                {art.items[i] ? (
+                  <Illustration className={s.productImg} src={art.items[i][0]} />
+                ) : (
+                  <PhotoSlot className={s.productImg} label={p.objective === 'trabalhos' ? 'Foto do trabalho' : 'Foto do produto'} />
+                )}
                 <span className={s.cardTitle}>{sv}</span>
               </div>
             ) : (
@@ -230,19 +256,32 @@ export function SitePreview({
         </ol>
       </div>
     ),
-    galeria: () => (
-      <div className={s.section} key="galeria">
-        <span className={s.h}>{seg === 'criativo' ? 'Projetos' : seg === 'imoveis' ? 'Fotos' : p.objective === 'trabalhos' ? 'Trabalhos' : 'Galeria'}</span>
-        <div className={`${s.gallery} ${seg === 'criativo' || p.objective === 'trabalhos' ? s.portfolio : ''}`}>
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <PhotoSlot key={i} className={s.tile} label={`Sua foto ${i + 1}`} />
-          ))}
+    galeria: () => {
+      // Ilustrações do segmento (4 a 6); sem elas, espaços marcados para as fotos do visitante.
+      const tiles = art.gallery.slice(0, 6);
+      const slots = Math.max(0, 4 - tiles.length);
+      const n = tiles.length + slots;
+      const portfolio = (seg === 'criativo' || p.objective === 'trabalhos') && n === 5;
+      return (
+        <div className={s.section} key="galeria">
+          <span className={s.h}>{seg === 'criativo' ? 'Projetos' : seg === 'imoveis' ? 'Fotos' : p.objective === 'trabalhos' ? 'Trabalhos' : 'Galeria'}</span>
+          <div
+            className={`${s.gallery} ${portfolio ? s.portfolio : ''}`}
+            style={{ '--gm': portfolio || n % 3 !== 0 ? 2 : 3, '--gd': portfolio ? 4 : n } as CSSProperties}
+          >
+            {tiles.map(([img, caption]) => (
+              <Illustration key={img} className={s.tile} src={img} caption={caption} />
+            ))}
+            {Array.from({ length: slots }, (_, i) => (
+              <PhotoSlot key={`slot-${i}`} className={s.tile} label={`Sua foto ${tiles.length + i + 1}`} />
+            ))}
+          </div>
+          <Tag>
+            <ImageIcon aria-hidden="true" /> {tiles.length ? 'Imagens ilustrativas · no site final entram as suas fotos' : 'Suas fotos entram aqui'} · até {p.gallery} fotos
+          </Tag>
         </div>
-        <Tag>
-          <ImageIcon aria-hidden="true" /> Suas fotos entram aqui · até {p.gallery} imagens
-        </Tag>
-      </div>
-    ),
+      );
+    },
     faq: () => (
       <div className={s.section} key="faq">
         <span className={s.h}>Perguntas frequentes</span>
@@ -271,16 +310,16 @@ export function SitePreview({
         <div className={s.section} key="vitrine">
           <span className={s.h}>Imóveis em destaque</span>
           <div className={s.products}>
-            {[1, 2, 3].map((n) => (
+            {[0, 1, 2].map((n) => (
               <div key={n} className={s.product}>
-                <PhotoSlot className={s.productImg} label="Foto do imóvel" />
-                <span className={s.cardTitle}>Imóvel demonstrativo {n}</span>
-                <span className={s.meta}>Tipo, bairro e detalhes informados por você</span>
+                {art.items[n] ? <Illustration className={s.productImg} src={art.items[n][0]} /> : <PhotoSlot className={s.productImg} label="Foto do imóvel" />}
+                <span className={s.cardTitle}>{art.items[n]?.[1] ?? `Imóvel ilustrativo ${n + 1}`}</span>
+                <span className={s.meta}>Bairro e detalhes informados por você</span>
                 <span className={s.pill}>{bookable ? 'Agendar visita pelo WhatsApp' : 'Consultar pelo WhatsApp'}</span>
               </div>
             ))}
           </div>
-          <Tag>Exemplo demonstrativo · sem preços nem disponibilidade · até 10 imóveis</Tag>
+          <Tag>Imóveis ilustrativos · sem preços nem disponibilidade · até 10 no site</Tag>
         </div>
       ) : seg === 'alimentacao' ? (
         // Alimentação: itens por categoria, pedido pelo WhatsApp, sem pagamento online.
@@ -294,25 +333,23 @@ export function SitePreview({
             ))}
           </div>
           <div className={s.products}>
-            {['Item 1', 'Item 2', 'Item 3'].map((item) => (
-              <div key={item} className={s.product}>
-                <PhotoSlot className={s.productImg} label="Foto do item" />
-                <span className={s.cardTitle}>
-                  {c.services[0]} · {item}
-                </span>
+            {(art.items.length ? art.items : [['', 'Item 1'], ['', 'Item 2'], ['', 'Item 3']]).map(([img, name]) => (
+              <div key={name} className={s.product}>
+                {img ? <Illustration className={s.productImg} src={img} /> : <PhotoSlot className={s.productImg} label="Foto do item" />}
+                <span className={s.cardTitle}>{name}</span>
                 <span className={s.pill}>Pedir pelo WhatsApp</span>
               </div>
             ))}
           </div>
-          <Tag>Itens de exemplo · até 10 · pedido pelo WhatsApp, sem pagamento online</Tag>
+          <Tag>Itens ilustrativos · até 10 no site · pedido pelo WhatsApp, sem pagamento online</Tag>
         </div>
       ) : (
         <div className={s.section} key="vitrine">
           <span className={s.h}>{p.objective === 'produtos' ? 'Vitrine' : 'Escolha o seu'}</span>
           <div className={s.products}>
-            {[...c.services, 'Item 4', 'Item 5', 'Item 6'].map((sv, i) => (
+            {[...c.services, 'Item 4', 'Item 5', 'Item 6'].slice(0, Math.max(3, art.items.length || 6)).map((sv, i) => (
               <div key={`${sv}-${i}`} className={s.product}>
-                <PhotoSlot className={s.productImg} label="Foto do item" />
+                {art.items[i] ? <Illustration className={s.productImg} src={art.items[i][0]} /> : <PhotoSlot className={s.productImg} label="Foto do item" />}
                 <span className={s.cardTitle}>{sv}</span>
                 <span className={s.pill}>Pedir pelo WhatsApp</span>
               </div>

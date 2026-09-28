@@ -6,7 +6,7 @@ import { isProduction } from '@/config/integrations';
 import './globals.css';
 
 const title = 'Beck Performance | Sites para empresas de todos os portes';
-const description = `Veja como o site da sua empresa pode ficar em até 5 minutos. Prévia grátis, sem cadastro. Desenvolvimento profissional de ${priceRange}.`;
+const description = `Um site profissional para apresentar sua empresa e facilitar novos contatos. Veja uma prévia grátis, sem cadastro. Desenvolvimento de ${priceRange}, pagamento único.`;
 
 /** Indexa só no build de produção E com a liberação em contact.ts. */
 const indexable = isProduction && contact.indexarNoGoogle;

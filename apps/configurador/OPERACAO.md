@@ -14,20 +14,26 @@ configurado:
   (ou “Pedir orçamento personalizado”, quando o projeto sai dos pacotes). Ele
   abre o WhatsApp com uma mensagem em blocos legíveis — MEU NEGÓCIO,
   PACOTE ESCOLHIDO, COMO IMAGINEI O SITE (estilo, cores, fonte, seções na
-  ordem, recursos), TEXTOS QUE EU ESCREVI OU EDITEI, OBSERVAÇÕES e SOBRE MIM.
+  ordem, recursos), TEXTOS ESCOLHIDOS PARA A PRÉVIA, OBSERVAÇÕES e SOBRE MIM.
+  O bloco de textos não diz que a pessoa os escreveu: podem ter vindo da IA,
+  de um exemplo ou da própria pessoa.
   Campos vazios não aparecem, e só entram o pacote e os recursos ativos.
   Nada de JSON, ids internos ou links com o estado inteiro (antes, o link
   "Opções de layout" levava o estado codificado — `complex%22%3A…` — para o
   corpo da mensagem). Nada é enviado até o visitante tocar em enviar.
 - Se a mensagem completa passar de ~1.800 caracteres, vai um resumo enxuto
-  que avisa: "Os textos que escrevi estão no arquivo do projeto". A página
+  que avisa: "Os textos escolhidos para a prévia estão no arquivo do
+  projeto, que envio em seguida". A página
   mostra o aviso e as alternativas **Copiar resumo** e **Baixar meu
   projeto** (arquivo `projeto-site-<empresa>.json`, ver seção 3.1).
 - A página **nunca** diz que o pedido foi recebido e **nunca** emite
   `generate_lead`. Abrir o WhatsApp é registrado como `whatsapp_open`
   (intenção).
-- A mensagem termina com `Código do projeto: bp-xxxxxxxxxx · Origem: …`
-  para você ligar a conversa ao projeto, ao arquivo exportado e à campanha.
+- A mensagem termina com `Referência (a mesma do arquivo do projeto):
+  bp-xxxxxxxxxx · Origem: …`. A referência é gerada no navegador do
+  visitante e **não** permite à equipe abrir o projeto: o projeto só existe
+  no aparelho da pessoa e no arquivo que ela enviar. Serve para ligar a
+  conversa ao arquivo exportado e à campanha.
 
 **Registro manual recomendado enquanto não há receptor:** a cada conversa
 nova, crie o card no CRM (ou planilha) na etapa *Novo contato*, colando a
@@ -158,17 +164,17 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 
 | Evento | Quando | Propriedades |
 |---|---|---|
-| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacotes`, `exemplo`, `flutuante`) |
+| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacote`, `exemplo`, `flutuante`); `package` quando vem de “Criar prévia com o …” |
 | `configurator_start` | Abrir a página de criação (1× por sessão) | — |
 | `step_complete` | Avançar uma etapa (1× por etapa): 1 negócio, 2 objetivo, 3 prévia pronta, 4 pacote, 5 estilo, 6 cores, 7 títulos, 8 conteúdo, 9 seções | `step` |
 | `example_opened` / `example_applied` | Abrir um exemplo / usar como ponto de partida | `segment` |
 | `example_view_mode` | Trocar Computador/Celular no exemplo | `segment`, `device` |
 | `preview_view` | Ver a prévia: chegar em “Sua prévia está pronta” ou na revisão, prévia gerada pela IA, tocar em “Ver meu site” ou abrir a tela cheia | `source` (`etapa`, `ia`, `alternancia`, `tela_cheia`), `step` |
-| `package_selected` | Escolher um pacote (1× por pacote e origem) | `package`, `source` |
+| `package_selected` | Escolher um pacote (1× por pacote e origem) | `package`, `source` (`apresentacao` quando a prévia começa pelo botão de um pacote) |
 | `package_changed` | Trocar de pacote, sempre depois da confirmação | `from`, `to`, `source` (`objetivo`, `seu_site`, `secoes`, `imagens`, `incluido`) |
 | `request_click` | Clique em “Solicitar desenvolvimento” (**intenção**) | `mode` (`whatsapp`, `formulario`), `package` (ou `personalizado`) |
 | `whatsapp_open` | Clique para abrir o WhatsApp (**intenção, não é pedido recebido**) | `context` (`pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `projeto_personalizado`, `final`, `rodape`) |
-| `ai_generate` | Resultado de “Gerar minha prévia” ou de “Gerar outra sugestão para esta seção” (só com a IA ligada) | `result` (`ok`, `erro`), `reason` (`secao` quando é só uma seção) |
+| `ai_generate` | Início e resultado de “Gerar minha prévia” e resultado de “Gerar outra sugestão para esta seção” (só com a IA ligada) | `result` (`iniciada`, `ok`, `erro`), `reason` (`secao` quando é só uma seção) |
 | `ai_audio` | Resultado de “Gravar minha ideia” (transcrição; cancelar não conta) | `result` (`ok`, `erro`), `reason` (`microfone`, `curto`, `sem-fala`…) |
 | `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
 | `summary_copy` / `project_export` / `project_import` | "Copiar resumo", "Baixar meu projeto", "Abrir arquivo de projeto" (sem conteúdo) | — |
@@ -179,7 +185,9 @@ Abrir o WhatsApp (`whatsapp_open`), pedido recebido (`generate_lead` ou card
 no CRM) e contratação (etapa *Aprovação* no CRM) são coisas diferentes e
 nunca se misturam nos relatórios.
 
-Todo evento leva `flow_version`, variantes ativas e UTMs normalizadas.
+Todo evento leva `flow_version`, `device` (`celular` abaixo de 760 px de
+largura, `tablet` até 1079 px, `computador` acima — só a largura da tela,
+sem identificar o aparelho), variantes ativas e UTMs normalizadas.
 Nunca levam nome, telefone, e-mail, textos digitados nem URL completa.
 Qualificação, proposta e venda (`qualify_lead`, `proposal_sent`,
 `deal_won`, `deal_lost`) acontecem no CRM e não são disparadas pela página.
@@ -193,6 +201,10 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
 - UTMs permitidas: `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`,
   `utm_term` — em minúsculas, sem acento, até 60 caracteres. Valores que
   parecem e-mail ou telefone são descartados. Vale a primeira origem da sessão.
+- `criar/?pacote=profissional` (ids: `essencial`, `profissional`, `completo`)
+  começa a prévia nesse pacote. Se a pessoa já tem uma prévia em andamento,
+  a página pergunta antes de aplicar; nada é trocado sozinho. É o que os
+  botões “Criar prévia com o …” da apresentação usam.
 - `?segmento=beleza` (ids: `local`, `beleza`, `consultoria`, `criativo`,
   `alimentacao`, `outro`) começa o carrossel no exemplo do segmento e abre a
   página de criação com o segmento já escolhido. Uma única página atende
@@ -208,6 +220,8 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
 | Chegada à prévia pronta | `preview_view(source=etapa)` ÷ `configurator_start` |
 | Troca de pacote | `package_changed` ÷ `preview_view(source=etapa)` |
 | Pedido de desenvolvimento | `request_click` ÷ `preview_view(source=etapa)` |
+| Funil por aparelho | Os indicadores acima separados por `device` — confirma (ou não) a premissa de ~90% de acessos pelo celular |
+| Pacote vindo da apresentação | `start_click(context=pacote)` por `package` ÷ `start_click` |
 | Pedidos confirmados | `generate_lead` (modo receptor) ou cards criados no CRM (modo WhatsApp) |
 | Proposta, fechamento, perda | No CRM, por etapa e motivo de perda |
 | Custo por pedido | Verba da campanha ÷ pedidos confirmados da mesma origem |

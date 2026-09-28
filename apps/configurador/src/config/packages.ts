@@ -96,17 +96,30 @@ export const packages: Package[] = [
 
 export const packageOrder: PackageId[] = packages.map((p) => p.id);
 
-/**
- * Até três benefícios principais de cada pacote, derivados dos limites
- * acima (nunca escritos à mão, para não divergir do catálogo).
- */
+/** Até três benefícios principais de cada pacote (derivados dos limites). */
 export function packageHighlights(pkg: Package): string[] {
-  const list = [`Até ${pkg.maxSections} seções com aparência profissional`];
-  if (pkg.showcaseItems) list.push(`Vitrine com até ${pkg.showcaseItems} itens e pedido pelo WhatsApp`);
-  if (pkg.galleryImages) list.push(`Galeria com até ${pkg.galleryImages} fotos suas`);
-  if (pkg.form && !pkg.showcaseItems) list.push('Formulário que organiza o pedido');
-  if (list.length === 1) list.push('Sua logo, suas cores e o estilo escolhido', 'Botão de WhatsApp e links para as redes');
-  return list.slice(0, 3);
+  return packageDiffs(pkg).slice(0, 3);
+}
+
+/** O que todos os pacotes têm — mostrado uma vez, fora dos cartões. */
+export const commonBenefits = [
+  'página responsiva, pensada primeiro para o celular',
+  'sua logo, suas cores e o estilo escolhido',
+  'botão de WhatsApp e links para as redes',
+  `${revisionRounds} rodadas de ajustes antes de publicar`,
+] as const;
+
+/**
+ * O que muda de um pacote para outro, em uso (até 4 linhas). O Essencial
+ * não ganha lista maior só para parecer completo.
+ */
+export function packageDiffs(pkg: Package): string[] {
+  const list = [pkg.id === 'essencial' ? `Até ${pkg.maxSections} seções: apresentação, serviços, sobre, contato e uma à escolha` : `Até ${pkg.maxSections} seções na página`];
+  if (pkg.showcaseItems) list.push(`Vitrine com até ${pkg.showcaseItems} itens, com pedido pelo WhatsApp`);
+  if (pkg.galleryImages) list.push(`Galeria com até ${pkg.galleryImages} fotos para apresentar trabalhos`);
+  if (pkg.form) list.push(pkg.showcaseItems ? 'Formulário, perguntas frequentes e depoimentos, como no Profissional' : 'Formulário que organiza a solicitação antes do WhatsApp');
+  if (pkg.form && !pkg.showcaseItems) list.push('Perguntas frequentes e depoimentos reais');
+  return list.slice(0, 4);
 }
 
 /**

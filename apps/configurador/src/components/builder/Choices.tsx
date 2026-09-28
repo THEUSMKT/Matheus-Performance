@@ -10,7 +10,7 @@ import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp, Check as CheckIcon, MessageCircle, Sparkles } from 'lucide-react';
 import { contact } from '@/config/contact';
 import { customNeeds, packageById, packages, rank } from '@/config/packages';
-import { currentPackage, directions, formBenefit, moveSection, sectionName, sections, segmentOf, siteContent, suggestedServices, type Project } from '@/lib/project';
+import { currentPackage, directions, formBenefit, moveSection, sectionName, sections, segmentOf, segments, siteContent, suggestedServices, type Project } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { Check } from '../landing/Controls';
@@ -48,6 +48,7 @@ export function StepReady({
   narrow,
   keptEdits = [],
   onUseNewTexts,
+  segConflict = null,
 }: {
   p: Project;
   edit: Edit;
@@ -56,6 +57,8 @@ export function StepReady({
   /** Textos editados à mão que a nova geração manteve. */
   keptEdits?: Project['edited'];
   onUseNewTexts?: () => void;
+  /** A descrição parece de outro segmento que o escolhido à mão. */
+  segConflict?: { suggested: string; onUse: () => void; onKeep: () => void } | null;
   onPersonalize: () => void;
   onEditDescription: () => void;
   editLabel: string;
@@ -79,6 +82,22 @@ export function StepReady({
             <li key={n}>{n}</li>
           ))}
         </ul>
+      )}
+      {segConflict && (
+        <div className={b.keptEdits} role="status">
+          <p>
+            Sua descrição parece de <strong>{segments.find((x) => x.id === segConflict.suggested)?.name}</strong>, mas o segmento escolhido é{' '}
+            <strong>{segmentOf(p).name}</strong>. O segmento muda o selo, as imagens e o resumo do pedido.
+          </p>
+          <div className={s.actionRow}>
+            <button type="button" className={`${s.primary} ${s.small}`} onClick={segConflict.onUse}>
+              Usar {segments.find((x) => x.id === segConflict.suggested)?.short}
+            </button>
+            <button type="button" className={`${s.secondary} ${s.small}`} onClick={segConflict.onKeep}>
+              Manter {segmentOf(p).short}
+            </button>
+          </div>
+        </div>
       )}
       {keptEdits.length > 0 && onUseNewTexts && (
         <div className={b.keptEdits} role="status">

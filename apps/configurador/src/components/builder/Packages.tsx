@@ -10,14 +10,18 @@
    o que sai fica guardado no rascunho (ParkedNote) para ser restaurado.
    Com mais seções do que o limite, o visitante escolhe quais manter.
    ========================================================================== */
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Check, X } from 'lucide-react';
-import { brl, customNeeds, externalCosts, packageById, packageComparison, packageHighlights, packages, priceNotes, rank, type PackageId } from '@/config/packages';
+import { brl, customNeeds, externalCosts, packageById, packageComparison, packageDiffs, packages, priceNotes, rank, type PackageId } from '@/config/packages';
 import { currentPackage, investmentLabel, isCustom, recommendation, restorable, sectionName, sections, switchPackage, type PackageSwitch, type Project } from '@/lib/project';
 import s from '../landing/Landing.module.css';
+import { LazyDetails } from '../landing/Controls';
 import b from './Builder.module.css';
 
-/** Resumo compacto, sempre à vista: "Profissional · R$ 750 · Alterar pacote". */
+/**
+ * Resumo compacto, sempre à vista: "Profissional · R$ 750 · Alterar pacote".
+ * Enquanto a pessoa não escolheu, diz que é o pacote inicial, sem contratação.
+ */
 export function PriceBar({ p, onChange }: { p: Project; onChange: () => void }) {
   const custom = isCustom(p);
   return (
@@ -30,64 +34,89 @@ export function PriceBar({ p, onChange }: { p: Project; onChange: () => void }) 
       <button type="button" className={b.textButton} onClick={onChange}>
         Alterar pacote
       </button>
+      {!p.pkgChosen && !custom && <span className={b.pkgInitial}>Pacote inicial: você pode mudar, e nada é contratado agora.</span>}
     </div>
   );
 }
 
-/** Comparação curta, alinhada por recurso. */
+/**
+ * Comparação curta, alinhada por recurso. No computador, uma tabela; no
+ * celular, um bloco por recurso com os três pacotes um embaixo do outro
+ * (mesmas informações, sem tabela larga para deslizar).
+ */
 export function PackageCompare({ current, caption = 'Comparar pacotes' }: { current?: PackageId; caption?: string }) {
   const rows = packageComparison();
+  const cellText = (c: string) =>
+    c === 'Incluído' ? (
+      <>
+        <Check aria-hidden="true" className={b.compareCheck} /> Incluído
+      </>
+    ) : (
+      c
+    );
   return (
-    <div className={b.compareWrap}>
-      <table className={b.compare}>
-        <caption className={s.srOnly}>{caption}</caption>
-        <thead>
-          <tr>
-            <td />
-            {packages.map((pkg) => (
-              <th key={pkg.id} scope="col" data-current={pkg.id === current || undefined}>
-                {pkg.name}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.label}>
-              <th scope="row">{r.label}</th>
-              {r.cells.map((c, i) => (
-                <td key={i} data-current={packages[i].id === current || undefined} data-off={c.startsWith('A partir') || undefined}>
-                  {c === 'Incluído' ? (
-                    <>
-                      <Check aria-hidden="true" className={b.compareCheck} /> Incluído
-                    </>
-                  ) : (
-                    c
-                  )}
-                </td>
+    <>
+      <div className={b.compareWrap}>
+        <table className={b.compare}>
+          <caption className={s.srOnly}>{caption}</caption>
+          <thead>
+            <tr>
+              <td />
+              {packages.map((pkg) => (
+                <th key={pkg.id} scope="col" data-current={pkg.id === current || undefined}>
+                  {pkg.name}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.label}>
+                <th scope="row">{r.label}</th>
+                {r.cells.map((c, i) => (
+                  <td key={i} data-current={packages[i].id === current || undefined} data-off={c.startsWith('A partir') || undefined}>
+                    {cellText(c)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <dl className={b.compareBlocks} aria-label={caption}>
+        {rows.map((r) => (
+          <div key={r.label} className={b.compareBlock}>
+            <dt>{r.label}</dt>
+            {r.cells.map((c, i) => (
+              <dd key={i} data-current={packages[i].id === current || undefined} data-off={c.startsWith('A partir') || undefined}>
+                <span>{packages[i].name}</span>
+                <b>{cellText(c)}</b>
+              </dd>
+            ))}
+          </div>
+        ))}
+      </dl>
+    </>
   );
 }
 
 type Confirm = { to: PackageId; keep: string[]; sw: PackageSwitch };
 
 /**
- * Os três pacotes como opções. O cartão inteiro escolhe (sem botões
- * aninhados); o botão diz o pacote ("Escolher Profissional"). Para um
+ * Escolha compacta: os três pacotes lado a lado (nome e preço, estado
+ * selecionado inequívoco) e, abaixo, os detalhes só do selecionado — nada de
+ * três listas longas ao mesmo tempo. Tocar escolhe (com desfazer); para um
  * pacote menor, confirma antes, mostrando o que sai e o novo preço.
  */
-export function PackageChooser({ p, onApply, headingLevel = 3 }: { p: Project; onApply: (to: PackageId, next: Project) => void; headingLevel?: 2 | 3 }) {
+export function PackageChooser({ p, onApply }: { p: Project; onApply: (to: PackageId, next: Project) => void; headingLevel?: 2 | 3 }) {
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const rec = recommendation(p);
-  const H = `h${headingLevel}` as 'h2' | 'h3';
+  const selected = currentPackage(p);
+  const shown = confirm ? packageById(confirm.to) : selected;
 
   function choose(to: PackageId) {
-    if (to === p.pkg) return;
+    if (to === p.pkg) return setConfirm(null);
     const sw = switchPackage(p, to);
     const down = rank(to) < rank(p.pkg);
     if (down && (sw.removed.length || sw.overLimit)) setConfirm({ to, keep: sw.overLimit ? sw.overLimit.optional.slice(0, sw.overLimit.room) : [], sw });
@@ -102,100 +131,117 @@ export function PackageChooser({ p, onApply, headingLevel = 3 }: { p: Project; o
     setConfirm({ ...confirm, keep, sw: switchPackage(p, confirm.to, keep) });
   }
 
-  const onCard = (to: PackageId) => (ev: MouseEvent) => {
-    if ((ev.target as HTMLElement).closest('button, a, input, label, [role=alertdialog]')) return;
-    choose(to);
-  };
+  function onKey(e: KeyboardEvent, i: number) {
+    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    const j = (i + step + packages.length) % packages.length;
+    refs.current[j]?.focus();
+    choose(packages[j].id);
+  }
 
   return (
-    <ul className={b.pkgChoose} aria-label="Pacotes">
-      {packages.map((pkg) => {
-        const current = pkg.id === p.pkg && !isCustom(p);
-        const suggested = pkg.id === rec.pkg && !current && rank(rec.pkg) > rank(p.pkg);
-        const open = confirm?.to === pkg.id ? confirm : null;
-        return (
-          <li key={pkg.id} className={b.pkgOption} data-current={current || undefined} onClick={onCard(pkg.id)}>
-            <div className={b.pkgHead}>
-              <H>{pkg.name}</H>
-              <strong>{brl(pkg.price)}</strong>
-            </div>
-            <p className={b.muted}>{pkg.forWhom}</p>
-            <ul className={b.pkgBenefits}>
-              {packageHighlights(pkg).map((h) => (
-                <li key={h}>
-                  <Check aria-hidden="true" /> {h}
-                </li>
-              ))}
-            </ul>
-            {suggested && <p className={b.pkgWhy}>{rec.reason}</p>}
-            {current ? (
-              <p className={b.pkgSelected}>
-                <Check aria-hidden="true" /> Selecionado
-              </p>
-            ) : (
-              <button type="button" className={`${s.secondary} ${s.small} ${b.pkgPick}`} onClick={() => choose(pkg.id)} aria-describedby={`preco-${pkg.id}`}>
-                Escolher {pkg.name}
+    <div className={b.pkgPicker}>
+      <div role="radiogroup" aria-label="Pacote" className={b.pkgSeg}>
+        {packages.map((pkg, i) => {
+          const on = pkg.id === p.pkg && !isCustom(p);
+          return (
+            <button
+              key={pkg.id}
+              ref={(el) => {
+                refs.current[i] = el;
+              }}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              tabIndex={on || (isCustom(p) && i === 0) ? 0 : -1}
+              data-pending={confirm?.to === pkg.id || undefined}
+              onClick={() => choose(pkg.id)}
+              onKeyDown={(e) => onKey(e, i)}
+            >
+              <span className={b.pkgSegName}>{pkg.name}</span>
+              <span className={b.pkgSegPrice}>{brl(pkg.price)}</span>
+              {on && (
+                <span className={b.pkgSegCheck}>
+                  <Check aria-hidden="true" /> Selecionado
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={b.pkgDetail} aria-live="polite">
+        <p className={b.pkgDetailFor}>
+          <strong>{shown.name}</strong> — {shown.forWhom}
+        </p>
+        <ul className={b.pkgBenefits}>
+          {packageDiffs(shown).map((h) => (
+            <li key={h}>
+              <Check aria-hidden="true" /> {h}
+            </li>
+          ))}
+        </ul>
+        <p className={b.muted}>
+          Prazo: {shown.deadline}, {priceNotes.deadlineStart}.
+        </p>
+        {!confirm && rec.pkg !== p.pkg && rank(rec.pkg) > rank(p.pkg) && <p className={b.pkgWhy}>{rec.reason}</p>}
+
+        {confirm && (
+          <div className={s.confirmBox} role="alertdialog" aria-labelledby="troca-pacote">
+            <p id="troca-pacote">
+              Trocar para o {shown.name} — {brl(shown.price)} no total?
+            </p>
+            {confirm.sw.overLimit && (
+              <fieldset className={b.keepPick}>
+                <legend>
+                  O {shown.name} comporta até {shown.maxSections} seções. Escolha até {confirm.sw.overLimit.room} para manter além de apresentação e contato:
+                </legend>
+                {confirm.sw.overLimit.optional.map((id) => {
+                  const on = confirm.keep.includes(id);
+                  const full = !on && confirm.keep.length >= confirm.sw.overLimit!.room;
+                  return (
+                    <label key={id} className={s.checkRow}>
+                      <input type="checkbox" checked={on} disabled={full} onChange={(ev) => setKeep(ev.target.checked ? [...confirm.keep, id] : confirm.keep.filter((x) => x !== id))} />
+                      <span>
+                        <strong>{sectionName(p, id)}</strong>
+                      </span>
+                    </label>
+                  );
+                })}
+              </fieldset>
+            )}
+            {confirm.sw.removed.length > 0 && (
+              <>
+                <p className={s.hint}>Saem da versão ativa (ficam guardados no seu rascunho, para restaurar se voltar a um pacote maior):</p>
+                <ul className={b.removed}>
+                  {confirm.sw.removed.map((r) => (
+                    <li key={r}>{r}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <div className={s.actionRow}>
+              <button
+                type="button"
+                className={`${s.primary} ${s.small}`}
+                autoFocus
+                onClick={() => {
+                  const c = confirm;
+                  setConfirm(null);
+                  onApply(c.to, c.sw.project);
+                }}
+              >
+                Trocar para o {shown.name}
               </button>
-            )}
-            <span id={`preco-${pkg.id}`} className={s.srOnly}>
-              {brl(pkg.price)} no total
-            </span>
-            {open && (
-              <div className={s.confirmBox} role="alertdialog" aria-labelledby={`troca-${pkg.id}`}>
-                <p id={`troca-${pkg.id}`}>
-                  Trocar para o {pkg.name} — {brl(pkg.price)} no total?
-                </p>
-                {open.sw.overLimit && (
-                  <fieldset className={b.keepPick}>
-                    <legend>
-                      O {pkg.name} comporta até {pkg.maxSections} seções. Escolha até {open.sw.overLimit.room} para manter além de apresentação e contato:
-                    </legend>
-                    {open.sw.overLimit.optional.map((id) => {
-                      const on = open.keep.includes(id);
-                      const full = !on && open.keep.length >= open.sw.overLimit!.room;
-                      return (
-                        <label key={id} className={s.checkRow}>
-                          <input type="checkbox" checked={on} disabled={full} onChange={(ev) => setKeep(ev.target.checked ? [...open.keep, id] : open.keep.filter((x) => x !== id))} />
-                          <span>
-                            <strong>{sectionName(p, id)}</strong>
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </fieldset>
-                )}
-                {open.sw.removed.length > 0 && (
-                  <>
-                    <p className={s.hint}>Saem da versão ativa (ficam guardados no seu rascunho, para restaurar se voltar a um pacote maior):</p>
-                    <ul className={b.removed}>
-                      {open.sw.removed.map((r) => (
-                        <li key={r}>{r}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                <div className={s.actionRow}>
-                  <button
-                    type="button"
-                    className={`${s.primary} ${s.small}`}
-                    autoFocus
-                    onClick={() => {
-                      setConfirm(null);
-                      onApply(open.to, open.sw.project);
-                    }}
-                  >
-                    Trocar para o {pkg.name}
-                  </button>
-                  <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => setConfirm(null)}>
-                    Manter o {currentPackage(p).name}
-                  </button>
-                </div>
-              </div>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+              <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => setConfirm(null)}>
+                Manter o {selected.name}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -242,13 +288,10 @@ export function StepPackage({ p, onApply, onRestore, onCustom }: { p: Project; o
         )}
       </p>
       <ParkedNote p={p} onRestore={onRestore} />
-      <PackageChooser p={p} onApply={onApply} headingLevel={2} />
-      <details className={s.details}>
-        <summary>Comparar pacotes</summary>
-        <div className={s.detailsBody}>
-          <PackageCompare current={p.pkg} />
-        </div>
-      </details>
+      <PackageChooser p={p} onApply={onApply} />
+      <LazyDetails className={s.details} summary="Comparar pacotes">
+        <PackageCompare current={p.pkg} />
+      </LazyDetails>
       <p className={b.muted} style={{ marginTop: 12 }}>
         {priceNotes.payment}{' '}
         <button type="button" className={b.textButton} onClick={onCustom}>
@@ -300,12 +343,9 @@ export function PackageDialog({
       </div>
       <div className={b.pkgBody}>
         {open && <PackageChooser p={p} onApply={onChoose} />}
-        <details className={s.details}>
-          <summary>Comparar pacotes</summary>
-          <div className={s.detailsBody}>
-            <PackageCompare current={p.pkg} />
-          </div>
-        </details>
+        <LazyDetails className={s.details} summary="Comparar pacotes">
+          <PackageCompare current={p.pkg} />
+        </LazyDetails>
         <div className={b.pkgExtra}>
           <h3>O que cada pacote inclui</h3>
           {packages.map((pkg) => (

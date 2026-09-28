@@ -1,5 +1,139 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — evolução comercial da landing e do configurador (celular primeiro, 28/09)
+
+Premissa de planejamento (não medida): a maior parte do tráfego pago chega
+pelo celular. Tudo foi desenhado e revisado primeiro em 390 px, depois em 360
+e 430 px, e só então adaptado para tablet e computador.
+
+**Correções (reproduzidas antes de corrigir):**
+- **Casa Oliva (Completo) mostrava "até 8 imagens":** os exemplos agora
+  usam o limite de galeria do próprio pacote (Completo: até 15 fotos).
+- **Modelo de estética + descrição de imobiliária mantinha "Beleza e
+  estética":** o segmento que veio de um modelo passa a ser tratado como
+  sugestão e acompanha a descrição. Quando o segmento foi escolhido à mão e
+  a descrição parece de outro setor, a tela pergunta ("Usar …" / "Manter …")
+  em vez de trocar sozinha.
+- **Reduzir e restaurar o pacote mudava a ordem das seções:** a ordem
+  anterior fica guardada junto com o que saiu (`parked.order`) e volta
+  igual.
+- **WhatsApp dizia "TEXTOS QUE EU ESCREVI OU EDITEI" para textos da IA:**
+  o bloco agora é "TEXTOS ESCOLHIDOS PARA A PRÉVIA".
+- **"Código do projeto" sugeria que a equipe consegue abrir o projeto:**
+  virou "Referência (a mesma do arquivo do projeto)". O projeto continua só
+  no aparelho da pessoa e no arquivo que ela enviar.
+
+**Apresentação:**
+- Topo com o novo título (versão curta no celular), a frase sobre prévia
+  grátis e desenvolvimento pela Beck Performance, "Desenvolvimento de R$ 500
+  a R$ 1.000", pagamento único e domínio/hospedagem à parte, "Criar minha
+  prévia grátis" e "Ver exemplos de sites", e "Sem cadastro. Sem
+  compromisso." O botão principal aparece sem rolar em 360, 390 e 430 px.
+  Celular deitado usa o título curto.
+- "Em até 5 minutos" saiu de todos os lugares (página, vitrine, imagem de
+  compartilhamento, descrição). No lugar: "em poucos passos".
+- Nova faixa "O que a Beck Performance faz no seu site" e "Como funciona"
+  em três passos: crie sua prévia; ajuste e escolha o pacote; converse e
+  confirme.
+- Pacotes em blocos verticais no celular. Os itens comuns aparecem uma vez
+  ("Em todos os pacotes"), e cada pacote mostra só o que o diferencia, o
+  prazo e o botão "Criar prévia com o …". O botão abre a criação já no
+  pacote; com uma prévia em andamento, pergunta antes e não troca nada
+  sozinho. O Profissional é descrito como "Para apresentar trabalhos e
+  organizar pedidos", sem selo de "mais vendido". A comparação completa tem
+  versão própria para o celular, em blocos.
+- Com um "Criar prévia com o …" à vista, o botão flutuante sai da tela e não
+  aparece duplicado.
+- Perguntas: as seis prioritárias primeiro (prévia × site final, o que o
+  valor inclui, domínio e hospedagem, prazo, materiais, alterações depois da
+  entrega). As outras continuam em "Ver todas".
+
+**Exemplos preenchidos:**
+- 27 ilustrações vetoriais próprias em `public/demo/` (origem e licença em
+  `public/demo/README.md`). Elas preenchem galeria, destaques, cardápio e
+  imóveis dos exemplos públicos. Somem "Sua foto 1", "Item 1" e "Foto do
+  item" dos exemplos, e as legendas deixam claro que são ilustrativas.
+- O cartão mostra o segmento, a finalidade, o pacote com o preço e "Ver
+  este exemplo". No celular, o exemplo abre na versão de celular em tela
+  cheia, sem moldura dentro de moldura. "Usar este modelo" mostra o pacote e
+  o preço.
+
+**Criação (configurador):**
+- No celular, o progresso é uma linha ("Etapa 3 de 4: Personalizar · Cores
+  (3 de 6)") que abre a lista de etapas.
+- Seletor de pacote compacto: três opções lado a lado (nome, preço e
+  "Selecionado") e, abaixo, os detalhes só do escolhido. Antes de a pessoa
+  escolher, o pacote aparece como "Pacote inicial: você pode mudar, e nada é
+  contratado agora".
+- Depois da prévia pronta: "Gostei assim — revisar e solicitar".
+- Áudio: o botão é "Parar gravação". Durante a gravação e a transcrição,
+  "Gerar minha prévia" fica desativado e explica o motivo. No navegador do
+  Instagram ou do Facebook aparece um aviso sobre o microfone, com a opção de
+  digitar. Se a pessoa sair do app durante a gravação, a gravação para e o
+  texto fica para conferir.
+- Revisão: ferramentas agrupadas em "Salvar ou compartilhar projeto". Se o
+  WhatsApp não abrir, a página indica onde copiar o resumo.
+- Gerar outra sugestão para uma seção não sobrescreve um texto que a pessoa
+  editou enquanto a sugestão era gerada.
+
+**Medição:**
+- Todo evento leva `device` (`celular`, `tablet` ou `computador`, só pela
+  largura da tela).
+- `start_click` com `context: pacote` leva o `package`.
+- `ai_generate` registra também `iniciada`.
+
+Nada disso envia texto digitado, áudio ou dados pessoais.
+
+**Verificação:**
+- 65 testes unitários, com 4 novos:
+  - galeria dos exemplos no limite do pacote;
+  - modelo de estética com descrição de imobiliária;
+  - texto e referência do WhatsApp;
+  - diferenças dos pacotes e categoria do aparelho.
+- 60 cenários de navegador, 16 novos:
+  - pacote vindo da apresentação, com e sem rascunho;
+  - exemplos sem espaços vazios;
+  - exemplo no celular;
+  - primeira tela em 360, 390 e 430 px;
+  - 768, 1024 e 1440 px e celular deitado (844×390);
+  - progresso, pacote e revisão no celular;
+  - ordem ao restaurar;
+  - WhatsApp;
+  - conflito de segmento;
+  - navegador do Instagram.
+- Tudo em Chromium, com celular emulado e microfone simulado. **Não houve
+  teste em iPhone ou Safari reais.**
+- Capturas antes/depois (celular primeiro) em `docs/capturas/2026-09-28/`.
+  Essa pasta não vai para o site publicado.
+
+**Medição de laboratório (não é dado de celular real):**
+- Condições: Chromium local com servidor gzip (como o GitHub Pages), sem cache, mediana de 5 execuções.
+- Celular: 390×844 com rede "Slow 4G" (RTT 150 ms, 1,6 Mbps) e CPU 4× mais lenta.
+- Computador: 1440×900 sem limitação.
+- Formato: `main` → esta branch.
+
+| Página | 1ª pintura (= LCP) | Bloqueio (TBT) | CLS | Transferido | Requisições | Elementos |
+|---|---|---|---|---|---|---|
+| Apresentação, celular | 892 → 968 ms | 532 → 480 ms | 0 → 0 | 234 → 241 KB | 15 → 20 | 885 → 760 |
+| Criação, celular | 752 → 776 ms | 300 → 266 ms | 0 → 0 | 255 → 259 KB | 17 → 17 | 403 → 338 |
+| Apresentação, computador | 200 → 188 ms | 59 → 42 ms | 0 → 0 | 238 → 248 KB | 19 → 30 | 885 → 760 |
+
+- **Mais leve:** a página tem menos elementos e menos tempo de bloqueio, porque a comparação de pacotes (tabela e blocos) só é montada quando a pessoa abre.
+- **Mais pesado:** a primeira pintura no celular ficou +76 ms, pelo CSS novo (+6 KB sem compressão).
+- **Requisições a mais:** são ilustrações pequenas (1–3 KB cada), com carregamento adiado e só depois da primeira pintura. Elas substituem os espaços "Sua foto".
+- Não há ganho de desempenho a declarar. LCP, INP e CLS reais só podem ser medidos depois da publicação (PageSpeed Insights / Search Console).
+
+**Pendências reais:**
+- Fotos reais de clientes e depoimentos: não existem ainda, e nada foi
+  inventado. As ilustrações são demonstração visual, não prova de
+  resultado.
+- Validação no iPhone (Safari) e no navegador interno do Instagram: roteiro
+  no PR.
+- Botão final diferente por objetivo (por exemplo, "Pedir orçamento" ×
+  "Agendar"): exige mudar o contrato da mensagem e do Worker. Ficou para
+  uma próxima rodada.
+- O Worker não mudou nesta rodada. Publicar é só o site (Pages no merge).
+
 ## Edição — o que faltava da especificação (segunda rodada)
 
 - **Topo da apresentação com a prévia real:** a vitrine deixou de ser um

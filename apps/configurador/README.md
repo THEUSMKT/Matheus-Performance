@@ -1,6 +1,6 @@
 # Configurador de sites — Beck Performance
 
-Prévia gratuita do site da empresa em até 5 minutos e desenvolvimento em
+Prévia gratuita do site da empresa em poucos passos e desenvolvimento em
 três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). A apresentação (`/`)
 mostra os dois diferenciais, exemplos, como funciona, os pacotes e as
 perguntas; o botão principal abre direto a página de criação (`/criar/`),

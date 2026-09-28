@@ -20,18 +20,24 @@ export const experiments = {
 
 export type ExperimentId = keyof typeof experiments;
 
-/** Textos que cada variante troca. O controle é o texto aprovado. */
+/**
+ * Textos que cada variante troca. O controle é o texto aprovado. `short` é o
+ * título no celular (o longo continua disponível para leitores de tela).
+ * Sem promessa de tempo: "em poucos passos", nunca "em X minutos".
+ */
 export const heroVariants = {
   a: {
-    title: 'Veja como o site da sua empresa pode ficar em até 5 minutos.',
+    title: 'Um site profissional para apresentar sua empresa e facilitar novos contatos.',
+    short: 'Um site profissional para o seu negócio.',
   },
   b: {
     title: 'Veja o site da sua empresa antes de contratar.',
+    short: 'Veja seu site antes de contratar.',
   },
 } as const;
 
 /** Rótulo do botão principal para quem ainda não tem prévia salva. */
 export const ctaVariants = {
   a: { primary: 'Criar minha prévia grátis' },
-  b: { primary: 'Ver meu site em 5 minutos' },
+  b: { primary: 'Ver meu site em poucos passos' },
 } as const;

@@ -30,6 +30,14 @@ export type Segment = {
   neutral?: string;
   /** Exemplos de serviço principal para escolher com um toque. */
   quick: string[];
+  /** Finalidade do exemplo, em uma frase curta (cartão da apresentação). */
+  purpose: string;
+  /**
+   * Ilustrações próprias do segmento (public/demo, ver README ali): galeria
+   * e itens (vitrine/destaques), com legendas ilustrativas. Nada de preço,
+   * disponibilidade ou cliente real.
+   */
+  art: { gallery: [string, string][]; items: [string, string][] };
 };
 
 export const segments: Segment[] = [
@@ -46,6 +54,8 @@ export const segments: Segment[] = [
     styles: ['marcante', 'essencial', 'tecnologico'],
     palette: 'azul',
     quick: ['Instalação de ar-condicionado', 'Serviços elétricos', 'Pintura'],
+    purpose: 'Pedidos de orçamento pelo WhatsApp',
+    art: { gallery: [['clima', 'Ar-condicionado'], ['servico-pintura', 'Pintura'], ['servico-eletrica', 'Parte elétrica'], ['reparos', 'Reparos']], items: [['clima', 'Instalação'], ['servico-pintura', 'Pintura'], ['servico-eletrica', 'Elétrica']] },
   },
   {
     id: 'beleza',
@@ -60,6 +70,8 @@ export const segments: Segment[] = [
     styles: ['elegante', 'sofisticado', 'essencial'],
     palette: 'terracota',
     quick: ['Estética facial', 'Corte e coloração', 'Manicure'],
+    purpose: 'Serviços e pedidos de horário',
+    art: { gallery: [['beleza-recepcao', 'Recepção'], ['beleza-cadeira', 'Atendimento'], ['beleza-facial', 'Sala de estética'], ['beleza-manicure', 'Manicure'], ['beleza', 'Bancada']], items: [['beleza-cadeira', 'Cabelo'], ['beleza-facial', 'Estética'], ['beleza-manicure', 'Unhas']] },
   },
   {
     id: 'consultoria',
@@ -75,6 +87,8 @@ export const segments: Segment[] = [
     styles: ['essencial', 'elegante', 'tecnologico'],
     palette: 'azul',
     quick: ['Contabilidade', 'Consultoria empresarial', 'Assessoria jurídica'],
+    purpose: 'Áreas de atuação e primeiro contato',
+    art: { gallery: [['consultoria-reuniao', 'Reunião'], ['consultoria-graficos', 'Planejamento'], ['consultoria', 'Atendimento']], items: [['consultoria-reuniao', 'Diagnóstico'], ['consultoria-graficos', 'Planejamento'], ['consultoria', 'Acompanhamento']] },
   },
   {
     id: 'alimentacao',
@@ -89,6 +103,8 @@ export const segments: Segment[] = [
     styles: ['sofisticado', 'elegante', 'marcante'],
     palette: 'verde',
     quick: ['Bolos e doces', 'Marmitas', 'Pizzas'],
+    purpose: 'Cardápio com pedidos pelo WhatsApp',
+    art: { gallery: [['restaurante-salao', 'Salão'], ['padaria-balcao', 'Balcão'], ['paes-cesta', 'Pães da casa'], ['sucos', 'Sucos naturais'], ['alimentacao', 'Mesa posta']], items: [['prato-massa', 'Massa ao molho de tomate'], ['prato-salada', 'Salada da estação'], ['prato-risoto', 'Risoto de cogumelos'], ['prato-sopa', 'Sopa do dia'], ['sobremesa-torta', 'Torta de limão'], ['bolo-fatia', 'Bolo da casa']] },
   },
   {
     id: 'criativo',
@@ -104,6 +120,8 @@ export const segments: Segment[] = [
     styles: ['escuro', 'marcante', 'sofisticado'],
     palette: 'roxo',
     quick: ['Projetos de arquitetura', 'Fotografia', 'Design gráfico'],
+    purpose: 'Portfólio de projetos',
+    art: { gallery: [['projeto-planta', 'Planta baixa'], ['imovel-cozinha', 'Cozinha'], ['imovel-quarto', 'Quarto'], ['criativo', 'Estudo de volumes'], ['imoveis', 'Fachada'], ['interiores', 'Sala integrada']], items: [['projeto-fachada', 'Fachada residencial'], ['projeto-escritorio', 'Escritório compacto'], ['projeto-varanda', 'Varanda com jardim']] },
   },
   {
     id: 'imoveis',
@@ -118,6 +136,8 @@ export const segments: Segment[] = [
     styles: ['sofisticado', 'elegante', 'marcante'],
     palette: 'azul',
     quick: ['Compra de imóveis', 'Venda de imóveis', 'Consultoria imobiliária'],
+    purpose: 'Imóveis e visitas com orientação',
+    art: { gallery: [['interiores', 'Sala de estar'], ['imovel-cozinha', 'Cozinha'], ['imovel-quarto', 'Quarto'], ['projeto-varanda', 'Varanda'], ['imoveis', 'Fachada']], items: [['imovel-sobrado', 'Casa com quintal'], ['imovel-apartamento', 'Apartamento em condomínio'], ['imovel-casa-terrea', 'Casa térrea']] },
   },
   {
     id: 'outro',
@@ -132,6 +152,8 @@ export const segments: Segment[] = [
     styles: ['essencial', 'marcante', 'elegante'],
     palette: 'azul',
     quick: [],
+    purpose: 'Apresentação e contato para qualquer negócio',
+    art: { gallery: [['loja', 'Fachada']], items: [] },
   },
 ];
 
@@ -148,9 +170,9 @@ export const keywordRules: { match: RegExp; image?: string; segment?: string; se
   { match: /mec[aâ]nic|oficina(?! de (costura|arte))|autom[oó]v|automotiv|ve[ií]cul|\bcarros?\b|funilaria|troca de [oó]leo|\bfreios?\b|\bpneus?\b|auto ?el[eé]tric|alinhamento/i, image: 'auto', services: ['Revisão', 'Troca de óleo', 'Freios e suspensão'] },
   { match: /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i, image: 'imoveis', segment: 'imoveis', services: ['Compra e venda de imóveis', 'Consultoria imobiliária', 'Avaliação de imóveis'] },
   { match: /ar[\s-]?condicionado|climatiza|refrigera/i, image: 'clima', segment: 'local', services: ['Instalação de ar-condicionado', 'Manutenção preventiva', 'Limpeza e higienização'] },
-  { match: /el[eé]tric/i, image: 'reparos', segment: 'local', services: ['Instalações elétricas', 'Manutenção elétrica', 'Troca de disjuntores e tomadas'] },
+  { match: /el[eé]tric/i, image: 'servico-eletrica', segment: 'local', services: ['Instalações elétricas', 'Manutenção elétrica', 'Troca de disjuntores e tomadas'] },
   { match: /hidr[aá]ulic|encana/i, image: 'reparos', segment: 'local', services: ['Reparos hidráulicos', 'Instalações', 'Troca de torneiras e registros'] },
-  { match: /pintur/i, image: 'reparos', segment: 'local', services: ['Pintura residencial', 'Pintura comercial', 'Textura e acabamento'] },
+  { match: /pintur/i, image: 'servico-pintura', segment: 'local', services: ['Pintura residencial', 'Pintura comercial', 'Textura e acabamento'] },
   { match: /reforma|pedreir|marido de aluguel|montagem de m[oó]veis|gesso|marcenar|serralh/i, image: 'reparos', segment: 'local', services: ['Pequenas reformas', 'Reparos', 'Montagem e instalação'] },
   { match: /limpez|faxin|diarista/i, image: 'reparos', segment: 'local', services: ['Limpeza residencial', 'Limpeza pós-obra', 'Limpeza comercial'] },
   { match: /cabel|sal[aã]o|barb|corte|colora/i, image: 'beleza', segment: 'beleza', services: ['Corte', 'Coloração', 'Tratamentos capilares'] },
