@@ -64,7 +64,7 @@ async function next(page) {
     await page.evaluate(() => document.activeElement.blur());
     await page.waitForTimeout(350);
   }
-  await visible(page.locator('[data-bar=configurador] button, [class*=desktopActions] button').filter({ hasText: /^(Continuar|Ver minha prévia|Revisar e solicitar)/ })).click();
+  await visible(page.locator('[data-bar=configurador] button, [class*=desktopActions] button').filter({ hasText: /^(Continuar|Manter sugestão|Ver minha prévia|Revisar e solicitar)/ })).click();
 }
 async function business(page, { name = 'Clima Sul', segment = 'Serviços locais', service = 'Instalação de ar-condicionado' } = {}) {
   await page.locator('#nome-empresa').fill(name);
@@ -146,7 +146,7 @@ await scenario('Vitrine do topo: exemplo fictício identificado, nada clicável'
   const sc = page.locator('[data-showcase]');
   assert.equal(await sc.getAttribute('role'), 'img');
   const txt = await sc.textContent();
-  for (const s of ['Exemplo ilustrativo', 'Atelier Norte', 'Sua prévia em até 5 minutos']) assert(txt.includes(s), s);
+  for (const s of ['Exemplo ilustrativo', 'Estúdio Forma', 'Sua prévia em até 5 minutos']) assert(txt.includes(s), s);
   assert.equal(await sc.locator('a, button, input, form').count(), 0);
   const imgs = await sc.locator('img').evaluateAll((els) => els.map((e) => [e.getAttribute('width'), e.getAttribute('height'), e.complete && e.naturalWidth > 0]));
   for (const [w, h, ok] of imgs) assert(w && h && ok, 'imagem com dimensões reservadas e carregada');
@@ -603,6 +603,56 @@ await scenario('Seções: limite explicado; textos por seção e detalhes editá
   assert(msg.includes('Onde atendo: Porto Alegre')); assert(msg.includes('Diferenciais: Visita técnica sem custo na região'));
 });
 
+await scenario('Progresso clicável, "Manter sugestão" e escolhas numeradas (§10)', async (page) => {
+  await toSite(page);
+  const choices = page.getByRole('list', { name: 'Escolhas da personalização' });
+  assert.equal(await choices.getByRole('button').count(), 6);
+  await choices.getByRole('button', { name: 'Escolha 3: Cores' }).click();
+  assert.equal(await title(page), Q.cores, 'volta direto à escolha');
+  assert.equal(await choices.getByRole('button', { name: 'Escolha 3: Cores' }).getAttribute('aria-current'), 'step');
+  const nextBtn = visible(page.locator('[class*=desktopActions] button').filter({ hasText: /^(Continuar|Manter sugestão)/ }));
+  assert.equal((await nextBtn.innerText()).trim(), 'Manter sugestão', 'sem mudança, mantém a sugestão');
+  await page.getByRole('radio', { name: /Oliva/ }).click();
+  assert.equal((await nextBtn.innerText()).trim(), 'Continuar', 'depois de escolher, continua');
+  assert.equal(await title(page), Q.cores, 'nada avança sozinho');
+  await page.getByRole('button', { name: 'Voltar para Sua prévia (concluída)' }).click();
+  assert.equal(await title(page), Q.pronta);
+  await page.getByRole('button', { name: 'Voltar para Seu negócio (concluída)' }).click();
+  assert.equal(await title(page), Q.negocio);
+  assert.equal(await page.locator('#nome-empresa').inputValue(), 'Clima Sul', 'voltar não apaga nada');
+});
+
+await scenario('Exemplos: filtro por segmento e composições próprias (imóveis, alimentação) (§14, §15)', async (page) => {
+  await page.goto(URL);
+  const filter = page.getByRole('group', { name: 'Filtrar exemplos por segmento' });
+  assert.equal(await filter.getByRole('button', { name: 'Todos' }).getAttribute('aria-pressed'), 'true');
+  await filter.getByRole('button', { name: 'Imóveis e corretores' }).click();
+  const cards = page.locator('#exemplos button[class*=exampleCard]');
+  assert.equal(await cards.count(), 1); assert.equal(await page.getByRole('heading', { name: 'Outro segmento' }).count(), 0);
+  assert.equal(await filter.getByRole('button', { name: 'Imóveis e corretores' }).getAttribute('aria-pressed'), 'true', 'filtro ativo marcado');
+  await cards.first().click();
+  assert.equal(await page.locator('#exemplo-titulo').innerText(), 'Imóveis e corretores');
+  await page.keyboard.press('Escape');
+  await filter.getByRole('button', { name: 'Todos' }).click();
+  assert.equal(await cards.count(), 6);
+  // Alimentação (Completo, com vitrine): cardápio por categorias, pedido pelo WhatsApp.
+  await page.getByRole('button', { name: 'Ver este exemplo: Alimentação' }).click();
+  const food = await page.locator('dialog[open] [aria-roledescription=prévia]').innerText();
+  assert(food.includes('Cardápio') && food.includes('Pedir pelo WhatsApp') && food.includes('sem pagamento online'));
+  await page.keyboard.press('Escape');
+  // Topo: a vitrine usa o mesmo desenho das prévias (sem mockup à parte).
+  assert.equal(await page.locator('[data-showcase] [aria-roledescription=prévia]').count(), 2);
+  // Imóveis com vitrine: imóveis demonstrativos, sem preço nem endereço inventados.
+  await page.goto(B);
+  await page.evaluate(() => localStorage.setItem('mb.configurador.v4', JSON.stringify({ version: 4, flow: 'guiado-v2', name: 'Casa Certa', segment: 'imoveis', objective: 'agendamento', pkg: 'completo', sections: ['apresentacao', 'vitrine', 'galeria', 'contato'], step: 9 })));
+  await page.reload();
+  await ready(page);
+  const pv = (await preview(page).innerText()).toLowerCase();
+  assert(pv.includes('imóveis em destaque') && pv.includes('imóvel demonstrativo 1') && pv.includes('agendar visita pelo whatsapp'), 'o estilo pode deixar títulos em maiúsculas');
+  assert(!/R\$\s?\d/.test(pv), 'sem preço de imóvel');
+  assert(pv.includes('foto do imóvel') && pv.includes('sua foto 1'), 'espaços de foto marcados');
+});
+
 await scenario('Projeto personalizado: orçamento separado e a prévia continua', async (page) => {
   await toSite(page);
   await page.getByRole('button', { name: 'Alterar pacote' }).first().click();
@@ -680,6 +730,8 @@ await scenario('Começar novamente pede confirmação; "Começar uma nova prévi
   await page.getByRole('button', { name: 'Manter minha prévia' }).click();
   assert.equal(await title(page), Q.revisao);
   await page.goto(URL);
+  // O rótulo muda depois que a página lê o projeto salvo (após carregar).
+  await page.getByRole('link', { name: 'Começar uma nova prévia' }).waitFor();
   assert.equal((await heroCta(page).innerText()).trim(), 'Continuar minha prévia');
   await page.getByRole('link', { name: 'Começar uma nova prévia' }).click();
   await ready(page);
@@ -1055,6 +1107,37 @@ await scenario('IA: se a pessoa sai da etapa enquanto gera, nada muda sozinho; a
   await late.getByRole('button', { name: 'Ver minha prévia' }).click();
   assert.equal(await title(page), Q.pronta);
   assert((await preview(page).innerText()).includes('Ar-condicionado instalado do jeito certo'));
+});
+
+await scenario('IA: gerar outra sugestão só para uma seção; as outras ficam e dá para desfazer (§13, A14)', async (page) => {
+  let calls = 0;
+  await page.route('https://ia.test/preview', async (route) => {
+    calls++;
+    const copy = calls === 1
+      ? { ...aiAnswer.previewCopy, differentials: ['Visita combinada', 'Orçamento por escrito', 'Contato direto'] }
+      : { ...aiAnswer.previewCopy, about: 'Novo texto sobre a empresa, só desta seção.', differentials: ['Outro 1', 'Outro 2', 'Outro 3'] };
+    route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion: { ...aiAnswer, needs: [], previewCopy: copy } }) });
+  });
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
+  await page.locator('#descricao-ia').fill('Faço instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
+  await toChoice(page, Q.conteudo);
+  await page.getByText('Editar os textos das seções').click();
+  await page.getByRole('button', { name: 'Gerar outra sugestão para esta seção' }).first().waitFor();
+  const aboutGroup = page.locator('fieldset').filter({ has: page.getByText('Sobre Clima Sul', { exact: true }) });
+  await aboutGroup.getByRole('button', { name: 'Gerar outra sugestão para esta seção' }).click();
+  await page.waitForFunction(() => document.body.innerText.includes('Novo texto sobre a empresa, só desta seção.'));
+  const pv = await preview(page).innerText();
+  assert(pv.includes('Novo texto sobre a empresa, só desta seção.'), 'a seção escolhida mudou');
+  assert(pv.includes('Visita combinada') && !pv.includes('Outro 1'), 'as outras seções ficaram');
+  assert(pv.includes('Detalhe um da IA'), 'serviços intactos');
+  assert.equal(calls, 2);
+  await page.getByRole('button', { name: 'Desfazer' }).click();
+  const back = await preview(page).innerText();
+  assert(back.includes('visita combinada antes') && !back.includes('Novo texto sobre a empresa'), 'versão anterior de volta');
 });
 
 await scenario('IA: gerar de novo troca o segmento que a IA sugeriu, mas não o escolhido à mão', async (page) => {

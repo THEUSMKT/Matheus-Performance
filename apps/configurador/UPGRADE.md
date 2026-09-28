@@ -1,5 +1,46 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — o que faltava da especificação (segunda rodada)
+
+- **Topo da apresentação com a prévia real:** a vitrine deixou de ser um
+  desenho à parte ("Atelier Norte") e passou a mostrar o exemplo Estúdio
+  Forma pelo mesmo componente das prévias (`SitePreview`), no computador e
+  no celular — só o que o configurador consegue montar.
+- **Composições por segmento na prévia (§14):** consultoria mostra "Áreas
+  de atuação"; imóveis, "Como posso ajudar" e, com a vitrine (Completo),
+  "Imóveis em destaque" com imóveis demonstrativos, sem preço, endereço ou
+  disponibilidade; alimentação com vitrine vira "Cardápio" por categorias,
+  com pedido pelo WhatsApp e sem pagamento online; arquitetura/criativo e
+  "Ver meus trabalhos" ganham galeria de portfólio (um projeto em destaque);
+  com agendamento, cada serviço mostra "Pedir um horário".
+- **Progresso clicável (§10):** fases concluídas no topo levam de volta
+  (Seu negócio, Sua prévia); as seis escolhas da personalização aparecem
+  numeradas e levam direto a cada uma. Nada é apagado ao voltar.
+- **"Manter sugestão" (§10):** em estilo, cores e títulos, enquanto a
+  pessoa não muda nada, o botão de avançar diz "Manter sugestão".
+- **Gerar outra sugestão só para uma seção (§13):** em "Editar os textos
+  das seções" (sobre, diferenciais, como funciona, perguntas), com a IA
+  ligada. Usa a mesma descrição da aba e troca só aquele texto; as outras
+  seções ficam, e "Desfazer" traz a versão anterior. Sem mudança no
+  contrato com o Worker.
+- **Desfazer também para textos (§11):** "Voltar ao texto sugerido" e
+  "Usar as sugestões" podem ser desfeitos.
+- **Filtro dos exemplos (§15):** "Todos" e um botão por segmento, com o
+  filtro ativo marcado; "Exemplo 1 de N" segue o total filtrado.
+- **Desempenho e SEO (§19):** miniaturas dos exemplos e dos estilos com
+  imagem carregada sob demanda e desenho adiado fora da tela
+  (`content-visibility`); descrição da página de criação atualizada. Medido
+  localmente (Chromium, servidor local, sem limitação de rede, 3 execuções):
+  apresentação com 15 requisições (antes 20), ~808 KB (antes ~811 KB), 885
+  elementos (antes 808, pela prévia real no topo), LCP de 120–148 ms (antes
+  168–232 ms). Esses números são do ambiente de teste, não do celular real.
+- **Celular:** topo um pouco mais compacto; o aviso "Prévia atualizada" não
+  aparece mais só porque o projeto ganhou identificador ao salvar.
+- **Mantido de propósito:** a promessa "em até 5 minutos" já existia; a
+  especificação pede para não criar promessas novas e preservar as atuais.
+- Testes: 61 unitários e 44 cenários de navegador (3 novos). Publicação: só
+  o site; o Worker não mudou nesta rodada.
+
 ## Edição — pacotes no início, pedido legível, exemplos fiéis e edição sem perder trabalho
 
 **Causas encontradas**

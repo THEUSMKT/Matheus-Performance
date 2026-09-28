@@ -119,6 +119,7 @@ export function SitePreview({
   mobile = false,
   bare = false,
   demo = false,
+  lazy = false,
 }: {
   project: Project;
   logo?: string | null;
@@ -130,6 +131,8 @@ export function SitePreview({
   bare?: boolean;
   /** Exemplo da apresentação: usa o nome fictício do segmento. */
   demo?: boolean;
+  /** Imagem carregada só perto da tela (miniaturas abaixo da dobra). */
+  lazy?: boolean;
 }) {
   const c = siteContent(p, { demo });
   const obj = objectiveOf(p);
@@ -152,10 +155,16 @@ export function SitePreview({
   const serviceDetails = texts.serviceDetails;
   const region = p.details.region.trim();
 
+  // Composição por segmento: títulos e blocos próprios, só com o que o pacote cobre.
+  const seg = isRealEstate ? 'imoveis' : p.segment;
+  const servicesTitle =
+    seg === 'consultoria' ? 'Áreas de atuação' : seg === 'imoveis' ? 'Como posso ajudar' : seg === 'alimentacao' && !showcase ? 'Destaques da casa' : p.objective === 'orcamento' ? 'O que fazemos' : sectionName(p, 'servicos');
+  const bookable = p.objective === 'agendamento';
+
   const blocks: Record<string, () => ReactNode> = {
     servicos: () => (
       <div className={s.section} key="servicos">
-        <span className={s.h}>{p.objective === 'orcamento' ? 'O que fazemos' : sectionName(p, 'servicos')}</span>
+        <span className={s.h}>{servicesTitle}</span>
         <div className={showcase ? s.products : s.cards}>
           {c.services.map((sv, i) =>
             showcase ? (
@@ -168,6 +177,7 @@ export function SitePreview({
                 <span className={s.num}>0{i + 1}</span>
                 <span className={s.cardTitle}>{sv}</span>
                 <span className={s.cardText}>{serviceDetails[i]}</span>
+                {bookable && <span className={s.pill}>Pedir um horário</span>}
               </div>
             ),
           )}
@@ -222,8 +232,8 @@ export function SitePreview({
     ),
     galeria: () => (
       <div className={s.section} key="galeria">
-        <span className={s.h}>{p.objective === 'trabalhos' ? 'Trabalhos' : 'Galeria'}</span>
-        <div className={s.gallery}>
+        <span className={s.h}>{seg === 'criativo' ? 'Projetos' : seg === 'imoveis' ? 'Fotos' : p.objective === 'trabalhos' ? 'Trabalhos' : 'Galeria'}</span>
+        <div className={`${s.gallery} ${seg === 'criativo' || p.objective === 'trabalhos' ? s.portfolio : ''}`}>
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <PhotoSlot key={i} className={s.tile} label={`Sua foto ${i + 1}`} />
           ))}
@@ -255,21 +265,62 @@ export function SitePreview({
         </div>
       </div>
     ),
-    vitrine: () => (
-      <div className={s.section} key="vitrine">
-        <span className={s.h}>{p.objective === 'produtos' ? 'Vitrine' : 'Escolha o seu'}</span>
-        <div className={s.products}>
-          {[...c.services, 'Item 4', 'Item 5', 'Item 6'].map((sv, i) => (
-            <div key={`${sv}-${i}`} className={s.product}>
-              <PhotoSlot className={s.productImg} label="Foto do item" />
-              <span className={s.cardTitle}>{sv}</span>
-              <span className={s.pill}>Pedir pelo WhatsApp</span>
-            </div>
-          ))}
+    vitrine: () =>
+      seg === 'imoveis' ? (
+        // Imóveis: vitrine demonstrativa, sem preço, endereço ou disponibilidade inventados.
+        <div className={s.section} key="vitrine">
+          <span className={s.h}>Imóveis em destaque</span>
+          <div className={s.products}>
+            {[1, 2, 3].map((n) => (
+              <div key={n} className={s.product}>
+                <PhotoSlot className={s.productImg} label="Foto do imóvel" />
+                <span className={s.cardTitle}>Imóvel demonstrativo {n}</span>
+                <span className={s.meta}>Tipo, bairro e detalhes informados por você</span>
+                <span className={s.pill}>{bookable ? 'Agendar visita pelo WhatsApp' : 'Consultar pelo WhatsApp'}</span>
+              </div>
+            ))}
+          </div>
+          <Tag>Exemplo demonstrativo · sem preços nem disponibilidade · até 10 imóveis</Tag>
         </div>
-        <Tag>Itens de exemplo · até 10 · pedido pelo WhatsApp, sem pagamento online</Tag>
-      </div>
-    ),
+      ) : seg === 'alimentacao' ? (
+        // Alimentação: itens por categoria, pedido pelo WhatsApp, sem pagamento online.
+        <div className={s.section} key="vitrine">
+          <span className={s.h}>Cardápio</span>
+          <div className={s.categories}>
+            {c.services.map((cat, i) => (
+              <span key={`${cat}-${i}`} data-on={i === 0 || undefined}>
+                {cat}
+              </span>
+            ))}
+          </div>
+          <div className={s.products}>
+            {['Item 1', 'Item 2', 'Item 3'].map((item) => (
+              <div key={item} className={s.product}>
+                <PhotoSlot className={s.productImg} label="Foto do item" />
+                <span className={s.cardTitle}>
+                  {c.services[0]} · {item}
+                </span>
+                <span className={s.pill}>Pedir pelo WhatsApp</span>
+              </div>
+            ))}
+          </div>
+          <Tag>Itens de exemplo · até 10 · pedido pelo WhatsApp, sem pagamento online</Tag>
+        </div>
+      ) : (
+        <div className={s.section} key="vitrine">
+          <span className={s.h}>{p.objective === 'produtos' ? 'Vitrine' : 'Escolha o seu'}</span>
+          <div className={s.products}>
+            {[...c.services, 'Item 4', 'Item 5', 'Item 6'].map((sv, i) => (
+              <div key={`${sv}-${i}`} className={s.product}>
+                <PhotoSlot className={s.productImg} label="Foto do item" />
+                <span className={s.cardTitle}>{sv}</span>
+                <span className={s.pill}>Pedir pelo WhatsApp</span>
+              </div>
+            ))}
+          </div>
+          <Tag>Itens de exemplo · até 10 · pedido pelo WhatsApp, sem pagamento online</Tag>
+        </div>
+      ),
   };
 
   const contactTitle = { orcamento: 'Peça seu orçamento', agendamento: 'Peça seu horário', produtos: 'Faça seu pedido' }[p.objective] ?? 'Vamos conversar?';
@@ -314,7 +365,7 @@ export function SitePreview({
         </div>
 
         <div className={s.hero}>
-          <img className={s.heroImg} src={image} alt="" width={480} height={360} />
+          <img className={s.heroImg} src={image} alt="" width={480} height={360} loading={lazy ? 'lazy' : undefined} />
           <div className={s.heroText}>
             <span className={s.eyebrow}>{c.segmentName}</span>
             <span className={s.title}>{c.title}</span>

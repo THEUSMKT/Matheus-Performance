@@ -73,7 +73,7 @@ export function StylePicker({
         >
           <div className={b.styleThumb} aria-hidden="true">
             <DesktopFrame width={330}>
-              <SitePreview project={normalizeProject({ ...p, direction: d.id })} compact bare />
+              <SitePreview project={normalizeProject({ ...p, direction: d.id })} compact bare lazy />
             </DesktopFrame>
           </div>
           <span className={b.styleName} aria-hidden="true">

@@ -25,7 +25,8 @@ import { asset } from '../landing/Chrome';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
-const DRAFT_KEY = 'bp.descricao.v1';
+/** Descrição em rascunho, só nesta aba (sessionStorage). */
+export const DRAFT_KEY = 'bp.descricao.v1';
 const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 type AudioProblem = keyof typeof audioReasonText;
 export type DescribePhase = 'escolher' | 'iniciando' | 'gravando' | 'transcrevendo' | 'texto';
