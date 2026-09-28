@@ -4,17 +4,19 @@
    A. Conte sobre seu negócio (gravando ou digitando; ou passo a passo)
    B/C. Revise o texto e gere a prévia
    D. Sua prévia está pronta (no celular, a prévia abre sozinha)
-   E. Personalize — uma escolha por vez: estilo, cores, títulos, conteúdo,
-      seções — com a prévia ao vivo
+   E. Personalize — uma escolha por vez: pacote, estilo, cores, títulos,
+      conteúdo, seções — com a prévia ao vivo
    F. Revise e solicite o desenvolvimento
-   O preço do pacote fica sempre à vista; mudanças que pedem outro pacote só
-   são aplicadas depois que a pessoa escolhe. Tudo fica salvo neste
-   dispositivo. No celular, "Personalizar" e "Ver meu site" alternam, e a
+   O pacote e o preço ficam sempre à vista ("Profissional · R$ 750 ·
+   Alterar pacote"); mudanças que pedem outro pacote só são aplicadas
+   depois que a pessoa escolhe, e trocas de pacote, restaurações e novas
+   gerações podem ser desfeitas. Tudo fica salvo neste dispositivo. No
+   celular, "Personalizar" e "Ver meu site" alternam, e a
    volta cai exatamente na escolha (e na rolagem) em que a pessoa estava.
    ========================================================================== */
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowRight, Check, ChevronLeft, Eye, LoaderCircle, Maximize2, MessageCircle, Monitor, Pencil, Smartphone, X } from 'lucide-react';
-import { brl, customNeeds, packageById, type PackageId } from '@/config/packages';
+import { brl, customNeeds, packageById, rank, type PackageId } from '@/config/packages';
 import { aiEnabled, integrations } from '@/config/integrations';
 import {
   CHOICE_STEPS,
@@ -22,18 +24,20 @@ import {
   STEP_COUNT,
   checkChange,
   currentPackage,
+  featurePackage,
   helpMessage,
   packageOffer,
   phaseOf,
   phases,
-  projectMessage,
+  requestMessage,
+  restoreParked,
   sectionName,
   stepQuestions,
   steps,
   switchPackage,
   type Project,
 } from '@/lib/project';
-import { aiReasonText, applySuggestion, requestSuggestion, type Suggestion } from '@/lib/aiPreview';
+import { aiReasonText, applySuggestion, requestSuggestion, withDetails, type Suggestion } from '@/lib/aiPreview';
 import { track } from '@/lib/analytics';
 import { originTag } from '@/lib/origin';
 import { clearLogo, readLogo, saveLogo } from '@/lib/logo';
@@ -44,7 +48,7 @@ import { DesktopFrame, PhoneFrame } from '../landing/DemoFrames';
 import { useTyping } from '../landing/hooks';
 import { useNarrow, useProject } from '../landing/useProject';
 import { SitePreview } from '../preview/SitePreview';
-import { PackageDialog, PriceBar } from './Packages';
+import { PackageDialog, PriceBar, StepPackage } from './Packages';
 import { PrintSummary, RequestButton, StepSite } from './Site';
 import { StepBusiness, StepObjective, type StepErrors } from './Steps';
 import { StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle } from './Choices';
@@ -58,7 +62,7 @@ const hints: Partial<Record<number, string>> = {
 
 export default function Builder() {
   const state = useProject();
-  const { project: p, update, replace, reset, ready, saved, notice, setNotice, hasProgress, origin } = state;
+  const { project: p, update, replace, reset, ready, saved, notice, setNotice, hasProgress, origin, backup, restoreBackup, dropBackup } = state;
   const narrow = useNarrow();
   const typing = useTyping();
   const [view, setView] = useState<'edit' | 'preview'>('edit');
@@ -80,6 +84,10 @@ export default function Builder() {
   const [late, setLate] = useState<Suggestion | null>(null);
   const [aiNotes, setAiNotes] = useState<string[]>([]);
   const [updated, setUpdated] = useState(false);
+  /** Última mudança ampla (pacote, restauração, nova geração), para desfazer. */
+  const [undo, setUndo] = useState<{ label: string; project: Project } | null>(null);
+  /** Nova geração que manteve textos editados à mão: permite usar os novos. */
+  const [keptEdits, setKeptEdits] = useState<{ base: Project; sug: Suggestion } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const readyHeading = useRef<HTMLHeadingElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -169,11 +177,13 @@ export default function Builder() {
       }
     }
     if (to > p.step) for (let i = p.step; i < to; i++) track('step_complete', { step: i + 1 });
+    if (p.step === STEP.pacote && to > p.step) track('package_selected', { package: p.pkg, source: 'etapa' });
     if (to === STEP.pronta || to === STEP.revisao) track('preview_view', { source: 'etapa', step: to + 1 });
     setErrors({});
     setPending(null);
     setNotice('');
     setUpdated(false);
+    setUndo(null);
     // A prévia pronta abre direto no celular; nas escolhas, a pessoa decide quando ver.
     const ready = narrow && to === STEP.pronta;
     setView(ready ? 'preview' : 'edit');
@@ -182,7 +192,7 @@ export default function Builder() {
   }
 
   const back = () => {
-    if (p.step === STEP.pronta || p.step === STEP.estilo) return go(p.step === STEP.estilo ? STEP.pronta : backFromReady());
+    if (p.step === STEP.pronta || p.step === STEP.pacote) return go(p.step === STEP.pacote ? STEP.pronta : backFromReady());
     go(p.step - 1);
   };
   /** "Editar minha descrição" volta ao começo; no passo a passo, ao objetivo. */
@@ -194,7 +204,24 @@ export default function Builder() {
     replace({ ...next, step: p.step });
     track('package_selected', { package: to, source });
     if (from !== to) track('package_changed', { from, to, source });
-    setNotice(`Pacote ${packageById(to).name} escolhido. Desenvolvimento: ${brl(packageById(to).price)}.`);
+    setNotice('');
+    if (from !== to) setUndo({ label: `Pacote ${packageById(to).name} escolhido — ${brl(packageById(to).price)} no total.`, project: p });
+  }
+
+  /** Traz de volta o que ficou guardado numa troca para um pacote menor. */
+  function restore() {
+    const r = restoreParked(p);
+    if (!r.restored.length) return;
+    replace({ ...r.project, step: p.step });
+    setUndo({ label: `Restaurado: ${r.restored.join(', ')}.`, project: p });
+  }
+
+  function undoLast() {
+    if (!undo) return;
+    replace({ ...undo.project, step: p.step });
+    setUndo(null);
+    setKeptEdits(null);
+    setNotice('Alteração desfeita.');
   }
 
   /** Mudança de escopo: aplica se couber no pacote atual; senão, pergunta antes. */
@@ -217,6 +244,19 @@ export default function Builder() {
       return;
     }
     const target = packageById(r.to);
+    const pkg = currentPackage(p);
+    // Limite atingido (e não um recurso de outro pacote): explica o limite.
+    if (r.project.sections.length > pkg.maxSections && rank(featurePackage(r.project)) <= rank(p.pkg)) {
+      setPending({
+        anchor,
+        title: `Você já selecionou ${p.sections.length} de ${pkg.maxSections} seções do ${pkg.name}.`,
+        detail: `Desmarque uma seção para incluir outra, ou mude para o ${target.name} (${brl(target.price)} no total), que comporta até ${target.maxSections}.`,
+        confirmLabel: `Mudar para o ${target.name}`,
+        cancelLabel: `Manter o ${pkg.name}`,
+        apply: () => applyPackage(r.to, r.project, anchor),
+      });
+      return;
+    }
     setPending({
       anchor,
       title: packageOffer(r.to),
@@ -262,7 +302,7 @@ export default function Builder() {
     setGenerating(true);
     setGenError('');
     setLate(null);
-    const result = await requestSuggestion(text, pNow.current.pkg, integrations.aiEndpoint);
+    const result = await requestSuggestion(withDetails(text, pNow.current.details), pNow.current.pkg, integrations.aiEndpoint);
     setGenerating(false);
     if (!result.ok) {
       track('ai_generate', { result: 'erro', reason: result.reason });
@@ -277,7 +317,8 @@ export default function Builder() {
 
   /** Sugestão da IA: aplica nos layouts existentes e abre a prévia pronta. */
   function applyAi(sug: Suggestion) {
-    const next = applySuggestion(pNow.current, sug);
+    const before = pNow.current;
+    const next = applySuggestion(before, sug);
     const notes: string[] = [];
     if (sug.extraSections.length) {
       const names = sug.extraSections.map((id) => sectionName(next, id)).join(', ');
@@ -288,6 +329,10 @@ export default function Builder() {
       notes.push(`Sua descrição cita itens fora dos pacotes (${names}). Se precisar deles, marque em “Seções”.`);
     }
     setAiNotes(notes);
+    // Textos editados à mão ficaram; a pessoa pode trocar pelos novos.
+    setKeptEdits(before.edited.length ? { base: before, sug } : null);
+    // Uma nova geração sobre uma prévia existente pode ser desfeita.
+    setUndo(before.aiFilled.segment || before.identitySet ? { label: 'Nova prévia montada.', project: before } : null);
     setLate(null);
     setErrors({});
     setPending(null);
@@ -331,7 +376,8 @@ export default function Builder() {
 
   const gate = (anchor: string): ReactNode => (pending?.anchor === anchor ? <ConfirmBox pending={pending} onCancel={() => setPending(null)} /> : null);
 
-  const message = projectMessage(p, originTag(origin), { logo: Boolean(logo) });
+  const request = requestMessage(p, originTag(origin), { logo: Boolean(logo) });
+  const message = request.text;
   const step = p.step;
   const choiceIndex = CHOICE_STEPS.indexOf(step);
   const phase = phaseOf(step);
@@ -406,17 +452,27 @@ export default function Builder() {
         edit={edit}
         notes={aiNotes}
         narrow={narrow}
-        onPersonalize={() => go(STEP.estilo)}
+        onPersonalize={() => go(STEP.pacote)}
+        keptEdits={keptEdits ? keptEdits.base.edited : []}
+        onUseNewTexts={() => {
+          if (!keptEdits) return;
+          const next = applySuggestion(keptEdits.base, keptEdits.sug, { replaceEdited: true });
+          setUndo({ label: 'Textos novos aplicados.', project: p });
+          setKeptEdits(null);
+          replace({ ...next, step: p.step });
+        }}
         onEditDescription={() => go(backFromReady(), { validate: false })}
         editLabel={editLabel}
         onReview={() => go(STEP.revisao)}
       />
     );
-  } else if (step === STEP.estilo) body = <StepStyle p={p} edit={edit} />;
+  } else if (step === STEP.pacote)
+    body = <StepPackage p={p} onApply={(to, next) => applyPackage(to, next, 'etapa')} onRestore={restore} onCustom={openCustom} />;
+  else if (step === STEP.estilo) body = <StepStyle p={p} edit={edit} />;
   else if (step === STEP.cores) body = <StepColors p={p} edit={edit} />;
   else if (step === STEP.titulos) body = <StepFonts p={p} edit={edit} />;
   else if (step === STEP.conteudo) body = <StepContent p={p} edit={edit} logo={logo} setLogo={setLogo} />;
-  else if (step === STEP.secoes) body = <StepSections p={p} edit={edit} scope={scope} gate={gate} />;
+  else if (step === STEP.secoes) body = <StepSections p={p} edit={edit} scope={scope} gate={gate} onSeePackages={() => setIncluded(true)} onRestore={restore} />;
   else if (step === STEP.revisao)
     body = (
       <StepSite
@@ -425,6 +481,11 @@ export default function Builder() {
         gate={gate}
         origin={origin}
         message={message}
+        lean={request.lean}
+        onImport={(next) => {
+          state.replaceKeeping({ ...next, step: STEP.revisao }, 'arquivo');
+          setNotice('Projeto aberto a partir do arquivo.');
+        }}
         logo={Boolean(logo)}
         formOpen={formOpen}
         openForm={openForm}
@@ -444,7 +505,7 @@ export default function Builder() {
             <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={() => go(backFromReady(), { validate: false })}>
               {editLabel}
             </button>
-            <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.estilo)}>
+            <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.pacote)}>
               Personalizar meu site
             </button>
           </>
@@ -483,7 +544,7 @@ export default function Builder() {
           <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={showPreview}>
             <Eye aria-hidden="true" /> Ver meu site
           </button>
-          <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.estilo)}>
+          <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.pacote)}>
             Personalizar meu site
           </button>
         </>
@@ -570,11 +631,39 @@ export default function Builder() {
               {phases[phase].name}
               {choiceIndex >= 0 && ` · Escolha ${choiceIndex + 1} de ${CHOICE_STEPS.length}: ${steps[step]}`}
             </p>
-            <PriceBar p={p} onIncluded={() => setIncluded(true)} />
+            <PriceBar p={p} onChange={() => setIncluded(true)} />
             {notice && (
               <p className={b.notice} role="status">
                 {notice}
               </p>
+            )}
+            {undo && (
+              <div className={b.undo} role="status">
+                <p>{undo.label}</p>
+                <button type="button" className={`${s.secondary} ${s.small}`} onClick={undoLast}>
+                  Desfazer
+                </button>
+              </div>
+            )}
+            {backup && (
+              <div className={b.undo} role="status">
+                <p>{backup.reason === 'modelo' ? 'Você começou por um modelo de exemplo.' : 'Você abriu um arquivo de projeto.'} Sua versão anterior está guardada.</p>
+                <div className={s.actionRow}>
+                  <button
+                    type="button"
+                    className={`${s.secondary} ${s.small}`}
+                    onClick={() => {
+                      restoreBackup();
+                      setNotice('Versão anterior recuperada.');
+                    }}
+                  >
+                    Recuperar minha versão anterior
+                  </button>
+                  <button type="button" className={b.textButton} onClick={dropBackup}>
+                    Dispensar
+                  </button>
+                </div>
+              </div>
             )}
             {late && (
               <div className={b.lateBox} role="status">

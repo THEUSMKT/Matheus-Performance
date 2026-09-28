@@ -95,6 +95,40 @@ export const packages: Package[] = [
 ];
 
 export const packageOrder: PackageId[] = packages.map((p) => p.id);
+
+/**
+ * Até três benefícios principais de cada pacote, derivados dos limites
+ * acima (nunca escritos à mão, para não divergir do catálogo).
+ */
+export function packageHighlights(pkg: Package): string[] {
+  const list = [`Até ${pkg.maxSections} seções com aparência profissional`];
+  if (pkg.showcaseItems) list.push(`Vitrine com até ${pkg.showcaseItems} itens e pedido pelo WhatsApp`);
+  if (pkg.galleryImages) list.push(`Galeria com até ${pkg.galleryImages} fotos suas`);
+  if (pkg.form && !pkg.showcaseItems) list.push('Formulário que organiza o pedido');
+  if (list.length === 1) list.push('Sua logo, suas cores e o estilo escolhido', 'Botão de WhatsApp e links para as redes');
+  return list.slice(0, 3);
+}
+
+/**
+ * Comparação curta, alinhada por recurso. Cada célula é derivada dos
+ * limites do pacote. `from` diz a partir de qual pacote o recurso existe.
+ */
+export function packageComparison(): { label: string; cells: string[] }[] {
+  const first = (test: (p: Package) => boolean) => packages.find(test)?.name ?? '';
+  const cell = (on: boolean, text: string, from: string) => (on ? text : `A partir do ${from}`);
+  return [
+    { label: 'Valor total', cells: packages.map((p) => brl(p.price)) },
+    { label: 'Seções na página', cells: packages.map((p) => `Até ${p.maxSections}`) },
+    { label: 'Estilo, cores e logo', cells: packages.map(() => 'Incluído') },
+    { label: 'Botão de WhatsApp', cells: packages.map(() => 'Incluído') },
+    { label: 'Galeria de fotos', cells: packages.map((p) => cell(p.galleryImages > 0, `Até ${p.galleryImages} fotos`, first((x) => x.galleryImages > 0))) },
+    { label: 'Formulário para WhatsApp', cells: packages.map((p) => cell(p.form, 'Incluído', first((x) => x.form))) },
+    { label: 'Perguntas frequentes e depoimentos', cells: packages.map((p) => cell(p.form, 'Incluído', first((x) => x.form))) },
+    { label: 'Vitrine de produtos', cells: packages.map((p) => cell(p.showcaseItems > 0, `Até ${p.showcaseItems} itens`, first((x) => x.showcaseItems > 0))) },
+    { label: 'Prazo', cells: packages.map((p) => p.deadline) },
+    { label: 'Ajustes antes de publicar', cells: packages.map(() => `${revisionRounds} rodadas`) },
+  ];
+}
 export const minPrice = packages[0].price;
 export const maxPrice = packages[packages.length - 1].price;
 

@@ -1,20 +1,27 @@
 'use client';
 /* ==========================================================================
    Revisão — o site, o pacote e o resumo antes do pedido. Ordem: nome do
-   projeto, investimento, o que está incluído, o pedido e o resumo com
-   "Editar" em cada linha (volta para a escolha certa). "Solicitar
-   desenvolvimento" abre o WhatsApp com o resumo (ou, com receptor
-   configurado, um formulário curto que só confirma depois de salvo).
+   projeto, investimento, o resumo com "Editar" em cada linha (volta para a
+   escolha certa) e o pedido. "Solicitar desenvolvimento" abre o WhatsApp
+   com a mensagem pronta (ou, com receptor configurado, um formulário curto
+   que só confirma depois de salvo). Alternativas: "Copiar resumo" (se o
+   WhatsApp não abrir) e "Baixar meu projeto" (arquivo com a configuração
+   completa, para anexar na conversa se precisar).
    ========================================================================== */
 import { useMemo, useRef, useState, type ReactNode } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { Copy, Download, FolderOpen, MessageCircle } from 'lucide-react';
 import { brl, packageById, priceNotes, rank, revisionRounds } from '@/config/packages';
 import { integrations, leadMode } from '@/config/integrations';
 import {
   contactChannels,
   currentPackage,
+  colorLabel,
   customNeedNames,
   deadlineText,
+  exportFileName,
+  exportProject,
+  fontLabel,
+  importProject,
   decisionRoles,
   desiredDeadlines,
   investmentLabel,
@@ -29,7 +36,7 @@ import {
   serviceLabel,
   shareLink,
   siteContent,
-  styleLabel,
+  directions,
   type Lead,
   type Project,
 } from '@/lib/project';
@@ -51,10 +58,12 @@ export function summaryRows(p: Project, { logo = false } = {}): Row[] {
     { label: 'Segmento', value: segmentLabel(p), step: STEP.negocio },
     { label: 'Serviço ou produto principal', value: serviceLabel(p), step: STEP.negocio },
     { label: 'Objetivo', value: objectiveOf(p).name, step: STEP.objetivo },
-    { label: 'Estilo e cores', value: `${styleLabel(p)}${logo ? ' · com logo' : ''}`, step: STEP.estilo },
-    { label: 'Pacote', value: isCustom(p) ? `Projeto personalizado (referência: ${pkg.name})` : pkg.name },
+    { label: 'Pacote', value: isCustom(p) ? `Projeto personalizado (referência: ${pkg.name})` : `${pkg.name} · ${investmentLabel(p)}`, step: STEP.pacote },
     { label: 'Valor do desenvolvimento', value: investmentLabel(p) },
-    { label: `Seções (${p.sections.length} de até ${pkg.maxSections})`, value: selectedSections(p).join(', ') },
+    { label: 'Estilo', value: `${directions.find((d) => d.id === p.direction)!.name}${logo ? ' · com logo' : ''}`, step: STEP.estilo },
+    { label: 'Cores', value: colorLabel(p), step: STEP.cores },
+    { label: 'Fonte dos títulos', value: fontLabel(p), step: STEP.titulos },
+    { label: `Seções (${p.sections.length} de até ${pkg.maxSections})`, value: selectedSections(p).join(', '), step: STEP.secoes },
     { label: 'Recursos', value: selectedResources(p).join(', ') },
     ...(isCustom(p) ? [{ label: 'Fora dos pacotes', value: customNeedNames(p).join(', ') }] : []),
     { label: 'Prazo', value: deadlineText(p) },
@@ -102,6 +111,8 @@ export function StepSite({
   gate,
   origin,
   message,
+  lean,
+  onImport,
   logo,
   formOpen,
   openForm,
@@ -115,6 +126,10 @@ export function StepSite({
   gate: (anchor: string) => ReactNode;
   origin: Origin;
   message: string;
+  /** A mensagem foi para a versão enxuta (a completa passou do limite). */
+  lean: boolean;
+  /** Abre um arquivo de projeto (a versão atual fica guardada para recuperar). */
+  onImport: (p: Project) => void;
   logo: boolean;
   formOpen: boolean;
   openForm: () => void;
@@ -139,6 +154,45 @@ export function StepSite({
       setStatus({ ok: true, text: 'Link copiado. Ele abre o mesmo estilo, cores, objetivo e seções — sem nome, textos, logo ou imagens.' });
     } catch {
       setStatus({ ok: false, text: 'Não foi possível copiar automaticamente. Copie o link abaixo.' });
+    }
+  }
+
+  async function copySummary() {
+    track('summary_copy');
+    try {
+      await navigator.clipboard.writeText(message);
+      setStatus({ ok: true, text: 'Resumo copiado. Cole na conversa do WhatsApp ou onde preferir.' });
+    } catch {
+      setStatus({ ok: false, text: 'Não foi possível copiar automaticamente. Abra “Ver a mensagem” e copie o texto.' });
+    }
+  }
+
+  function downloadProject() {
+    track('project_export');
+    try {
+      const data = JSON.stringify(exportProject(p, { logo }), null, 2);
+      const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = exportFileName(p);
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setStatus({ ok: true, text: `Arquivo ${exportFileName(p)} salvo. Se precisar, anexe-o na conversa do WhatsApp${logo ? ' junto com a sua logo' : ''}.` });
+    } catch {
+      setStatus({ ok: false, text: 'Não foi possível gerar o arquivo neste navegador. Use “Copiar resumo”.' });
+    }
+  }
+
+  async function openFile(file: File | undefined) {
+    if (!file) return;
+    try {
+      if (file.size > 200_000) throw Error('grande');
+      onImport(importProject(await file.text()));
+      track('project_import');
+    } catch {
+      setStatus({ ok: false, text: 'Este arquivo não é um projeto do configurador. Nada foi alterado.' });
     }
   }
 
@@ -176,6 +230,21 @@ export function StepSite({
       </div>
       {gate('seu_site')}
 
+      <h2 className={b.rowsTitle}>Resumo do pedido</h2>
+      <dl className={b.rows}>
+        {summaryRows(p, { logo })
+          .filter((r) => r.step !== undefined)
+          .map((r) => (
+            <div key={r.label} className={b.row}>
+              <dt>{r.label}</dt>
+              <dd>{r.value}</dd>
+              <button type="button" className={b.textButton} onClick={() => go(r.step!)} aria-label={`Editar ${r.label.toLowerCase()}`}>
+                Editar
+              </button>
+            </div>
+          ))}
+      </dl>
+
       <ul className={b.includedList} aria-label="Incluído no seu pacote">
         <li>
           Uma página com {p.sections.length} de até {pkg.maxSections} seções
@@ -211,6 +280,19 @@ export function StepSite({
                 <p className={b.muted} style={{ marginTop: 8 }}>
                   Abre o WhatsApp com o resumo do seu projeto. Nada é enviado sem você confirmar, e o pedido só é considerado recebido quando respondermos.
                 </p>
+                {lean && (
+                  <p className={b.leanNote}>
+                    Seu projeto tem muitos textos: a mensagem leva um resumo e avisa que o resto está no arquivo. Use “Baixar meu projeto” e anexe o arquivo na conversa.
+                  </p>
+                )}
+                <div className={b.requestTools}>
+                  <button type="button" className={b.toolButton} onClick={copySummary}>
+                    <Copy aria-hidden="true" /> Copiar resumo
+                  </button>
+                  <button type="button" className={b.toolButton} onClick={downloadProject}>
+                    <Download aria-hidden="true" /> Baixar meu projeto
+                  </button>
+                </div>
                 <details className={s.details}>
                   <summary>Ver a mensagem</summary>
                   <div className={s.detailsBody}>
@@ -229,7 +311,7 @@ export function StepSite({
       </div>
 
       <div className={b.secondaryActions}>
-        <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => go(STEP.estilo)}>
+        <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => go(STEP.pacote)}>
           Voltar a personalizar
         </button>
         <button type="button" className={`${s.secondary} ${s.small}`} onClick={onIncluded}>
@@ -237,28 +319,22 @@ export function StepSite({
         </button>
       </div>
 
-      <h2 className={b.rowsTitle}>Resumo do seu site</h2>
-      <dl className={b.rows}>
-        {summaryRows(p, { logo })
-          .filter((r) => r.step !== undefined)
-          .map((r) => (
-            <div key={r.label} className={b.row}>
-              <dt>{r.label}</dt>
-              <dd>{r.value}</dd>
-              <button type="button" className={b.textButton} onClick={() => go(r.step!)} aria-label={`Editar ${r.label.toLowerCase()}`}>
-                Editar
-              </button>
-            </div>
-          ))}
-      </dl>
-
       <div className={b.tools}>
-        <button type="button" className={b.toolButton} onClick={copyLink}>
-          Compartilhar opções de layout
-        </button>
+        {leadMode !== 'whatsapp' && (
+          <button type="button" className={b.toolButton} onClick={downloadProject}>
+            <Download aria-hidden="true" /> Baixar meu projeto
+          </button>
+        )}
         <button type="button" className={b.toolButton} onClick={savePdf}>
           Salvar resumo em PDF
         </button>
+        <button type="button" className={b.toolButton} onClick={copyLink}>
+          Compartilhar opções de layout
+        </button>
+        <label className={b.toolButton}>
+          <FolderOpen aria-hidden="true" /> Abrir arquivo de projeto
+          <input type="file" accept="application/json,.json" className={s.srOnly} style={{ fontSize: 16 }} onChange={(ev) => (openFile(ev.target.files?.[0]), (ev.target.value = ''))} />
+        </label>
       </div>
       <p className={b.muted} style={{ marginTop: 6 }}>
         O link leva estilo, cores, objetivo e seções. Nome, textos, logo e imagens ficam só neste dispositivo.

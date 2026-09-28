@@ -12,18 +12,37 @@ configurado:
 
 - O botão final, na etapa “Revise e solicite”, é **“Solicitar desenvolvimento”**
   (ou “Pedir orçamento personalizado”, quando o projeto sai dos pacotes). Ele
-  abre o WhatsApp com o resumo pronto — empresa, segmento, objetivo, serviço,
-  estilo e cores, pacote, valor, seções, recursos, prazo, observações e o
-  link das opções de layout; nada é enviado até o visitante tocar em enviar.
+  abre o WhatsApp com uma mensagem em blocos legíveis — MEU NEGÓCIO,
+  PACOTE ESCOLHIDO, COMO IMAGINEI O SITE (estilo, cores, fonte, seções na
+  ordem, recursos), TEXTOS QUE EU ESCREVI OU EDITEI, OBSERVAÇÕES e SOBRE MIM.
+  Campos vazios não aparecem, e só entram o pacote e os recursos ativos.
+  Nada de JSON, ids internos ou links com o estado inteiro (antes, o link
+  "Opções de layout" levava o estado codificado — `complex%22%3A…` — para o
+  corpo da mensagem). Nada é enviado até o visitante tocar em enviar.
+- Se a mensagem completa passar de ~1.800 caracteres, vai um resumo enxuto
+  que avisa: "Os textos que escrevi estão no arquivo do projeto". A página
+  mostra o aviso e as alternativas **Copiar resumo** e **Baixar meu
+  projeto** (arquivo `projeto-site-<empresa>.json`, ver seção 3.1).
 - A página **nunca** diz que o pedido foi recebido e **nunca** emite
   `generate_lead`. Abrir o WhatsApp é registrado como `whatsapp_open`
   (intenção).
-- A mensagem traz uma referência `Ref.: bp-xxxxxxxxxx · origem` para você
-  ligar a conversa ao projeto e à campanha.
+- A mensagem termina com `Código do projeto: bp-xxxxxxxxxx · Origem: …`
+  para você ligar a conversa ao projeto, ao arquivo exportado e à campanha.
 
 **Registro manual recomendado enquanto não há receptor:** a cada conversa
 nova, crie o card no CRM (ou planilha) na etapa *Novo contato*, colando a
 mensagem recebida. A referência evita duplicar o mesmo projeto.
+
+### 1.1 Arquivo do projeto ("Baixar meu projeto")
+
+JSON com `formato: "beck-performance/projeto-de-site"` e `versaoDoFormato: 1`.
+Traz `resumo` legível (empresa, segmento, serviço, objetivo, pacote e valor,
+estilo, cores, fonte, seções na ordem, recursos, itens guardados fora do
+pacote, textos exibidos e editados, detalhes e observações) e `projeto`, o
+modelo v4 completo, que o configurador abre de volta em **Abrir arquivo de
+projeto** (na revisão) — útil para você ver no seu navegador exatamente o
+site que o cliente montou. Não leva telefone/e-mail, aceite de marketing, a
+descrição enviada à IA, áudio nem a logo (a logo vem à parte na conversa).
 
 ## 2. Ativar o formulário de pedido (modo receptor)
 
@@ -77,11 +96,19 @@ outra resposta é tratada como falha pela página.
   seções, galeria de 15 imagens e vitrine de 10 itens). Mudar um valor ou
   limite aqui muda a apresentação, o configurador, o PDF, a mensagem e o
   receptor.
-- **Projeto** (`src/lib/project.ts`, `version: 4`, `flow: guiado-v1`):
+- **Projeto** (`src/lib/project.ts`, `version: 4`, `flow: guiado-v2`):
   nome, segmento (e “Outro”), serviço principal ou “Definir depois”,
-  objetivo, fonte dos títulos, título/frase/serviços próprios (vazio = sugestão), seções em
-  ordem, formulário, tamanho da galeria, pacote, necessidades de projeto
-  personalizado, identidade, observações e dados de contato. O pacote nunca
+  objetivo, fonte dos títulos, título/frase/serviços próprios (vazio = sugestão),
+  textos das seções, quais textos o visitante editou (`edited` — uma nova
+  geração pela IA não os substitui sem ele pedir), detalhes opcionais
+  (`details`: quem atende, onde atende, o que destacar), seções em
+  ordem, formulário, tamanho da galeria, pacote, itens guardados de uma
+  troca para pacote menor (`parked`: fora da prévia, do resumo e do pedido;
+  restauráveis num pacote que os comporte), necessidades de projeto
+  personalizado, identidade, observações e dados de contato. Projetos do
+  fluxo `guiado-v1` (sem a escolha de pacote) abrem na mesma escolha de antes.
+  Ao usar um modelo de exemplo ou abrir um arquivo, a versão anterior fica
+  em `mb.configurador.anterior` para "Recuperar minha versão anterior". O pacote nunca
   fica abaixo do que as escolhas exigem. Validado sempre que é lido. Projetos
   das versões anteriores (v1, v2, v3 — chaves `mb.configurador.v1…v3`) são
   convertidos ao abrir, com aviso; os dados antigos continuam no navegador
@@ -133,7 +160,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 |---|---|---|
 | `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacotes`, `exemplo`, `flutuante`) |
 | `configurator_start` | Abrir a página de criação (1× por sessão) | — |
-| `step_complete` | Avançar uma etapa (1× por etapa): 1 negócio, 2 objetivo, 3 prévia pronta, 4 estilo, 5 cores, 6 títulos, 7 conteúdo, 8 seções | `step` |
+| `step_complete` | Avançar uma etapa (1× por etapa): 1 negócio, 2 objetivo, 3 prévia pronta, 4 pacote, 5 estilo, 6 cores, 7 títulos, 8 conteúdo, 9 seções | `step` |
 | `example_opened` / `example_applied` | Abrir um exemplo / usar como ponto de partida | `segment` |
 | `example_view_mode` | Trocar Computador/Celular no exemplo | `segment`, `device` |
 | `preview_view` | Ver a prévia: chegar em “Sua prévia está pronta” ou na revisão, prévia gerada pela IA, tocar em “Ver meu site” ou abrir a tela cheia | `source` (`etapa`, `ia`, `alternancia`, `tela_cheia`), `step` |
@@ -144,6 +171,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 | `ai_generate` | Resultado de “Gerar minha prévia” (só com a IA ligada) | `result` (`ok`, `erro`), `reason` |
 | `ai_audio` | Resultado de “Gravar minha ideia” (transcrição; cancelar não conta) | `result` (`ok`, `erro`), `reason` (`microfone`, `curto`, `sem-fala`…) |
 | `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
+| `summary_copy` / `project_export` / `project_import` | "Copiar resumo", "Baixar meu projeto", "Abrir arquivo de projeto" (sem conteúdo) | — |
 | `lead_submit_attempt` / `lead_submit_error` | Envio no modo receptor | `reason` |
 | `generate_lead` | **Só** após o receptor confirmar o pedido salvo (1× por pedido) | `lead_ref` |
 

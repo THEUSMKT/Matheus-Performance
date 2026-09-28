@@ -105,40 +105,54 @@ export const palettes = [
   { id: 'roxo', name: 'Violeta', accent: '#6650b5', bg: '#f6f3fc' },
 ] as const;
 
-export type Section = { id: string; name: string; fixed?: boolean; min: PackageId; hint?: string };
+export type Section = {
+  id: string;
+  name: string;
+  fixed?: boolean;
+  min: PackageId;
+  hint?: string;
+  /** Benefício concreto, em uma frase, mostrado na escolha das seções. */
+  benefit?: string;
+};
 
 /** Blocos da página. Cada um conta como uma seção do pacote. */
 export const sections: Section[] = [
   { id: 'apresentacao', name: 'Apresentação', fixed: true, min: 'essencial' },
-  { id: 'servicos', name: 'Serviços', min: 'essencial' },
-  { id: 'sobre', name: 'Sobre a empresa', min: 'essencial' },
-  { id: 'diferenciais', name: 'Diferenciais', min: 'essencial' },
-  { id: 'atendimento', name: 'Informações de atendimento', min: 'essencial', hint: 'Horários, região ou endereço — você informa.' },
-  { id: 'processo', name: 'Como funciona', min: 'essencial' },
-  { id: 'galeria', name: 'Galeria de fotos', min: 'profissional', hint: 'Com as suas fotos.' },
-  { id: 'faq', name: 'Perguntas frequentes', min: 'profissional' },
-  { id: 'depoimentos', name: 'Depoimentos', min: 'profissional', hint: 'Só com relatos reais, autorizados pelos seus clientes.' },
-  { id: 'vitrine', name: 'Vitrine de produtos', min: 'completo', hint: 'Até 10 itens, com pedido pelo WhatsApp. Sem pagamento online.' },
+  { id: 'servicos', name: 'Serviços', min: 'essencial', benefit: 'Mostre o que você faz, com uma frase para cada item.' },
+  { id: 'sobre', name: 'Sobre a empresa', min: 'essencial', benefit: 'Conte quem está por trás do negócio e como você trabalha.' },
+  { id: 'diferenciais', name: 'Diferenciais', min: 'essencial', benefit: 'Destaque os motivos para escolher você.' },
+  { id: 'atendimento', name: 'Informações de atendimento', min: 'essencial', hint: 'Horários, região ou endereço — você informa.', benefit: 'Deixe claro quando e onde você atende.' },
+  { id: 'processo', name: 'Como funciona', min: 'essencial', benefit: 'Explique as etapas do atendimento em três passos.' },
+  { id: 'galeria', name: 'Galeria de fotos', min: 'profissional', hint: 'Com as suas fotos.', benefit: 'Apresente seu trabalho com imagens organizadas.' },
+  { id: 'faq', name: 'Perguntas frequentes', min: 'profissional', benefit: 'Responda às dúvidas comuns antes da conversa.' },
+  { id: 'depoimentos', name: 'Depoimentos', min: 'profissional', hint: 'Só com relatos reais, autorizados pelos seus clientes.', benefit: 'Mostre o que clientes reais dizem do seu trabalho.' },
+  { id: 'vitrine', name: 'Vitrine de produtos', min: 'completo', hint: 'Até 10 itens, com pedido pelo WhatsApp. Sem pagamento online.', benefit: 'Mostre os itens disponíveis e receba pedidos pelo WhatsApp.' },
   { id: 'contato', name: 'Contato', fixed: true, min: 'essencial' },
 ];
 
+/** Benefício do formulário (recurso sem seção própria). */
+export const formBenefit = 'Organize o pedido antes de abrir a conversa no WhatsApp.';
+
 /** Versão do fluxo apresentado — registrada no projeto e nos eventos. */
-export const FLOW_VERSION = 'guiado-v1';
+export const FLOW_VERSION = 'guiado-v2';
 /**
  * Etapas do fluxo guiado. O negócio e o objetivo vêm antes da prévia; depois
- * dela, uma escolha por vez (estilo, cores, títulos, conteúdo, seções) e a
- * revisão com o pedido. Quem descreve o negócio para a IA pula o objetivo.
+ * dela, uma escolha por vez (pacote, estilo, cores, títulos, conteúdo,
+ * seções) e a revisão com o pedido. Quem descreve o negócio para a IA pula
+ * o objetivo. O pacote vem primeiro na personalização, mas nunca bloqueia a
+ * primeira prévia: ela usa o pacote atual (Essencial, se nada foi escolhido).
  */
-export const steps = ['Seu negócio', 'Seu objetivo', 'Sua prévia', 'Estilo', 'Cores', 'Títulos', 'Conteúdo', 'Seções', 'Revisão'] as const;
+export const steps = ['Seu negócio', 'Seu objetivo', 'Sua prévia', 'Pacote', 'Estilo', 'Cores', 'Títulos', 'Conteúdo', 'Seções', 'Revisão'] as const;
 export const STEP_COUNT = steps.length;
-export const STEP = { negocio: 0, objetivo: 1, pronta: 2, estilo: 3, cores: 4, titulos: 5, conteudo: 6, secoes: 7, revisao: 8 } as const;
+export const STEP = { negocio: 0, objetivo: 1, pronta: 2, pacote: 3, estilo: 4, cores: 5, titulos: 6, conteudo: 7, secoes: 8, revisao: 9 } as const;
 /** Escolhas da personalização, na ordem. */
-export const CHOICE_STEPS: readonly number[] = [STEP.estilo, STEP.cores, STEP.titulos, STEP.conteudo, STEP.secoes];
+export const CHOICE_STEPS: readonly number[] = [STEP.pacote, STEP.estilo, STEP.cores, STEP.titulos, STEP.conteudo, STEP.secoes];
 /** Pergunta de cada etapa, como aparece no título. */
 export const stepQuestions = [
   'Conte sobre seu negócio',
   'O que as pessoas devem fazer no seu site?',
   'Sua prévia está pronta',
+  'Escolha o pacote do seu site',
   'Qual estilo combina com sua empresa?',
   'Quais cores você prefere?',
   'Como você quer os títulos do seu site?',
@@ -158,6 +172,8 @@ export function phaseOf(step: number): number {
 }
 /** Etapas do fluxo anterior (Seu negócio, Seu objetivo, Sua identidade, Seu site) para as atuais. */
 const FLOW4_STEP = [STEP.negocio, STEP.objetivo, STEP.estilo, STEP.revisao];
+/** Etapas do fluxo guiado-v1 (sem a escolha de pacote) para as atuais. */
+const GUIDED1_STEP = [STEP.negocio, STEP.objetivo, STEP.pronta, STEP.estilo, STEP.cores, STEP.titulos, STEP.conteudo, STEP.secoes, STEP.revisao];
 
 /** Fontes dos títulos. "auto" segue o estilo escolhido. */
 export const fonts = [
@@ -253,8 +269,21 @@ export type Project = {
    * nunca o que o visitante digitou ou escolheu.
    */
   aiFilled: { name: string; segment: string; segmentOther: string };
+  /**
+   * Textos que o visitante editou à mão. Uma nova geração pela IA não os
+   * substitui sem ele pedir.
+   */
+  edited: EditableText[];
+  /** Detalhes opcionais ("Deixar minha prévia mais específica"). Só fatos informados pelo visitante. */
+  details: { audience: string; region: string; highlights: string };
   /** Seções na ordem da página. Apresentação sempre primeiro, contato sempre por último. */
   sections: string[];
+  /**
+   * Recursos guardados ao trocar para um pacote menor: ficam no rascunho,
+   * fora da prévia, do resumo e do pedido, e podem ser restaurados num
+   * pacote que os comporte.
+   */
+  parked: { sections: string[]; form: boolean; gallery: number };
   /** O visitante mexeu nas seções: trocar o objetivo não reorganiza mais sozinho. */
   structureEdited: boolean;
   /** Formulário que organiza o pedido e encaminha ao WhatsApp. */
@@ -276,6 +305,13 @@ export type Project = {
   lead: Lead;
 };
 
+/** Textos editáveis à mão (título, frase, serviços e os textos das seções). */
+export const editableTexts = ['headline', 'description', 'services', 'about', 'serviceDetails', 'differentials', 'processSteps', 'faqQuestions'] as const;
+export type EditableText = (typeof editableTexts)[number];
+
+export const emptyParked: Project['parked'] = { sections: [], form: false, gallery: 0 };
+export const emptyDetails: Project['details'] = { audience: '', region: '', highlights: '' };
+
 export const emptyLead: Lead = { name: '', channel: 'whatsapp', contact: '', deadline: '', decision: '', marketing: false };
 
 export function initialProject(): Project {
@@ -295,7 +331,10 @@ export function initialProject(): Project {
     services: [],
     previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] },
     aiFilled: { name: '', segment: '', segmentOther: '' },
+    edited: [],
+    details: { ...emptyDetails },
     sections: [...objectives[0].structure],
+    parked: { ...emptyParked },
     structureEdited: false,
     form: false,
     gallery: 8,
@@ -381,7 +420,18 @@ export function normalizeProject(input: unknown): Project {
       segment: pickOrEmpty(record(x.aiFilled).segment, segments.map((s) => s.id)),
       segmentOther: cleanText(record(x.aiFilled).segmentOther, 60),
     },
+    edited: [...new Set(strings(x.edited).filter((e): e is EditableText => (editableTexts as readonly string[]).includes(e)))],
+    details: {
+      audience: cleanText(record(x.details).audience, 120),
+      region: cleanText(record(x.details).region, 120),
+      highlights: cleanText(record(x.details).highlights, 200),
+    },
     sections: orderSections(Array.isArray(x.sections) ? strings(x.sections) : d.sections),
+    parked: {
+      sections: [...new Set(strings(record(x.parked).sections).filter((id) => sectionById(id) && !sectionById(id)!.fixed))],
+      form: record(x.parked).form === true,
+      gallery: GALLERY_SIZES.includes(record(x.parked).gallery as number) ? (record(x.parked).gallery as number) : 0,
+    },
     structureEdited: x.structureEdited === true,
     form: x.form === true,
     gallery: GALLERY_SIZES.includes(x.gallery as number) ? (x.gallery as number) : 8,
@@ -398,15 +448,20 @@ export function normalizeProject(input: unknown): Project {
   };
   if (p.serviceLater) p.service = '';
   p.pkg = higher(p.pkg, requiredPackage(p) ?? 'completo');
+  // Guardado é só o que não está ativo.
+  p.parked.sections = p.parked.sections.filter((id) => !p.sections.includes(id));
+  if (p.form) p.parked.form = false;
+  if (p.parked.gallery <= (p.sections.includes('galeria') ? p.gallery : 0)) p.parked.gallery = 0;
   return p;
 }
 
 /**
- * Etapa salva. Projetos do fluxo anterior de 4 etapas (qualquer "flow"
- * diferente do atual) têm a etapa convertida; o resto do projeto fica igual.
+ * Etapa salva. Projetos de fluxos anteriores (guiado-v1, sem a escolha de
+ * pacote, e o de 4 etapas) têm a etapa convertida; o resto fica igual.
  */
 function readStep(x: Record<string, unknown>): number {
   if (typeof x.step !== 'number' || !Number.isInteger(x.step)) return 0;
+  if (x.flow === 'guiado-v1') return GUIDED1_STEP[Math.max(0, Math.min(GUIDED1_STEP.length - 1, x.step))];
   if (typeof x.flow === 'string' && x.flow !== FLOW_VERSION) return FLOW4_STEP[Math.max(0, Math.min(3, x.step))];
   return Math.max(0, Math.min(STEP_COUNT - 1, x.step));
 }
@@ -510,6 +565,14 @@ export function requiredPackage(p: Pick<Project, 'sections' | 'form' | 'gallery'
   return higher(need, bySize.id);
 }
 
+/** Pacote mínimo pelos recursos escolhidos (seções e formulário), sem contar a quantidade de seções. */
+export function featurePackage(p: Pick<Project, 'sections' | 'form'>): PackageId {
+  let need: PackageId = 'essencial';
+  for (const id of p.sections) need = higher(need, sectionById(id)?.min ?? 'essencial');
+  if (p.form) need = higher(need, packages.find((x) => x.form)!.id);
+  return need;
+}
+
 export function currentPackage(p: Project): Package {
   return packageById(p.pkg);
 }
@@ -555,30 +618,92 @@ export function checkChange(current: Project, patch: Partial<Project>): PackageC
   return { kind: 'upgrade', to: need, project: normalizeProject({ ...draft, pkg: need }) };
 }
 
+export type PackageSwitch = {
+  project: Project;
+  /** O que sai da versão ativa (fica guardado no rascunho). */
+  removed: string[];
+  /**
+   * Há mais seções do que o pacote comporta: o visitante escolhe quais
+   * manter. `room` é quantas opcionais cabem; `optional`, as candidatas.
+   */
+  overLimit: { room: number; optional: string[] } | null;
+};
+
 /**
  * Troca de pacote escolhida pelo visitante. Para um pacote menor, lista o
- * que sai (seções e recursos que ele não comporta) antes de aplicar.
+ * que sai antes de aplicar — e o que sai não é apagado: fica guardado em
+ * `parked`, fora da prévia, do resumo e do pedido, para ser restaurado num
+ * pacote que comporte. Com mais seções do que o limite, `keep` diz quais
+ * seções opcionais ficam (sem ele, ficam as primeiras da ordem atual).
  */
-export function switchPackage(p: Project, to: PackageId): { project: Project; removed: string[] } {
+export function switchPackage(p: Project, to: PackageId, keep?: string[]): PackageSwitch {
   const target = packageById(to);
   const removed: string[] = [];
+  const parked = { ...p.parked, sections: [...p.parked.sections] };
+  const park = (id: string) => {
+    removed.push(sectionName(p, id));
+    if (!parked.sections.includes(id)) parked.sections.push(id);
+  };
   let list = p.sections.filter((id) => {
-    const keep = rank(sectionById(id)!.min) <= rank(to);
-    if (!keep) removed.push(sectionName(p, id));
-    return keep;
+    const fits = rank(sectionById(id)!.min) <= rank(to);
+    if (!fits) park(id);
+    return fits;
   });
   const optional = list.filter((id) => !sectionById(id)!.fixed);
   const room = target.maxSections - 2;
+  let overLimit: PackageSwitch['overLimit'] = null;
   if (optional.length > room) {
-    const drop = optional.slice(room);
-    drop.forEach((id) => removed.push(sectionName(p, id)));
-    list = list.filter((id) => !drop.includes(id));
+    overLimit = { room, optional };
+    const chosen = keep ? optional.filter((id) => keep.includes(id)).slice(0, room) : optional.slice(0, room);
+    optional.filter((id) => !chosen.includes(id)).forEach(park);
+    list = list.filter((id) => sectionById(id)!.fixed || chosen.includes(id));
   }
   const form = p.form && target.form;
-  if (p.form && !form) removed.push('Formulário para WhatsApp');
+  if (p.form && !form) {
+    removed.push('Formulário para WhatsApp');
+    parked.form = true;
+  }
   const gallery = Math.min(p.gallery, Math.max(8, target.galleryImages));
-  if (list.includes('galeria') && gallery < p.gallery) removed.push(`Galeria acima de ${gallery} imagens`);
-  return { project: normalizeProject({ ...p, pkg: to, sections: list, form, gallery }), removed };
+  if (list.includes('galeria') && gallery < p.gallery) {
+    removed.push(`Galeria acima de ${gallery} imagens`);
+    parked.gallery = p.gallery;
+  } else if (p.sections.includes('galeria') && !list.includes('galeria') && p.gallery > 8) parked.gallery = p.gallery;
+  return { project: normalizeProject({ ...p, pkg: to, sections: list, form, gallery, parked }), removed, overLimit };
+}
+
+/** Itens guardados que cabem no pacote atual (nomes legíveis). */
+export function restorable(p: Project): string[] {
+  return restoreParked(p).restored;
+}
+
+/**
+ * Traz de volta o que foi guardado numa troca para um pacote menor, dentro
+ * do que o pacote atual comporta. Nada é restaurado sem o visitante pedir.
+ */
+export function restoreParked(p: Project): { project: Project; restored: string[] } {
+  const pkg = currentPackage(p);
+  const restored: string[] = [];
+  const middle = p.sections.slice(1, -1);
+  const left: string[] = [];
+  for (const id of p.parked.sections) {
+    const fits = rank(sectionById(id)!.min) <= rank(p.pkg) && middle.length < pkg.maxSections - 2;
+    if (fits) {
+      middle.push(id);
+      restored.push(sectionName(p, id));
+    } else left.push(id);
+  }
+  const form = p.form || (p.parked.form && pkg.form);
+  if (form && !p.form) restored.push('Formulário para WhatsApp');
+  const galleryBack = p.parked.gallery > p.gallery && pkg.galleryImages >= p.parked.gallery && middle.includes('galeria');
+  if (galleryBack) restored.push(`Galeria com até ${p.parked.gallery} imagens`);
+  const project = normalizeProject({
+    ...p,
+    sections: ['apresentacao', ...middle, 'contato'],
+    form,
+    gallery: galleryBack ? p.parked.gallery : p.gallery,
+    parked: { sections: left, form: p.parked.form && !form, gallery: galleryBack ? 0 : p.parked.gallery },
+  });
+  return { project, restored };
 }
 
 /** Pacote recomendado e o motivo, em linguagem simples. */
@@ -587,7 +712,25 @@ export function recommendation(p: Project): { pkg: PackageId; reason: string } {
   const obj = objectiveOf(p);
   if (obj.recommend && rank(obj.recommend.pkg) > rank(need)) return obj.recommend;
   if (need === 'essencial') return { pkg: need, reason: 'As seções escolhidas cabem no Essencial.' };
-  return { pkg: need, reason: `As seções e recursos escolhidos pedem o ${packageById(need).name}.` };
+  const items = neededItems(p, need);
+  const name = packageById(need).name;
+  return { pkg: need, reason: items.length ? `O ${name} inclui ${items.join(' e ')} que você escolheu.` : `As seções escolhidas pedem o ${name}.` };
+}
+
+/** O que, nas escolhas atuais, só existe a partir de `pkg` ("a galeria", "o formulário"). */
+function neededItems(p: Project, pkg: PackageId): string[] {
+  const below = packageOrder[rank(pkg) - 1];
+  if (!below) return [];
+  const prev = packageById(below);
+  const items: string[] = [];
+  for (const id of p.sections) {
+    if (sectionById(id)!.min !== pkg) continue;
+    const article: Record<string, string> = { galeria: 'a', faq: 'as', depoimentos: 'os', vitrine: 'a' };
+    items.push(`${article[id] ?? 'a seção'} ${sectionName(p, id).toLowerCase()}`);
+  }
+  if (p.form && !prev.form) items.push('o formulário');
+  if (p.sections.length > prev.maxSections) items.push(`as ${p.sections.length} seções`);
+  return items.slice(0, 2);
 }
 
 /* ── Objetivo e estrutura ────────────────────────────────────────────────── */
@@ -706,7 +849,8 @@ export function suggestedServices(p: Project): string[] {
   return [...new Map(list.map((s) => [s.toLowerCase(), s])).values()].slice(0, 3);
 }
 
-const NEUTRAL_NAME = 'Seu Negócio';
+/** Nome mostrado na prévia do visitante enquanto ele não informa o da empresa. */
+export const NEUTRAL_NAME = 'Seu negócio';
 const NEUTRAL_IMAGE = 'loja';
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
@@ -737,8 +881,12 @@ export type SiteContent = {
   previewCopy: Project['previewCopy'];
 };
 
-/** Tudo o que a prévia mostra, derivado das respostas. Sugestões são marcadas como tal. */
-export function siteContent(p: Project): SiteContent {
+/**
+ * Tudo o que a prévia mostra, derivado das respostas. Sugestões são marcadas
+ * como tal. Sem nome informado, a prévia do visitante diz "Seu negócio"; os
+ * nomes fictícios ("Oficina do Lar") ficam só nos exemplos (`demo`).
+ */
+export function siteContent(p: Project, { demo = false } = {}): SiteContent {
   const seg = segmentOf(p);
   const obj = objectiveOf(p);
   const main = p.serviceLater ? '' : p.service.trim();
@@ -746,7 +894,7 @@ export function siteContent(p: Project): SiteContent {
   const rule = ruleFor(p);
   const fits = fitsSegment(p, seg, rule);
   return {
-    name: p.name.trim() || (fits ? seg.demo : NEUTRAL_NAME),
+    name: p.name.trim() || (demo && fits ? seg.demo : NEUTRAL_NAME),
     segmentName: p.segment === 'outro' && p.segmentOther.trim() ? cap(p.segmentOther.trim()) : seg.name,
     title: p.headline.trim() || (main ? titleTemplates[obj.id](cap(main)) : seg.title),
     titleSuggested: !p.headline.trim(),
@@ -903,51 +1051,176 @@ export function deadlineText(p: Project): string {
   return `${currentPackage(p).deadline}, ${priceNotes.deadlineStart}`;
 }
 
+/** Nome legível da fonte dos títulos. */
+export function fontLabel(p: Project): string {
+  return fonts.find((f) => f.id === p.font)?.name ?? fonts[0].name;
+}
+
+/** Nome legível das cores. */
+export function colorLabel(p: Project): string {
+  return p.custom ? `Cor da marca (${p.custom})` : palettes.find((x) => x.id === p.palette)!.name;
+}
+
 /**
- * Mensagem do WhatsApp: tudo o que foi escolhido, para o atendimento não
- * precisar perguntar de novo. Usa as mesmas funções da página e do PDF.
+ * Acima disto a mensagem fica longa demais para abrir com segurança pelo
+ * link do WhatsApp em todos os aparelhos: vai o resumo enxuto e o arquivo
+ * do projeto guarda o resto.
  */
-export function projectMessage(p: Project, origin?: string, opts: { logo?: boolean } = {}): string {
+export const MESSAGE_LIMIT = 1800;
+
+/** Textos escritos ou editados pelo visitante, para o atendimento. */
+function ownTexts(p: Project): string[] {
+  const lines: string[] = [];
+  const own = (field: EditableText) => p.edited.includes(field);
+  if (p.headline.trim()) lines.push(`Título: ${p.headline.trim()}`);
+  if (p.description.trim()) lines.push(`Frase de apresentação: ${p.description.trim()}`);
+  const services = p.services.map((x) => x.trim()).filter(Boolean);
+  if (services.length) lines.push(`Serviços: ${services.join('; ')}`);
+  const c = p.previewCopy;
+  if (own('about') && c.about.trim()) lines.push(`Sobre a empresa: ${c.about.trim()}`);
+  if (own('serviceDetails') && c.serviceDetails.some(Boolean)) lines.push(`Detalhes dos serviços: ${c.serviceDetails.filter(Boolean).join(' | ')}`);
+  if (own('differentials') && c.differentials.length) lines.push(`Diferenciais: ${c.differentials.join('; ')}`);
+  if (own('processSteps') && c.processSteps.length) lines.push(`Como funciona: ${c.processSteps.join('; ')}`);
+  if (own('faqQuestions') && c.faqQuestions.length) lines.push(`Perguntas frequentes: ${c.faqQuestions.join(' | ')}`);
+  return lines;
+}
+
+/**
+ * Mensagem do WhatsApp: texto humano, em blocos, com os nomes que o
+ * visitante viu na tela e só o pacote e os recursos ativos. Nada de JSON,
+ * ids ou links com o estado inteiro — a configuração completa vai no
+ * arquivo "Baixar meu projeto". Campos vazios não aparecem. A mensagem é
+ * texto puro: quem codifica para a URL é `whatsappLink`, uma única vez.
+ *
+ * `lean`: versão enxuta (sem os textos editados), usada quando a completa
+ * passa de MESSAGE_LIMIT; ela avisa que o arquivo do projeto tem o resto.
+ */
+export function projectMessage(p: Project, origin?: string, opts: { logo?: boolean; lean?: boolean } = {}): string {
   const pkg = currentPackage(p);
   const custom = isCustom(p);
-  const lines: string[] = [custom ? contact.whatsappPersonalizado : contact.whatsappIntro, ''];
+  const blocks: string[][] = [];
+  const block = (title: string, lines: (string | false | undefined)[]) => {
+    const kept = lines.filter((l): l is string => Boolean(l && l.trim()));
+    if (kept.length) blocks.push([title, ...kept]);
+  };
 
-  lines.push(`Empresa: ${p.name.trim() || 'a informar'}`);
-  lines.push(`Segmento: ${segmentLabel(p)}`);
-  lines.push(`Objetivo: ${objectiveOf(p).name}`);
-  lines.push(`Serviço ou produto principal: ${serviceLabel(p)}`);
-  lines.push(`Estilo e cores: ${styleLabel(p)}`);
-  lines.push(`Logo: ${opts.logo ? 'tenho e envio por aqui' : 'usar o nome da empresa por enquanto'}`);
+  const service = p.serviceLater ? '' : p.service.trim();
+  block('MEU NEGÓCIO', [
+    p.name.trim() && `Empresa: ${p.name.trim()}`,
+    p.segment && `Segmento: ${segmentLabel(p)}`,
+    service && `Serviço principal: ${service}`,
+    `Objetivo do site: ${objectiveOf(p).name}`,
+    p.details.audience.trim() && `Quem atendo: ${p.details.audience.trim()}`,
+    p.details.region.trim() && `Onde atendo: ${p.details.region.trim()}`,
+    p.details.highlights.trim() && `Quero destacar: ${p.details.highlights.trim()}`,
+  ]);
 
-  lines.push('');
-  if (custom) {
-    lines.push('Pacote: projeto personalizado (orçamento separado)');
-    lines.push(`Preciso de: ${customNeedNames(p).join('; ')}`);
-    lines.push(`Pacote de referência na prévia: ${pkg.name} (${brl(pkg.price)})`);
-  } else {
-    lines.push(`Pacote: ${pkg.name}`);
-    lines.push(`Valor do desenvolvimento: ${brl(pkg.price)} — ${priceNotes.payment}`);
-  }
-  lines.push(`Seções (${p.sections.length} de até ${pkg.maxSections}): ${selectedSections(p).join(', ')}`);
-  lines.push(`Recursos: ${selectedResources(p).join('; ')}`);
-  lines.push(`Prazo: ${deadlineText(p)}`);
-  lines.push(`Ajustes: ${revisionRounds} rodadas antes da publicação`);
+  block(
+    custom ? 'PROJETO PERSONALIZADO' : 'PACOTE ESCOLHIDO',
+    custom
+      ? [`Preciso de: ${customNeedNames(p).join('; ')}`, `Pacote de referência na prévia: ${pkg.name} — ${brl(pkg.price)}`, 'Valor: orçamento separado']
+      : [`${pkg.name} — ${brl(pkg.price)}`, priceNotes.payment, `Prazo: ${deadlineText(p)}`, `Ajustes: ${revisionRounds} rodadas antes da publicação`],
+  );
 
-  if (p.notes.trim()) lines.push('', `Observações: ${p.notes.trim()}`);
+  block('COMO IMAGINEI O SITE', [
+    `Estilo: ${directions.find((d) => d.id === p.direction)!.name}`,
+    `Cores: ${colorLabel(p)}`,
+    `Fonte dos títulos: ${fontLabel(p)}`,
+    `Logo: ${opts.logo ? 'tenho e envio por aqui' : 'usar o nome da empresa por enquanto'}`,
+    `Seções, na ordem escolhida: ${selectedSections(p).join(', ')}`,
+    `Recursos selecionados: ${selectedResources(p).join('; ')}`,
+  ]);
+
+  const texts = ownTexts(p);
+  if (!opts.lean) block('TEXTOS QUE EU ESCREVI OU EDITEI', texts);
+  else if (texts.length) block('TEXTOS', ['Os textos que escrevi estão no arquivo do projeto, que envio em seguida.']);
+
+  block('OBSERVAÇÕES', [p.notes.trim()]);
 
   const lead = p.lead;
   const quando = desiredDeadlines.find((d) => d.id === lead.deadline);
   const decisao = decisionRoles.find((d) => d.id === lead.decision);
-  if (lead.name.trim() || quando || decisao) {
-    lines.push('');
-    if (lead.name.trim()) lines.push(`Meu nome: ${lead.name.trim()}`);
-    if (quando) lines.push(`Quando quero começar: ${quando.name}`);
-    if (decisao) lines.push(`Decisão: ${decisao.name}`);
-  }
+  block('SOBRE MIM', [lead.name.trim() && `Meu nome: ${lead.name.trim()}`, quando && `Quando quero começar: ${quando.name}`, decisao && `Decisão: ${decisao.name}`]);
 
-  lines.push('', `Opções de layout (o link não leva nome nem textos): ${shareLink(p)}`);
-  if (p.id || origin) lines.push(`Ref.: ${[p.id, origin].filter(Boolean).join(' · ')}`);
-  return lines.join('\n');
+  const intro = custom ? contact.whatsappPersonalizado : contact.whatsappIntro;
+  const ref = [p.id && `Código do projeto: ${p.id}`, origin && `Origem: ${origin}`].filter(Boolean).join(' · ');
+  return [intro, ...blocks.map((b) => b.join('\n')), contact.whatsappClosing, ...(ref ? [ref] : [])].join('\n\n');
+}
+
+/** A mensagem que vai para o WhatsApp: a completa, ou a enxuta quando a completa é longa demais. */
+export function requestMessage(p: Project, origin?: string, opts: { logo?: boolean } = {}): { text: string; lean: boolean } {
+  const full = projectMessage(p, origin, opts);
+  if (full.length <= MESSAGE_LIMIT) return { text: full, lean: false };
+  return { text: projectMessage(p, origin, { ...opts, lean: true }), lean: true };
+}
+
+/* ── Arquivo do projeto ──────────────────────────────────────────────────── */
+
+export const EXPORT_FORMAT = 'beck-performance/projeto-de-site';
+export const EXPORT_VERSION = 1;
+
+/**
+ * Configuração completa e versionada para o atendimento ("Baixar meu
+ * projeto"). Leva nomes legíveis e, em `projeto`, o modelo v4 que o
+ * configurador lê de volta (`importProject`). Não leva contato, aceite de
+ * marketing, a descrição enviada à IA, áudio nem a logo (a logo vai à parte).
+ */
+export function exportProject(p: Project, { logo = false, now = new Date() } = {}) {
+  const n = normalizeProject(p);
+  const pkg = currentPackage(n);
+  const projeto = { ...n, lead: { ...n.lead, contact: '', marketing: false } };
+  return {
+    formato: EXPORT_FORMAT,
+    versaoDoFormato: EXPORT_VERSION,
+    exportadoEm: now.toISOString(),
+    codigo: n.id || null,
+    resumo: {
+      empresa: n.name.trim() || null,
+      segmento: n.segment ? segmentLabel(n) : null,
+      servicoPrincipal: serviceLabel(n),
+      objetivo: objectiveOf(n).name,
+      pacote: isCustom(n) ? { tipo: 'personalizado', referencia: pkg.name, precisa: customNeedNames(n) } : { nome: pkg.name, valor: pkg.price, valorTexto: brl(pkg.price) },
+      estilo: directions.find((d) => d.id === n.direction)!.name,
+      cores: colorLabel(n),
+      fonteDosTitulos: fontLabel(n),
+      logo: logo ? 'enviada à parte' : 'sem logo por enquanto',
+      secoes: selectedSections(n),
+      recursos: selectedResources(n),
+      guardadosForaDoPacote: [...n.parked.sections.map((id) => sectionName(n, id)), ...(n.parked.form ? ['Formulário para WhatsApp'] : [])],
+      textos: {
+        titulo: siteContent(n).title,
+        fraseDeApresentacao: siteContent(n).intro,
+        servicos: siteContent(n).services,
+        sugeridos: !n.edited.length && !n.headline && !n.description && !n.services.length,
+        ...n.previewCopy,
+      },
+      detalhes: n.details,
+      observacoes: n.notes.trim() || null,
+    },
+    projeto,
+  };
+}
+
+/** Nome do arquivo exportado: "projeto-site-clima-sul.json". */
+export function exportFileName(p: Project): string {
+  const slug = (p.name.trim() || 'meu-negocio')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40);
+  return `projeto-site-${slug || 'meu-negocio'}.json`;
+}
+
+/** Lê um arquivo exportado. Lança erro se não for um projeto válido. */
+export function importProject(text: string): Project {
+  const data = record(JSON.parse(text));
+  if (data.formato !== EXPORT_FORMAT) throw Error('Arquivo não reconhecido');
+  if (typeof data.versaoDoFormato !== 'number' || data.versaoDoFormato > EXPORT_VERSION) throw Error('Versão do arquivo não reconhecida');
+  const projeto = record(data.projeto);
+  if (projeto.version !== 4) throw Error('Projeto não reconhecido');
+  return normalizeProject(projeto);
 }
 
 /** Mensagem curta para tirar dúvidas no meio do fluxo, sem dados pessoais. */

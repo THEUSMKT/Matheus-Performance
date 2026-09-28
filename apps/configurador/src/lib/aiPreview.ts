@@ -81,7 +81,8 @@ export function systemPrompt(): string {
     '',
     'Regras:',
     '- Escolha segment, objective, direction, palette e sections somente entre os ids listados abaixo.',
-    '- Crie conteúdo específico, concreto e pronto para uma prévia profissional, não frases genéricas como "atendimento de qualidade" ou "soluções sob medida".',
+    '- Crie conteúdo específico, concreto e pronto para uma prévia profissional, não frases genéricas como "atendimento de qualidade", "excelência e qualidade", "soluções sob medida", "soluções personalizadas" ou "estratégias direcionadas".',
+    '- Se a descrição trouxer "Quem atendo", "Onde atendo" ou "Quero destacar", use essas informações nos textos, sem acrescentar nada além delas.',
     '- objective deve priorizar a ação de conversão pedida: se a pessoa quer marcar uma consulta ou horário, escolha agendamento; se quer receber propostas, escolha orcamento. Ver trabalhos ou conhecer a empresa são objetivos secundários e podem entrar como seções.',
     '- headline: título curto e natural (até 70 caracteres) que mencione o serviço principal quando houver.',
     '- description: uma frase (até 160 caracteres) que explique para quem é e o que o visitante consegue fazer no site.',
@@ -269,7 +270,12 @@ export function sanitizeSuggestion(raw: unknown, pkg: PackageId = 'essencial'): 
  * escolhido) vale mais que a IA; pacote, necessidades, observações e dados de
  * contato nunca mudam. Os textos da IA ficam como textos editáveis.
  */
-export function applySuggestion(p: Project, s: Suggestion): Project {
+/**
+ * Aplica a sugestão. Textos que o visitante editou à mão (`p.edited`) ficam
+ * como estão, a não ser que ele peça para trocar (`replaceEdited`).
+ */
+export function applySuggestion(p: Project, s: Suggestion, { replaceEdited = false } = {}): Project {
+  const keep = (field: Project['edited'][number]) => !replaceEdited && p.edited.includes(field);
   // O que a prévia anterior preencheu pode ser trocado; o que o visitante
   // digitou ou escolheu, não.
   const prev = p.aiFilled;
@@ -293,10 +299,17 @@ export function applySuggestion(p: Project, s: Suggestion): Project {
     serviceLater: s.service ? false : p.serviceLater,
     objective: s.objective,
     objectiveSet: true,
-    headline: s.headline,
-    description: s.description,
-    services: s.services,
-    previewCopy: s.previewCopy,
+    headline: keep('headline') ? p.headline : s.headline,
+    description: keep('description') ? p.description : s.description,
+    services: keep('services') ? p.services : s.services,
+    previewCopy: {
+      about: keep('about') ? p.previewCopy.about : s.previewCopy.about,
+      serviceDetails: keep('serviceDetails') ? p.previewCopy.serviceDetails : s.previewCopy.serviceDetails,
+      differentials: keep('differentials') ? p.previewCopy.differentials : s.previewCopy.differentials,
+      processSteps: keep('processSteps') ? p.previewCopy.processSteps : s.previewCopy.processSteps,
+      faqQuestions: keep('faqQuestions') ? p.previewCopy.faqQuestions : s.previewCopy.faqQuestions,
+    },
+    edited: replaceEdited ? [] : p.edited,
     sections: ['apresentacao', ...s.sections, 'contato'],
     structureEdited: true,
     direction: s.direction,
@@ -328,6 +341,23 @@ export const aiReasonText: Record<AiFailure, string> = {
 type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string; signal?: AbortSignal }) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
 
 /** Pede a sugestão ao servidor intermediário. Só há sucesso com uma sugestão válida. */
+/**
+ * Descrição enviada à IA: o texto da pessoa e, se couber no limite, os
+ * detalhes opcionais que ela informou ("Deixar minha prévia mais
+ * específica"). Nenhum campo novo no contrato com o servidor.
+ */
+export function withDetails(description: string, details: Project['details']): string {
+  const extra = [
+    details.audience.trim() && `Quem atendo: ${details.audience.trim()}.`,
+    details.region.trim() && `Onde atendo: ${details.region.trim()}.`,
+    details.highlights.trim() && `Quero destacar: ${details.highlights.trim()}.`,
+  ].filter(Boolean);
+  const base = description.trim();
+  if (!extra.length) return base;
+  const full = `${base}\n${extra.join(' ')}`;
+  return full.length <= DESCRIPTION_MAX ? full : base;
+}
+
 export async function requestSuggestion(
   description: string,
   pkg: PackageId,
