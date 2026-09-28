@@ -1,9 +1,26 @@
 import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
 
 import { contact } from '@/config/contact';
 import { priceRange } from '@/config/packages';
 import { isProduction } from '@/config/integrations';
 import './globals.css';
+
+/**
+ * Títulos em Plus Jakarta Sans (arquivo local, variável, só o subconjunto
+ * latino — OFL, licença em app/fonts). Os textos usam a fonte do sistema
+ * (SF no iPhone, Roboto no Android): nada a baixar para ler.
+ */
+const titleFont = localFont({
+  src: './fonts/plus-jakarta-sans-latin-wght-normal.woff2',
+  weight: '200 800',
+  display: 'swap',
+  // Sem preload: no 4G lento o arquivo competia com o CSS e atrasava a primeira pintura.
+  // Os títulos aparecem na fonte do sistema e trocam quando a fonte chega.
+  preload: false,
+  variable: '--font-title',
+  fallback: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Arial', 'sans-serif'],
+});
 
 const title = 'Beck Performance | Sites para empresas de todos os portes';
 const description = `Um site profissional para apresentar sua empresa e facilitar novos contatos. Veja uma prévia grátis, sem cadastro. Desenvolvimento de ${priceRange}, pagamento único.`;
@@ -69,7 +86,7 @@ const jsonLd = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const fontVars = '';
+  const fontVars = titleFont.variable;
 
   return (
     <html lang="pt-BR" className={fontVars}>

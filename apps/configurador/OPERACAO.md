@@ -164,7 +164,9 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 
 | Evento | Quando | Propriedades |
 |---|---|---|
-| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacote`, `exemplo`, `flutuante`); `package` quando vem de “Criar prévia com o …” |
+| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacotes`, `exemplo`); `package` quando vem de “Criar prévia com este pacote” |
+| `nav_click` | “Explorar exemplos de sites” / “Ver pacotes e valores” | `target` (`exemplos`, `pacotes`), `context` (página de origem) |
+| `real_project_open` | “Visitar site” de um projeto real (abre em nova aba) | `project`, `context` (`inicio`, `exemplos`) |
 | `configurator_start` | Abrir a página de criação (1× por sessão) | — |
 | `step_complete` | Avançar uma etapa (1× por etapa): 1 negócio, 2 objetivo, 3 prévia pronta, 4 pacote, 5 estilo, 6 cores, 7 títulos, 8 conteúdo, 9 seções | `step` |
 | `example_opened` / `example_applied` | Abrir um exemplo / usar como ponto de partida | `segment` |
@@ -204,11 +206,22 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
 - `criar/?pacote=profissional` (ids: `essencial`, `profissional`, `completo`)
   começa a prévia nesse pacote. Se a pessoa já tem uma prévia em andamento,
   a página pergunta antes de aplicar; nada é trocado sozinho. É o que os
-  botões “Criar prévia com o …” da apresentação usam.
+  botões “Criar prévia com este pacote” de `/pacotes/` usam.
+- `criar/?modelo=beleza` (ids de segmento, e `outro`) começa pela prévia
+  pronta do modelo. Com uma prévia em andamento, pergunta antes de
+  substituir, e a versão anterior fica em “Recuperar minha versão anterior”.
+  É o que “Criar minha prévia com este modelo” de `/exemplos/` usa.
 - `?segmento=beleza` (ids: `local`, `beleza`, `consultoria`, `criativo`,
-  `alimentacao`, `outro`) começa o carrossel no exemplo do segmento e abre a
-  página de criação com o segmento já escolhido. Uma única página atende
-  todas as campanhas — não crie cópias.
+  `alimentacao`, `outro`):
+  - na página inicial, faz “Explorar exemplos de sites” abrir `/exemplos/`
+    já filtrado;
+  - abre a página de criação com o segmento já escolhido;
+  - `/exemplos/?segmento=beleza` também abre filtrado.
+
+  Uma única página atende todas as campanhas; não crie cópias.
+- Atalhos antigos continuam valendo: `/#exemplos` leva a `/exemplos/` e
+  `/#investimento` leva a `/pacotes/`. Sem JavaScript, a âncora cai no acesso
+  correspondente da página inicial.
 - Preparar a página para campanhas não inclui iniciar anúncios ou gastar verba.
 
 ### Indicadores
@@ -221,7 +234,8 @@ Para instalar GA4 ou Meta via Google Tag Manager: inclua o snippet no
 | Troca de pacote | `package_changed` ÷ `preview_view(source=etapa)` |
 | Pedido de desenvolvimento | `request_click` ÷ `preview_view(source=etapa)` |
 | Funil por aparelho | Os indicadores acima separados por `device` — confirma (ou não) a premissa de ~90% de acessos pelo celular |
-| Pacote vindo da apresentação | `start_click(context=pacote)` por `package` ÷ `start_click` |
+| Pacote vindo da página de pacotes | `start_click(context=pacotes)` por `package` ÷ `start_click` |
+| Interesse nos projetos reais | `real_project_open` por `project` ÷ visitas |
 | Pedidos confirmados | `generate_lead` (modo receptor) ou cards criados no CRM (modo WhatsApp) |
 | Proposta, fechamento, perda | No CRM, por etapa e motivo de perda |
 | Custo por pedido | Verba da campanha ÷ pedidos confirmados da mesma origem |

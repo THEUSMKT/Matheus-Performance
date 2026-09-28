@@ -1,17 +1,38 @@
 # Configurador de sites — Beck Performance
 
 Prévia gratuita do site da empresa em poucos passos e desenvolvimento em
-três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). A apresentação (`/`)
-mostra os dois diferenciais, exemplos, como funciona, os pacotes e as
-perguntas; o botão principal abre direto a página de criação (`/criar/`),
-que monta a prévia contando sobre o negócio (por áudio, texto ou passo a
-passo) → “Sua prévia está pronta” → uma escolha por tela (pacote, estilo,
-cores, títulos, conteúdo, seções) → revisão, com a prévia ao lado (ou em
-“Ver meu site”, no celular). No fim, o pedido de desenvolvimento pelo
-WhatsApp com uma mensagem legível, “Copiar resumo” e “Baixar meu projeto”
-(arquivo com a configuração completa). Um botão flutuante na apresentação leva
-à criação (“Criar minha prévia” / “Continuar minha prévia”). Tudo fica salvo neste
-dispositivo.
+três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). Páginas:
+
+- **Início (`/`)**, objetiva:
+  - apresentação;
+  - dois projetos reais ("Da ideia ao ar");
+  - como funciona;
+  - acessos a exemplos e pacotes;
+  - quem desenvolve;
+  - dúvidas essenciais e chamada final.
+- **Exemplos (`/exemplos/`)**:
+  - projetos reais, com "Visitar site";
+  - modelos demonstrativos por segmento, com filtros, visualização no
+    computador e no celular e "Criar minha prévia com este modelo".
+- **Pacotes (`/pacotes/`)**:
+  - comparação compacta;
+  - cartões completos de cada pacote;
+  - comparação lado a lado;
+  - condições (domínio e hospedagem, depois da entrega, o que não está
+    incluído, projeto personalizado).
+- **Criação (`/criar/`)**:
+  - monta a prévia contando sobre o negócio (por áudio, texto ou passo a
+    passo);
+  - depois vem "Sua prévia está pronta";
+  - em seguida, uma escolha por tela: pacote, estilo, cores, títulos,
+    conteúdo e seções;
+  - por fim, a revisão.
+  - O pedido de desenvolvimento sai pelo WhatsApp, com "Copiar resumo" e
+    "Baixar meu projeto".
+  - Tudo fica salvo neste dispositivo.
+
+Navegação, menu do celular e botões de pacote e modelo são links comuns: as
+páginas funcionam mesmo que o JavaScript não carregue.
 
 Next.js 16 · React 19 · TypeScript · CSS Modules. Exporta HTML estático e é
 publicado no GitHub Pages em `/Matheus-Performance/configurador/`.
@@ -46,7 +67,7 @@ texto comercial fica escrito dentro de componente.
 | `contact.ts` | Marca, responsável, **WhatsApp** (único lugar do número), mensagens de abertura, e-mail e Instagram (vazios = não aparecem), liberação para o Google |
 | `segments.ts` | Segmentos, textos sugeridos, estilos e cores sugeridos, respostas rápidas e regras por palavra-chave (ex.: ar-condicionado → imagem de climatização) |
 | `projectFaq.ts` | Perguntas frequentes (valores, prazos e limites vêm de `packages.ts`) |
-| `proof.ts` | Projetos reais e depoimentos — **só com autorização**; vazio = a seção não aparece |
+| `proof.ts` | Projetos reais (nome, categoria, frase, endereço, capturas em `public/projetos/`) e depoimentos — **só com autorização**, sem pacote, preço ou resultado associado |
 | `experiments.ts` | Testes de mensagem e CTA (todos inativos) |
 | `integrations.ts` | Receptor de pedidos e ambiente, lidos de variáveis de ambiente |
 
@@ -61,7 +82,9 @@ Página, PDF, mensagem do WhatsApp e receptor usam as mesmas funções.
 
 | Caminho | Papel |
 |---|---|
-| `src/components/landing/` | Apresentação, cabeçalho/rodapé (`Chrome`), controles de escolha e estado salvo (`useProject`) |
+| `src/components/landing/` | Início (`Landing`), Exemplos (`ExamplesPage`, `ExampleGallery`), Pacotes (`PackagesPage`), projetos reais (`RealProjects`), cabeçalho/rodapé (`Chrome`), controles de escolha e estado salvo (`useProject`) |
+| `public/projetos/` | Capturas dos projetos reais (WebP, origem e data no README da pasta) |
+| `src/app/fonts/` | Plus Jakarta Sans (títulos), arquivo local com licença OFL |
 | `src/app/criar/` · `src/components/builder/` | Página de criação: fluxo e barra do celular (`Builder`), descrição por áudio/texto (`Describe`), negócio e objetivo (`Steps`), prévia pronta e escolhas uma por tela (`Choices`, `Pickers`), revisão, pedido, copiar resumo e arquivo do projeto (`Site`), escolha, comparação e troca reversível de pacotes (`Packages`) |
 | `src/components/preview/SitePreview.tsx` | Prévia do site: nome, logo, segmento, serviço, objetivo, estilo, cores e seções na ordem escolhida |
 | `public/demo/` | Ilustrações próprias por segmento (SVG, sem links externos) |

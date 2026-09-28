@@ -1060,4 +1060,58 @@ test('Pacotes: diferenças em uso, comuns uma vez só, Essencial sem lista infla
   assert.equal(analytics.deviceCategory(390), 'celular'); assert.equal(analytics.deviceCategory(900), 'tablet'); assert.equal(analytics.deviceCategory(1440), 'computador');
 });
 
+test('Página de pacotes: cada cartão lista tudo o que inclui e marca só o que acrescenta ao anterior', () => {
+  const [e, pr, c] = pk.packages;
+  const fe = pk.packageFeatures(e), fp = pk.packageFeatures(pr), fc = pk.packageFeatures(c);
+  assert(!fe.some((f) => f.extra), 'o Essencial não acrescenta nada a um pacote anterior');
+  for (const list of [fe, fp, fc]) {
+    for (const common of ['Página única e responsiva', 'Aplicação da sua logo', 'Botão de WhatsApp', '2 rodadas de ajustes', 'Acompanhamento da publicação']) assert(list.some((f) => f.text.startsWith(common)), `sem "tudo do anterior": ${common}`);
+    assert(!list.some((f) => /^Tudo do/.test(f.text)));
+  }
+  assert.deepEqual(fp.filter((f) => f.extra).map((f) => f.text), ['Até 7 seções na mesma página', 'Galeria com até 8 fotos fornecidas por você', 'Formulário que organiza a solicitação e encaminha ao WhatsApp', 'Perguntas frequentes e depoimentos reais, dentro do limite de seções']);
+  assert.deepEqual(fc.filter((f) => f.extra).map((f) => f.text), ['Até 8 seções na mesma página', 'Galeria com até 15 fotos fornecidas por você', 'Vitrine de até 10 produtos ou serviços, com pedido pelo WhatsApp', 'Organização mais detalhada do conteúdo']);
+  assert(fc.some((f) => f.text.startsWith('Formulário') && !f.extra), 'o formulário já vinha do Profissional');
+  assert.equal(pk.upgradeNote(e), null);
+  const up1 = pk.upgradeNote(pr), up2 = pk.upgradeNote(c);
+  assert.equal(up1.diff, 250); assert.equal(up1.from, 'Essencial');
+  assert.deepEqual(up1.gains, ['2 seções a mais (até 7)', 'galeria com até 8 fotos', 'formulário que organiza a solicitação', 'perguntas frequentes e depoimentos reais']);
+  assert.equal(up2.diff, 250); assert.equal(up2.from, 'Profissional');
+  assert.deepEqual(up2.gains, ['1 seção a mais (até 8)', 'galeria com até 15 fotos (no Profissional, até 8)', 'vitrine com até 10 produtos ou serviços']);
+});
+
+test('Projetos reais: dois sites, capturas locais, sem pacote, preço ou resultado associado', () => {
+  const { realProjects, testimonials } = require('../src/config/proof.ts');
+  assert.deepEqual(realProjects.map((r) => [r.name, r.category, r.url]), [
+    ['Schay Corretora', 'Mercado imobiliário', 'https://schaycorretora.com.br/'],
+    ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'Marketing e serviços profissionais', 'https://theusmkt.github.io/Matheus-Performance/'],
+  ]);
+  assert.equal(realProjects.filter((r) => r.ownBrand).map((r) => r.id).join(), 'matheus-beck', 'só o site da própria marca é identificado como tal');
+  for (const r of realProjects) {
+    for (const suffix of ['-640.webp', '-1080.webp', '-1280.webp', '-celular-300.webp', '-celular-600.webp']) assert(fs.existsSync(path.join(__dirname, '../public', r.image + suffix)), r.image + suffix);
+    assert(!/R\$|\d+ ?%/.test(r.description), 'sem preço nem resultado');
+    for (const key of ['pkg', 'package', 'price', 'result']) assert(!(key in r), `sem ${key} associado`);
+  }
+  assert.equal(testimonials.length, 0, 'nenhum depoimento inventado');
+  assert(fs.existsSync(path.join(__dirname, '../public/projetos/README.md')), 'origem das capturas registrada');
+  const cards = fs.readFileSync(path.join(__dirname, '../src/components/landing/RealProjects.tsx'), 'utf8');
+  assert(!/<iframe/.test(cards), 'sem iframe');
+  assert(/target="_blank"/.test(cards) && /abre em nova aba/.test(cards) && /rel="noopener noreferrer"/.test(cards));
+});
+
+test('Rotas novas, links sem depender de script e alvo mínimo de compatibilidade', () => {
+  const src = (f) => fs.readFileSync(path.join(__dirname, '../src', f), 'utf8');
+  assert(fs.existsSync(path.join(__dirname, '../src/app/exemplos/page.tsx')) && fs.existsSync(path.join(__dirname, '../src/app/pacotes/page.tsx')));
+  assert(/\/exemplos\//.test(src('app/sitemap.ts')) && /\/pacotes\//.test(src('app/sitemap.ts')));
+  const chrome = src('components/landing/Chrome.tsx');
+  assert(/<details className=\{s\.menu\}/.test(chrome), 'menu do celular abre sem script');
+  assert(!/next\/link/.test(chrome), 'navegação por links comuns');
+  const gallery = src('components/landing/ExampleGallery.tsx');
+  assert(/\?modelo=\$\{id\}/.test(gallery) && /<a className=\{s\.primary\} href=\{modelHref/.test(gallery), 'modelo por link comum');
+  const pkgJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+  assert(pkgJson.browserslist.includes('ios_saf >= 15.4') && pkgJson.browserslist.includes('safari >= 15.4'));
+  assert(pkgJson.scripts['check:compat']);
+  const builder = src('components/builder/Builder.tsx');
+  assert(!/params\.size|searchParams\.size/.test(builder), 'URLSearchParams.size só existe no Safari 17+');
+});
+
 Promise.all(pending).then(() => console.log(`${count} testes passaram.`)).catch((e) => { console.error(e); process.exit(1); });
