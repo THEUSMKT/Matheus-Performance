@@ -123,6 +123,50 @@ export function packageDiffs(pkg: Package): string[] {
 }
 
 /**
+ * Lista completa do que o pacote inclui, sem "Tudo do anterior": cada
+ * cartão se explica sozinho. `extra` marca o que este pacote acrescenta ao
+ * pacote logo abaixo dele (para destacar o que muda).
+ */
+export function packageFeatures(pkg: Package): { text: string; extra: boolean }[] {
+  const below = packages[packageOrder.indexOf(pkg.id) - 1];
+  const list: { text: string; extra: boolean }[] = [
+    { text: 'Página única e responsiva, para celular e computador', extra: false },
+    {
+      text: pkg.id === 'essencial' ? `Até ${pkg.maxSections} seções: apresentação, serviços, sobre, contato e uma complementar` : `Até ${pkg.maxSections} seções na mesma página`,
+      extra: Boolean(below),
+    },
+    { text: 'Aplicação da sua logo e das cores da marca', extra: false },
+    { text: 'Escolha entre os estilos disponíveis', extra: false },
+    { text: 'Botão de WhatsApp e links para as redes sociais', extra: false },
+  ];
+  if (pkg.galleryImages) list.push({ text: `Galeria com até ${pkg.galleryImages} fotos fornecidas por você`, extra: !below || below.galleryImages !== pkg.galleryImages });
+  if (pkg.form) {
+    list.push({ text: 'Formulário que organiza a solicitação e encaminha ao WhatsApp', extra: !below?.form });
+    list.push({ text: 'Perguntas frequentes e depoimentos reais, dentro do limite de seções', extra: !below?.form });
+  }
+  if (pkg.showcaseItems) list.push({ text: `Vitrine de até ${pkg.showcaseItems} produtos ou serviços, com pedido pelo WhatsApp`, extra: !below?.showcaseItems });
+  if (pkg.id === 'completo') list.push({ text: 'Organização mais detalhada do conteúdo', extra: true });
+  list.push({ text: `${revisionRounds} rodadas de ajustes antes da publicação`, extra: false });
+  list.push({ text: 'Acompanhamento da publicação no ambiente combinado', extra: false });
+  return list;
+}
+
+/**
+ * O que a diferença de preço para o pacote de baixo compra, em uma frase
+ * derivada dos limites. Nulo no primeiro pacote.
+ */
+export function upgradeNote(pkg: Package): { diff: number; from: string; gains: string[] } | null {
+  const below = packages[packageOrder.indexOf(pkg.id) - 1];
+  if (!below) return null;
+  const gains: string[] = [];
+  if (pkg.maxSections > below.maxSections) gains.push(`${pkg.maxSections - below.maxSections} ${pkg.maxSections - below.maxSections === 1 ? 'seção' : 'seções'} a mais (até ${pkg.maxSections})`);
+  if (pkg.galleryImages > below.galleryImages) gains.push(below.galleryImages ? `galeria com até ${pkg.galleryImages} fotos (no ${below.name}, até ${below.galleryImages})` : `galeria com até ${pkg.galleryImages} fotos`);
+  if (pkg.form && !below.form) gains.push('formulário que organiza a solicitação', 'perguntas frequentes e depoimentos reais');
+  if (pkg.showcaseItems > below.showcaseItems) gains.push(`vitrine com até ${pkg.showcaseItems} produtos ou serviços`);
+  return { diff: pkg.price - below.price, from: below.name, gains };
+}
+
+/**
  * Comparação curta, alinhada por recurso. Cada célula é derivada dos
  * limites do pacote. `from` diz a partir de qual pacote o recurso existe.
  */

@@ -9,7 +9,8 @@
     "start": "node scripts/preview.cjs",
     "preview": "node scripts/preview.cjs",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/project.test.cjs"
+    "test": "node tests/project.test.cjs",
+    "check:compat": "node scripts/compat-check.cjs"
   },
   "dependencies": {
     "lucide-react": "^1.47.0",
@@ -24,5 +25,12 @@
     "@types/react-dom": "^19.2.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.0"
-  }
+  },
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 111",
+    "safari >= 15.4",
+    "ios_saf >= 15.4"
+  ]
 }

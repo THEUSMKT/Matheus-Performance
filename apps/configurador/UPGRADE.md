@@ -1,5 +1,116 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — página inicial objetiva, projetos reais, Exemplos e Pacotes
+
+**Página inicial (`/`)**, na ordem:
+1. Apresentação e benefício: "Criar minha prévia grátis", ou "Continuar minha prévia" quando há projeto salvo.
+2. **Da ideia ao ar: conheça sites que criamos.** Dois projetos reais (Schay Corretora e Matheus Beck), cada um com:
+   - captura estática, sem iframe;
+   - categoria, nome e uma frase;
+   - "Visitar site", que abre em nova aba e avisa isso para leitores de tela.
+   O site Matheus Beck aparece como "Projeto da própria marca". Nenhum projeto tem pacote, preço, resultado ou depoimento associado.
+3. Como funciona, em 3 passos.
+4. Acessos às páginas internas: "Explorar exemplos de sites" e "Ver pacotes e valores".
+5. Quem desenvolve.
+6. Dúvidas essenciais (6) e chamada final.
+
+Saíram da página inicial:
+- a galeria de modelos;
+- a comparação dos pacotes;
+- a faixa de valor;
+- o botão flutuante. Nada fica fixo sobre o conteúdo; o cabeçalho acompanha a rolagem e, no celular, o menu tem o botão de criar a prévia.
+
+**Exemplos (`/exemplos/`)**: "Inspire-se no próximo site da sua empresa."
+- **Projetos reais**: captura de computador e de celular, com "Visitar site".
+- **Modelos para imaginar o seu**: os modelos demonstrativos, identificados como tal.
+  - Filtros por segmento que quebram linha (sem rolagem lateral).
+  - Grade de uma coluna no celular.
+  - "Ver no computador e no celular" (mesma demonstração de antes).
+  - "Criar minha prévia com este modelo" é link para `criar/?modelo=<segmento>`. A página de criação pergunta antes de substituir um rascunho e guarda a versão anterior.
+
+**Pacotes (`/pacotes/`)**: "Escolha como sua empresa vai se apresentar ao mundo."
+- Abertura do maior para o menor (Completo — R$ 1.000, Profissional — R$ 750, Essencial — R$ 500), uma frase por pacote.
+- Cartões completos, sem "tudo do anterior":
+  - preço em destaque e pagamento único;
+  - para quem é;
+  - limites de seções, fotos e itens;
+  - recursos, com "+" no que o pacote acrescenta;
+  - prazo e quando ele começa a contar;
+  - "Criar prévia com este pacote" (`criar/?pacote=`).
+- Profissional com o selo "Equilíbrio entre apresentação e recursos". Os R$ 250 de diferença (Essencial → Profissional → Completo) são explicados a partir dos limites de `packages.ts`.
+- Ordem dos cartões: no computador, Essencial | Profissional | Completo; no celular, Profissional, Essencial, Completo (também a ordem para teclado e leitor de tela).
+- Comparação completa, em tabela no computador e em blocos no celular.
+- Condições: domínio e hospedagem, depois da entrega, o que não está incluído e projeto personalizado.
+- Preços e regras não mudaram. Não há preço riscado, desconto, contador ou "mais vendido".
+
+**Atalhos antigos**:
+- `/#exemplos` leva a `/exemplos/` e `/#investimento` leva a `/pacotes/`.
+- `?segmento=` faz os exemplos abrirem filtrados.
+- Sem JavaScript, as âncoras caem nos acessos da página inicial.
+- Menu e rodapé apontam para as páginas novas em todas as páginas.
+
+**Visual**:
+- Fundos azulados claros, superfícies lavanda e um tom quente suave usados com moderação, azul vivo nos botões e azul-marinho nos textos.
+- Cartões de pacote diferenciados por fundo e cor de destaque.
+- Títulos em **Plus Jakarta Sans**: arquivo local, variável, 27 KB, licença OFL em `src/app/fonts/`.
+- Textos na fonte do sistema: nada a baixar para ler.
+- Texto principal com 16 px; comparação com 15 px ou mais.
+
+**Compatibilidade (relato de botões sem resposta no iPhone 13 com iOS 16)**:
+- O Next.js 16 declara suporte a partir do Safari 16.4.
+- O JavaScript do framework carregado em todas as páginas tinha um bloco estático de classe (`static { … }`). O Safari anterior à 16.4 não entende essa sintaxe, e aí o arquivo inteiro deixa de ser lido: a página aparece, mas nada que depende de script responde. **Isso é compatível com o relato, mas a causa não está confirmada**: a versão exata do iOS 16 no aparelho não foi informada, e não houve teste em iPhone.
+- O que mudou:
+  - `browserslist` no `package.json` (Safari/iOS 15.4 ou mais). O build agora converte essa sintaxe; o JavaScript cresceu cerca de 0,8 KB com gzip.
+  - `npm run check:compat` lê os arquivos exportados e falha se aparecer sintaxe que o Safari anterior à 16.4 não lê: bloco estático, lookbehind em expressão regular ou flag `v`.
+  - O uso de `URLSearchParams.size` (Safari 17+) foi trocado.
+  - Links comuns e o menu em `<details>` mantêm a navegação sem script.
+  - `color-mix()` continua só em tons decorativos das prévias. No iOS 16.0 e 16.1 esses tons são ignorados sem quebrar nada.
+
+**Medição de laboratório (não é dado de celular real):**
+- Condições: Chromium local com servidor gzip (como o GitHub Pages), sem cache, mediana de 5 execuções.
+- Celular: 390×844 com rede "Slow 4G" (RTT 150 ms, 1,6 Mbps) e CPU 4× mais lenta.
+- Computador: 1440×900 sem limitação.
+- Formato: `main` (9bf2300) → esta branch.
+
+| Página | 1ª pintura | LCP | Bloqueio (TBT) | CLS | Transferido | Requisições | Elementos |
+|---|---|---|---|---|---|---|---|
+| Início, celular | 916 → 1120 ms | 916 → 1120 ms | 553 → 467 ms | 0 → 0 | 241 → 335 KB | 20 → 22 | 760 → 363 |
+| Criação, celular | 760 → 900 ms | 760 → 900 ms | 208 → 298 ms | 0 → 0 | 259 → 284 KB | 17 → 17 | 338 → 339 |
+| Início, computador | 172 → 168 ms | 172 → 168 ms | 41 → 43 ms | 0 → 0 | 248 → 295 KB | 30 → 22 | 760 → 363 |
+| Exemplos, celular (nova) | 1008 ms | 1616 ms | 428 ms | 0 | 408 KB | 17 | 560 |
+| Pacotes, celular (nova) | 1112 ms | 1112 ms | 432 ms | 0 | 244 KB | 13 | 598 |
+
+- **Melhorou na página inicial:** menos da metade dos elementos (760 → 363) e menos bloqueio (553 → 467 ms). A galeria e a comparação saíram dela.
+- **Transferido a mais:** as duas capturas reais (cerca de 80 KB em telas 3×, com variante de 1080 px) e a fonte dos títulos (27 KB). A fonte não é pré-carregada e usa `swap`, então os títulos aparecem primeiro na fonte do sistema.
+- **Primeira pintura +140 a 200 ms no 4G lento emulado:** a causa não foi isolada. Não é a fonte (medido com ela bloqueada), nem o tamanho do CSS ou do HTML (iguais), nem o alvo de compatibilidade (medido sem ele). Parece vir da ordem de chegada dos arquivos em rede lenta.
+- Não há ganho de velocidade a declarar. LCP, INP e CLS reais só podem ser medidos depois da publicação (PageSpeed Insights / Search Console).
+
+**Verificação:**
+- 68 testes unitários, com 3 novos:
+  - listas completas e diferenças dos pacotes;
+  - dados e capturas dos projetos reais;
+  - rotas, links sem script e alvo de compatibilidade.
+- 70 cenários de navegador. Os da página inicial foram reescritos, e os novos cobrem:
+  - projetos reais;
+  - atalhos antigos e campanha por segmento;
+  - menu e rodapé em todas as páginas;
+  - menu do celular;
+  - navegação **sem JavaScript**;
+  - prévia salva preservada;
+  - teclado e foco visível;
+  - modelo com e sem rascunho;
+  - pacotes no computador e no celular;
+  - toque e leitura em 320, 360, 390 e 430 px.
+- Os fluxos de texto, áudio, IA, receptor e configurador seguem passando.
+- axe-core (WCAG 2.1 A/AA, contraste incluído) nas três páginas, a 390 e a 1440 px: nenhuma violação. As prévias demonstrativas ficaram fora da checagem porque representam sites fictícios.
+- Tudo em Chromium. **Não houve teste em iPhone/Safari real nem em iOS 16.**
+- Capturas (celular primeiro; antes × depois na página inicial) em `docs/capturas/2026-09-28-paginas/`. Essa pasta não vai para o site.
+
+**Pendências:**
+- **Capturas dos projetos**: geradas do código atual de cada repositório (Schay: `THEUSMKT/schay-landing-page`, commit `65f883c`), porque este ambiente não acessa os domínios publicados. Confira se correspondem ao que está no ar (`public/projetos/README.md`).
+- **Autorização da Schay Corretora**: guarde a autorização por escrito do cliente para exibir o site.
+- **Validação no iPhone 13**: confirmar a versão do iOS (Ajustes → Geral → Sobre) e testar depois da publicação. O roteiro está no PR.
+
 ## Edição — evolução comercial da landing e do configurador (celular primeiro, 28/09)
 
 Premissa de planejamento (não medida): a maior parte do tráfego pago chega

@@ -1,53 +1,34 @@
 'use client';
 /* ==========================================================================
-   Página de apresentação. Ordem: os dois diferenciais e o botão principal →
-   exemplos navegáveis → como funciona → pacotes e o que está incluído →
-   projetos reais (só com material autorizado) → quem cuida → perguntas →
-   chamada final. O botão principal abre direto a criação (/criar/).
-
-   Acesso flutuante "Criar/Continuar minha prévia": aparece quando nenhum
-   botão principal (topo, pacotes, chamada final) está na tela — assim nunca
-   some junto com eles nem duplica o que já está visível. No celular é uma
-   barra inferior larga (respeita a área segura do iPhone); no computador,
-   uma pílula no canto. A página reserva espaço embaixo para ela.
+   Página inicial — objetiva, pensada primeiro para o celular:
+   1. apresentação e benefício, com "Criar minha prévia grátis" (ou
+      "Continuar minha prévia" quando há um projeto salvo);
+   2. dois projetos reais ("Da ideia ao ar");
+   3. como funciona, em três passos;
+   4. acessos às páginas internas: "Explorar exemplos de sites" e "Ver
+      pacotes e valores";
+   5. quem desenvolve; 6. dúvidas essenciais e chamada final.
+   A galeria completa de modelos e a comparação dos pacotes ficam em
+   /exemplos/ e /pacotes/. Nada flutua sobre o conteúdo.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ChevronLeft, ChevronRight, MessageCircle, Monitor, Smartphone, Sparkles, X } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 import { contact } from '@/config/contact';
-import { brl, commonBenefits, packageById, packageDiffs, packages, priceNotes, priceRange, revisionRounds, type PackageId } from '@/config/packages';
+import { brl, packages, priceNotes, priceRange } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
-import { realProjects, testimonials } from '@/config/proof';
 import { ctaVariants, heroVariants } from '@/config/experiments';
-import { STEP, exampleProject, hasOwnChoices, segments } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
-import { SitePreview } from '../preview/SitePreview';
-import { PackageCompare } from '../builder/Packages';
-import { Carousel, type CarouselApi } from './Carousel';
-import { Footer, Header, asset, builderHref } from './Chrome';
-import { ConfirmBox, LazyDetails, type Pending } from './Controls';
-import { DesktopFrame, PhoneFrame } from './DemoFrames';
+import { Footer, Header, asset, builderHref, examplesHref, packagesHref } from './Chrome';
 import { HeroShowcase } from './HeroShowcase';
-import { useNarrow, useProject, type ProjectState } from './useProject';
+import { RealProjectCards } from './RealProjects';
+import { useProject } from './useProject';
 import s from './Landing.module.css';
-
-const demoSegments = segments.filter((x) => x.id !== 'outro');
 
 const processSteps = [
   ['Crie sua prévia', 'Conte sobre o negócio por texto ou áudio e veja o site montado. Grátis e sem cadastro.'],
   ['Ajuste e escolha o pacote', 'Mude estilo, cores, textos e seções. O valor do pacote fica sempre à vista.'],
   ['Converse e confirme', 'O resumo abre no WhatsApp. Escopo, prazo e valor são confirmados por escrito antes de começar.'],
-] as const;
-
-/**
- * O que o desenvolvimento entrega, em uso — só o que os pacotes incluem
- * (config/packages.ts). Nada de promessa de venda ou de posição no Google.
- */
-const valueItems = [
-  ['Apresentação organizada', 'Serviços, diferenciais e contato numa página clara, pensada primeiro para o celular.'],
-  ['Sua identidade visual', 'Sua logo, suas cores e o estilo que você escolheu na prévia.'],
-  ['Caminho de contato', 'Botão de WhatsApp em todos os pacotes; formulário que organiza o pedido a partir do Profissional.'],
-  ['Revisão antes de publicar', `${revisionRounds} rodadas de ajustes e acompanhamento da publicação no ambiente combinado.`],
 ] as const;
 
 const FAQ_PREVIEW = 6;
@@ -58,18 +39,22 @@ export default function Landing() {
   const hero = heroVariants[variants.hero as keyof typeof heroVariants] ?? heroVariants.a;
   const cta = ctaVariants[variants.cta as keyof typeof ctaVariants] ?? ctaVariants.a;
   const primaryLabel = resumable ? 'Continuar minha prévia' : cta.primary;
-  const floatLabel = resumable ? 'Continuar minha prévia' : 'Criar minha prévia';
   const start = (context: string) => () => track('start_click', { context });
+  // Campanha de um segmento: os exemplos abrem já filtrados.
+  const examplesLink = state.origin.segment && state.origin.segment !== 'outro' ? `${examplesHref}?segmento=${state.origin.segment}` : examplesHref;
 
-  // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…).
+  // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…),
+  // e os exemplos e pacotes eram seções dela (#exemplos, #investimento).
   useEffect(() => {
     const h = location.hash;
     if (h.startsWith('#projeto=')) location.replace(builderHref + h);
     else if (h === '#configurador') location.replace(builderHref);
+    else if (h === '#exemplos') location.replace(examplesHref + location.search);
+    else if (h === '#investimento' || h === '#pacotes') location.replace(packagesHref);
   }, []);
 
   return (
-    <div className={`${s.page} ${s.withFloat}`} id="topo">
+    <div className={s.page} id="topo">
       <Header ctaLabel={primaryLabel} onStart={start('cabecalho')} />
       <main id="conteudo">
         <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
@@ -90,36 +75,29 @@ export default function Landing() {
               <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')} data-main-cta="">
                 <span>{primaryLabel}</span>
               </a>
-              <a className={s.secondary} href="#exemplos">
-                Ver exemplos de sites
-              </a>
             </div>
             <p className={s.micro}>Sem cadastro. Sem compromisso.</p>
-            {resumable && (
-              <a className={s.quiet} href={`${builderHref}#novo`}>
-                Começar uma nova prévia
+            <p className={s.heroLinks}>
+              <a className={s.quiet} href="#projetos">
+                Ver sites que já criamos
               </a>
-            )}
+              {resumable && (
+                <a className={s.quiet} href={`${builderHref}#novo`}>
+                  Começar uma nova prévia
+                </a>
+              )}
+            </p>
           </div>
           <HeroShowcase />
         </section>
 
-        <Examples state={state} />
-
-        <section className={s.valueBand} aria-labelledby="valor-titulo">
+        <section className={`${s.section} ${s.projectsBand}`} id="projetos" aria-labelledby="projetos-titulo">
           <div className={s.wrap}>
-            <h2 id="valor-titulo">O que a Beck Performance faz no seu site</h2>
-            <ul className={s.valueList}>
-              {valueItems.map(([t, d], i) => (
-                <li key={t}>
-                  <span className={s.valueNum} aria-hidden="true">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <h3>{t}</h3>
-                  <p>{d}</p>
-                </li>
-              ))}
-            </ul>
+            <div className={s.sectionHead}>
+              <h2 id="projetos-titulo">Da ideia ao ar: conheça sites que criamos.</h2>
+              <p>Explore dois projetos desenvolvidos pela Beck Performance e veja diferentes formas de apresentar um negócio na internet.</p>
+            </div>
+            <RealProjectCards context="inicio" />
           </div>
         </section>
 
@@ -139,8 +117,38 @@ export default function Landing() {
           </div>
         </section>
 
-        <Investment />
-        <RealWork />
+        <section className={s.section} id="explorar" aria-labelledby="explorar-titulo">
+          <div className={s.wrap}>
+            <div className={s.sectionHead}>
+              <h2 id="explorar-titulo">Antes de começar, compare com calma</h2>
+            </div>
+            <div className={s.paths}>
+              {/* Os ids mantêm os atalhos antigos (#exemplos, #investimento) mesmo sem script. */}
+              <article className={s.path} data-path="exemplos" id="exemplos">
+                <h3>Modelos por segmento</h3>
+                <p>Serviços locais, beleza, consultoria, alimentação, arquitetura e imóveis. Veja cada modelo no computador e no celular e comece a sua prévia com o que mais combina com você.</p>
+                <a className={s.primary} href={examplesLink} onClick={() => track('nav_click', { target: 'exemplos', context: 'inicio' })}>
+                  Explorar exemplos de sites
+                </a>
+              </article>
+              <article className={s.path} data-path="pacotes" id="investimento">
+                <h3>Três pacotes, valor fechado</h3>
+                <p className={s.pathPrices}>
+                  {packages.map((pkg) => (
+                    <span key={pkg.id}>
+                      {pkg.name} <strong>{brl(pkg.price)}</strong>
+                    </span>
+                  ))}
+                </p>
+                <p>Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte. Veja o que cada pacote inclui, os prazos e as condições.</p>
+                <a className={s.primary} href={packagesHref} onClick={() => track('nav_click', { target: 'pacotes', context: 'inicio' })}>
+                  Ver pacotes e valores
+                </a>
+              </article>
+            </div>
+          </div>
+        </section>
+
         <About />
         <Faq />
 
@@ -154,475 +162,14 @@ export default function Landing() {
               </a>
               <a className={s.quietLight} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'final' })}>
                 <MessageCircle aria-hidden="true" /> Tirar uma dúvida no WhatsApp
+                <span className={s.srOnly}> (abre em nova aba)</span>
               </a>
             </div>
           </div>
         </section>
       </main>
       <Footer />
-      <FloatingStart label={floatLabel} onStart={start('flutuante')} />
     </div>
-  );
-}
-
-/**
- * Acesso persistente à criação. Fica escondido enquanto algum botão
- * principal da página (topo, final ou "Criar prévia com o …" dos pacotes)
- * estiver visível; sem IntersectionObserver, fica
- * sempre visível (nunca somem os dois ao mesmo tempo). Também sai da
- * frente enquanto controles que ele cobriria (setas e bolinhas do
- * carrossel, "Ver este exemplo") passam pela faixa de baixo da tela.
- */
-function FloatingStart({ label, onStart }: { label: string; onStart: () => void }) {
-  const [mainVisible, setMainVisible] = useState(true);
-  const [covering, setCovering] = useState(false);
-  const shown = !mainVisible && !covering;
-
-  useEffect(() => {
-    const targets = [...document.querySelectorAll<HTMLElement>('[data-main-cta]')];
-    if (!targets.length || typeof IntersectionObserver === 'undefined') {
-      setMainVisible(false);
-      return;
-    }
-    const visible = new Set<Element>();
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) visible.add(e.target);
-          else visible.delete(e.target);
-        }
-        setMainVisible(visible.size > 0);
-      },
-      // O cabeçalho fixo cobre o topo: um botão escondido atrás dele não conta.
-      { rootMargin: '-64px 0px 0px 0px' },
-    );
-    targets.forEach((t) => io.observe(t));
-    return () => io.disconnect();
-  }, []);
-
-  // Faixa ocupada pelo botão (≈ 110px embaixo): controles ali fazem ele sair da frente.
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return;
-    let io: IntersectionObserver | null = null;
-    const setup = () => {
-      io?.disconnect();
-      const hits = new Set<Element>();
-      io = new IntersectionObserver(
-        (entries) => {
-          for (const e of entries) {
-            if (e.isIntersecting) hits.add(e.target);
-            else hits.delete(e.target);
-          }
-          setCovering(hits.size > 0);
-        },
-        { rootMargin: `-${Math.max(0, window.innerHeight - 110)}px 0px 0px 0px` },
-      );
-      document.querySelectorAll('[data-float-avoid]').forEach((el) => io!.observe(el));
-    };
-    setup();
-    window.addEventListener('resize', setup);
-    return () => {
-      io?.disconnect();
-      window.removeEventListener('resize', setup);
-    };
-  }, []);
-
-  return (
-    <div className={s.floatStart} data-float="" data-shown={shown || undefined} aria-hidden={shown ? undefined : true}>
-      <a className={s.floatStartButton} href={builderHref} onClick={onStart} tabIndex={shown ? undefined : -1}>
-        <Sparkles aria-hidden="true" />
-        <span>{label}</span>
-        <ArrowRight aria-hidden="true" className={s.floatStartArrow} />
-      </a>
-    </div>
-  );
-}
-
-/**
- * "Usar este modelo": o projeto passa a ser exatamente o do exemplo
- * (segmento, estilo, cores, fonte, seções, ordem e pacote) — só o nome da
- * empresa, as observações e o contato do visitante continuam. Com rascunho,
- * pede confirmação e guarda a versão anterior para "Recuperar".
- */
-function startingPoint(state: ProjectState, id: string) {
-  const p = state.project;
-  const example = exampleProject(id);
-  const next = {
-    ...example,
-    id: p.id,
-    name: p.name,
-    notes: p.notes,
-    lead: p.lead,
-    // Segmento que veio do modelo é sugestão: uma descrição nova pode trocá-lo.
-    aiFilled: { name: '', segment: example.segment, segmentOther: '' },
-    step: id === 'outro' ? STEP.negocio : STEP.pronta,
-  };
-  const run = () => {
-    state.replaceKeeping(next, 'modelo');
-    track('example_applied', { segment: id });
-    track('start_click', { context: 'exemplo' });
-    location.href = builderHref;
-  };
-  return { needs: state.hasProgress && (hasOwnChoices(p) || p.step > 0), run };
-}
-
-/** Um gesto lateral no carrossel não conta como toque no cartão. */
-function useTapGuard() {
-  const start = useRef<{ x: number; y: number } | null>(null);
-  return {
-    onPointerDown: (e: React.PointerEvent) => {
-      start.current = { x: e.clientX, y: e.clientY };
-    },
-    moved: (e: React.MouseEvent) => {
-      const s0 = start.current;
-      start.current = null;
-      return Boolean(s0 && e.detail > 0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 10);
-    },
-  };
-}
-
-function packageNote(id: string) {
-  const pkg = packageById(exampleProject(id).pkg);
-  return `Pacote ${pkg.name} · ${brl(pkg.price)}`;
-}
-
-function Examples({ state }: { state: ProjectState }) {
-  const carousel = useRef<CarouselApi>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const cards = useRef<(HTMLButtonElement | null)[]>([]);
-  const applying = useRef(false);
-  const [open, setOpen] = useState<number | null>(null);
-  // No celular, o exemplo abre primeiro na versão de celular.
-  const small = useNarrow('(max-width: 759px)');
-  const [deviceChoice, setDevice] = useState<'desktop' | 'mobile' | null>(null);
-  const device = deviceChoice ?? (small ? 'mobile' : 'desktop');
-  const [dialogPending, setDialogPending] = useState<Pending | null>(null);
-  const [otherPending, setOtherPending] = useState<Pending | null>(null);
-  const tap = useTapGuard();
-  /** Filtro por segmento ("todos" mostra também o cartão "Outro segmento"). */
-  const [filter, setFilter] = useState('todos');
-  const shown = demoSegments.map((_, i) => i).filter((i) => filter === 'todos' || demoSegments[i].id === filter);
-
-  // Campanha de um segmento: o carrossel começa no exemplo dele.
-  const campaign = state.origin.segment;
-  const startAt = !campaign ? 0 : campaign === 'outro' ? demoSegments.length : Math.max(0, demoSegments.findIndex((x) => x.id === campaign));
-
-  function show(index: number) {
-    setOpen(index);
-    setDialogPending(null);
-    track('example_opened', { segment: demoSegments[index].id });
-  }
-
-  function openAt(index: number) {
-    show(index);
-    dialog.current?.showModal();
-  }
-
-  function onClose() {
-    const index = open;
-    setOpen(null);
-    setDialogPending(null);
-    if (applying.current) {
-      applying.current = false;
-      return;
-    }
-    if (index === null) return;
-    // O exemplo pode ter mudado com Anterior/Próximo: volta ao cartão dele, mostrando todos se preciso.
-    if (!shown.includes(index)) setFilter('todos');
-    carousel.current?.goTo(shown.includes(index) ? shown.indexOf(index) : index, false);
-    // Depois da devolução de foco do próprio <dialog>, que volta ao card que o abriu.
-    requestAnimationFrame(() => cards.current[index]?.focus({ preventScroll: true }));
-  }
-
-  function applyOpened() {
-    if (open === null) return;
-    const sp = startingPoint(state, demoSegments[open].id);
-    const finish = () => {
-      applying.current = true;
-      dialog.current?.close();
-      sp.run();
-    };
-    if (sp.needs)
-      setDialogPending({
-        title: 'Usar este modelo substitui o seu rascunho.',
-        detail: 'Estilo, cores, seções, pacote e textos passam a ser os do exemplo. Sua versão atual fica guardada: você pode recuperá-la na página de criação.',
-        confirmLabel: 'Usar este modelo',
-        cancelLabel: 'Manter meu rascunho',
-        apply: finish,
-      });
-    else finish();
-  }
-
-  function applyOther() {
-    const sp = startingPoint(state, 'outro');
-    if (sp.needs)
-      setOtherPending({
-        title: 'Começar com outro segmento substitui o seu rascunho.',
-        detail: 'Sua versão atual fica guardada: você pode recuperá-la na página de criação.',
-        confirmLabel: 'Começar assim',
-        cancelLabel: 'Manter meu rascunho',
-        apply: sp.run,
-      });
-    else sp.run();
-  }
-
-  function changeDevice(next: 'desktop' | 'mobile') {
-    setDevice(next);
-    if (open !== null) track('example_view_mode', { segment: demoSegments[open].id, device: next === 'desktop' ? 'computador' : 'celular' });
-  }
-
-  const opened = open === null ? null : demoSegments[open];
-
-  return (
-    <section className={s.section} id="exemplos" aria-labelledby="exemplos-titulo">
-      <div className={s.wrap}>
-        <div className={s.sectionHead}>
-          <h2 id="exemplos-titulo">Exemplos de sites</h2>
-          <p>Toque em um exemplo para ver no computador e no celular.</p>
-          <small className={s.sectionNote}>Exemplos demonstrativos, com nomes fictícios.</small>
-        </div>
-      </div>
-      <div className={s.wrap}>
-        <div className={s.exampleFilter} role="group" aria-label="Filtrar exemplos por segmento">
-          {[{ id: 'todos', short: 'Todos' }, ...demoSegments].map((x) => (
-            <button key={x.id} type="button" className={s.chip} aria-pressed={filter === x.id} onClick={() => setFilter(x.id)}>
-              {x.short}
-            </button>
-          ))}
-        </div>
-      </div>
-      <Carousel
-        key={filter}
-        id="carrossel-exemplos"
-        label="Exemplos de sites"
-        itemLabel={(i, n) => `Exemplo ${i + 1} de ${n}`}
-        start={filter === 'todos' ? startAt : 0}
-        apiRef={carousel}
-      >
-        {[
-          ...shown.map((i) => [demoSegments[i], i] as const).map(([x, i]) => (
-            <button
-              key={x.id}
-              ref={(el) => {
-                cards.current[i] = el;
-              }}
-              type="button"
-              className={s.exampleCard}
-              onPointerDown={tap.onPointerDown}
-              onClick={(e) => !tap.moved(e) && openAt(i)}
-              aria-label={`Ver este exemplo: ${x.name}`}
-            >
-              <span className={s.exampleThumb} aria-hidden="true">
-                <DesktopFrame width={900}>
-                  <SitePreview project={exampleProject(x.id)} compact demo lazy />
-                </DesktopFrame>
-              </span>
-              <span className={s.exampleName}>{x.name}</span>
-              <span className={s.examplePurpose}>{x.purpose}</span>
-              <span className={s.exampleDemo}>
-                {x.demo} · <span className={s.keep}>{packageNote(x.id)}</span>
-              </span>
-              <span className={s.exampleOpen} data-float-avoid="">
-                Ver este exemplo <ChevronRight aria-hidden="true" />
-              </span>
-            </button>
-          )),
-          filter === 'todos' && <div key="outro" className={`${s.exampleCard} ${s.otherCard}`}>
-            <h3>Outro segmento</h3>
-            <p>Comece por um modelo neutro e conte qual é o seu negócio.</p>
-            {otherPending && <ConfirmBox pending={otherPending} onCancel={() => setOtherPending(null)} />}
-            <button type="button" className={`${s.primary} ${s.small}`} onClick={applyOther}>
-              Começar com outro segmento
-            </button>
-          </div>,
-        ]}
-      </Carousel>
-
-      <dialog ref={dialog} className={s.dialog} aria-labelledby="exemplo-titulo" onClose={onClose} onClick={(ev) => ev.target === dialog.current && dialog.current?.close()}>
-        {opened && open !== null && (
-          <>
-            <div className={s.demoHead}>
-              <div>
-                <h3 id="exemplo-titulo">{opened.name}</h3>
-                <p>Exemplo fictício · {opened.demo}</p>
-              </div>
-              <button type="button" className={s.closeButton} onClick={() => dialog.current?.close()} aria-label="Fechar exemplo" autoFocus>
-                <X aria-hidden="true" />
-              </button>
-            </div>
-            <div className={s.viewSwitch} role="group" aria-label="Ver o exemplo no">
-              <button type="button" aria-pressed={device === 'desktop'} onClick={() => changeDevice('desktop')}>
-                <Monitor aria-hidden="true" /> Computador
-              </button>
-              <button type="button" aria-pressed={device === 'mobile'} onClick={() => changeDevice('mobile')}>
-                <Smartphone aria-hidden="true" /> Celular
-              </button>
-            </div>
-            <div className={s.demoBody}>
-              {device === 'desktop' ? (
-                <DesktopFrame key={`d-${opened.id}`}>
-                  <SitePreview project={exampleProject(opened.id)} demo />
-                </DesktopFrame>
-              ) : small ? (
-                // Celular de verdade: a versão móvel ocupa a tela, sem moldura nem rolagem dentro de rolagem.
-                <div key={`m-${opened.id}`} className={s.demoMobile}>
-                  <SitePreview project={exampleProject(opened.id)} bare mobile demo />
-                </div>
-              ) : (
-                <PhoneFrame key={`m-${opened.id}`}>
-                  <SitePreview project={exampleProject(opened.id)} bare demo />
-                </PhoneFrame>
-              )}
-            </div>
-            <div className={s.demoFoot}>
-              {dialogPending && <ConfirmBox pending={dialogPending} onCancel={() => setDialogPending(null)} />}
-              <div className={s.demoNav}>
-                <button type="button" className={s.ghost} onClick={() => show(open - 1)} disabled={open === 0}>
-                  <ChevronLeft aria-hidden="true" /> Anterior
-                </button>
-                <span aria-live="polite">
-                  {open + 1} de {demoSegments.length}
-                </span>
-                <button type="button" className={s.ghost} onClick={() => show(open + 1)} disabled={open === demoSegments.length - 1}>
-                  Próximo <ChevronRight aria-hidden="true" />
-                </button>
-              </div>
-              <div className={s.demoUse}>
-                <button type="button" className={s.primary} onClick={applyOpened}>
-                  Usar este modelo <span className={s.keep}>· {packageNote(opened.id).replace('Pacote ', '')}</span>
-                </button>
-                <small>Leva estilo, cores e seções deste exemplo, no {packageNote(opened.id)}. A prévia é grátis; você pode mudar tudo depois.</small>
-              </div>
-            </div>
-          </>
-        )}
-      </dialog>
-    </section>
-  );
-}
-
-/** Rótulo factual do pacote em destaque (sem "mais vendido"). */
-const pkgTag: Partial<Record<PackageId, string>> = { profissional: 'Para apresentar trabalhos e organizar pedidos' };
-
-/**
- * Pacotes: três cartões em sequência (no celular, um embaixo do outro), cada
- * um com uso indicado, preço, diferenças e o botão que abre a criação já
- * nesse pacote. O que é comum aos três aparece uma vez só.
- */
-function Investment() {
-  return (
-    <section className={`${s.section} ${s.band}`} id="investimento" aria-labelledby="investimento-titulo">
-      <div className={s.wrap}>
-        <div className={s.sectionHead}>
-          <h2 id="investimento-titulo">Pacotes de desenvolvimento</h2>
-          <p>Valor total do site, em pagamento único. Domínio e hospedagem à parte.</p>
-        </div>
-        <p className={s.common}>
-          <strong>Em todos os pacotes:</strong> {commonBenefits.join(' · ')}.
-        </p>
-        <ul className={s.packages}>
-          {packages.map((pkg) => (
-            <li key={pkg.id} className={s.package} data-featured={pkgTag[pkg.id] ? '' : undefined}>
-              {pkgTag[pkg.id] && <span className={s.packageTag}>{pkgTag[pkg.id]}</span>}
-              <div className={s.packageHead}>
-                <h3>{pkg.name}</h3>
-                <strong className={s.packagePrice}>{brl(pkg.price)}</strong>
-              </div>
-              <p className={s.packageFor}>{pkg.forWhom}</p>
-              <ul className={s.checkList}>
-                {packageDiffs(pkg).map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <p className={s.packageDeadline}>
-                Prazo: {pkg.deadline}, {priceNotes.deadlineStart}.
-              </p>
-              <a
-                className={pkgTag[pkg.id] ? s.primary : s.secondary}
-                href={`${builderHref}?pacote=${pkg.id}`}
-                onClick={() => track('start_click', { context: 'pacote', package: pkg.id })}
-                data-main-cta=""
-              >
-                Criar prévia com o {pkg.name}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <LazyDetails className={`${s.details} ${s.compareDetails}`} summary="Comparar todos os recursos">
-          <PackageCompare caption="Comparação dos pacotes" />
-        </LazyDetails>
-        <p className={s.customLine}>
-          Precisa de loja virtual, sistema ou várias páginas? Isso é um projeto personalizado, com orçamento separado.{' '}
-          <a
-            href={whatsappLink(contact.whatsappProjetoPersonalizado)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track('whatsapp_open', { context: 'projeto_personalizado' })}
-          >
-            Falar sobre um projeto personalizado
-          </a>
-        </p>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Projetos reais e depoimentos. Só aparece com material autorizado em
- * config/proof.ts — sem ele, a seção não é publicada.
- */
-function RealWork() {
-  if (!realProjects.length && !testimonials.length) return null;
-  return (
-    <section className={`${s.section} ${s.band}`} id="projetos" aria-labelledby="projetos-titulo">
-      <div className={s.wrap}>
-        <div className={s.sectionHead}>
-          <h2 id="projetos-titulo">Projetos reais</h2>
-          <p>Sites entregues, publicados com autorização dos clientes.</p>
-        </div>
-        {realProjects.length > 0 && (
-          <ul className={s.realList}>
-            {realProjects.map((r) => (
-              <li key={r.client} className={s.realCard}>
-                <span className={s.realTag}>Projeto real</span>
-                <div className={r.previewImage ? s.compare : undefined}>
-                  {r.previewImage && (
-                    <figure>
-                      <img src={asset(r.previewImage)} alt={`Prévia escolhida por ${r.client}`} loading="lazy" width={640} height={400} />
-                      <figcaption>Prévia escolhida</figcaption>
-                    </figure>
-                  )}
-                  <figure>
-                    <img src={asset(r.image)} alt={`Site entregue para ${r.client}`} loading="lazy" width={640} height={400} />
-                    <figcaption>Site entregue</figcaption>
-                  </figure>
-                </div>
-                <h3>{r.client}</h3>
-                <p>{r.segment}</p>
-                {r.url && (
-                  <a href={r.url} target="_blank" rel="noopener noreferrer">
-                    Ver o site
-                  </a>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        {testimonials.length > 0 && (
-          <ul className={s.quotes}>
-            {testimonials.map((t) => (
-              <li key={t.name}>
-                <blockquote>{t.text}</blockquote>
-                <p>
-                  {t.name}
-                  {t.company ? ` · ${t.company}` : ''}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </section>
   );
 }
 

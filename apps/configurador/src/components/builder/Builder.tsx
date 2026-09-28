@@ -24,7 +24,9 @@ import {
   STEP_COUNT,
   checkChange,
   currentPackage,
+  exampleProject,
   featurePackage,
+  hasOwnChoices,
   helpMessage,
   packageOffer,
   phaseOf,
@@ -32,6 +34,7 @@ import {
   requestMessage,
   restoreParked,
   sectionName,
+  segments,
   stepQuestions,
   steps,
   switchPackage,
@@ -127,17 +130,27 @@ export default function Builder() {
     }
   }, []);
 
-  // Botão de um pacote na apresentação (?pacote=profissional): começa nele. Com
-  // uma prévia em andamento, pergunta antes — nada é apagado nem trocado sozinho.
+  // Botão de um pacote (?pacote=profissional) ou de um modelo (?modelo=beleza)
+  // nas páginas de pacotes e exemplos: começa nele. Com uma prévia em
+  // andamento, pergunta antes — nada é apagado nem trocado sozinho.
   const pkgParam = useRef(false);
   useEffect(() => {
     if (!ready || pkgParam.current) return;
     pkgParam.current = true;
     const params = new URLSearchParams(location.search);
     const want = packageOrder.find((id) => id === params.get('pacote'));
-    if (!params.has('pacote')) return;
+    const hasModel = params.has('modelo');
+    const model = segments.find((x) => x.id === params.get('modelo'));
+    if (!params.has('pacote') && !hasModel) return;
     params.delete('pacote');
-    history.replaceState(null, '', `${location.pathname}${params.size ? `?${params}` : ''}${location.hash}`);
+    params.delete('modelo');
+    // toString() em vez de .size: essa propriedade só existe no Safari 17+.
+    const rest = params.toString();
+    history.replaceState(null, '', `${location.pathname}${rest ? `?${rest}` : ''}${location.hash}`);
+    if (hasModel) {
+      if (model) startFromModel(model.id);
+      return;
+    }
     if (!want || want === p.pkg) {
       if (want) replace({ ...p, pkgChosen: true });
       return;
@@ -159,6 +172,49 @@ export default function Builder() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
+
+  /**
+   * "Criar minha prévia com este modelo": o projeto passa a ser o do modelo
+   * (segmento, estilo, cores, fonte, seções, ordem e pacote) — só o nome da
+   * empresa, as observações e o contato continuam. Com rascunho, pergunta
+   * antes e guarda a versão atual para "Recuperar".
+   */
+  function startFromModel(id: string) {
+    const current = pNow.current;
+    const example = exampleProject(id);
+    const seg = segments.find((x) => x.id === id)!;
+    const pkg = packageById(example.pkg);
+    const next: Project = {
+      ...example,
+      id: current.id,
+      name: current.name,
+      notes: current.notes,
+      lead: current.lead,
+      // Segmento que veio do modelo é sugestão: uma descrição nova pode trocá-lo.
+      aiFilled: { name: '', segment: example.segment, segmentOther: '' },
+      step: id === 'outro' ? STEP.negocio : STEP.pronta,
+    };
+    const run = () => {
+      setPending(null);
+      state.replaceKeeping(next, 'modelo');
+      track('example_applied', { segment: id });
+      setView('edit');
+      focusAfter.current = 'heading';
+      setNotice(
+        id === 'outro'
+          ? 'Você começou com um modelo neutro. Conte sobre o seu negócio para montar a prévia.'
+          : `Sua prévia começa com o modelo de ${seg.name}, no pacote ${pkg.name} — ${brl(pkg.price)}. Nada é contratado agora; você pode mudar tudo depois.`,
+      );
+    };
+    if (!(hasProgress && (hasOwnChoices(current) || current.step > 0))) return run();
+    setPending({
+      title: 'Usar este modelo substitui o seu rascunho.',
+      detail: 'Estilo, cores, seções, pacote e textos passam a ser os do modelo. Sua versão atual fica guardada e você pode recuperá-la aqui mesmo.',
+      confirmLabel: 'Usar este modelo',
+      cancelLabel: 'Manter meu rascunho',
+      apply: run,
+    });
+  }
 
   // Ao trocar de etapa: topo da página e foco no título (teclado e leitor de tela).
   useEffect(() => {
@@ -720,7 +776,7 @@ export default function Builder() {
     <div className={`${s.page} ${b.builder}`}>
       <header className={b.header}>
         <div className={`${s.wrap} ${b.headerInner}`}>
-          <Brand href={asset('/')} />
+          <Brand where="outra" />
           <a className={b.back} href={asset('/')}>
             <ChevronLeft aria-hidden="true" /> Início
           </a>

@@ -22,6 +22,10 @@ export const EVENTS = {
   configurator_start: { once: 'session', props: [] },
   step_complete: { once: 'per-value', props: ['step'] },
   example_opened: { once: false, props: ['segment'] },
+  /** "Visitar site" de um projeto real (abre em nova aba). */
+  real_project_open: { once: false, props: ['project', 'context'] },
+  /** Acesso às páginas internas: "Explorar exemplos de sites", "Ver pacotes e valores". */
+  nav_click: { once: false, props: ['target', 'context'] },
   example_applied: { once: false, props: ['segment'] },
   /** Troca entre computador e celular na demonstração de um exemplo. */
   example_view_mode: { once: false, props: ['segment', 'device'] },
