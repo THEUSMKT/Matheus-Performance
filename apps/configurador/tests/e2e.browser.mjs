@@ -1094,7 +1094,7 @@ await scenario('Começar novamente: diálogo que não apaga ao abrir; cancelar, 
     assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), 'Continuar editando', 'foco inicial no botão seguro');
     assert.equal(await page.evaluate(() => document.querySelector('main')?.matches(':modal') ?? false), false);
     if (close === 'Escape') await page.keyboard.press('Escape');
-    else await dialog.getByRole('button', { name: close }).click();
+    else await dialog.getByRole('button', { name: close, exact: true }).click();
     await dialog.waitFor({ state: 'hidden' });
     assert.equal(await title(page), Q.revisao, `${close}: mesma etapa`);
     assert.deepEqual(await stored(page), before, `${close}: dados preservados`);
@@ -1139,10 +1139,12 @@ await scenario('Celular 390px: "Começar novamente" abre um painel na parte de b
   await trigger.scrollIntoViewIfNeeded();
   const y = await page.evaluate(() => scrollY);
   await trigger.click();
+  await resetDialog(page).waitFor();
+  await page.waitForTimeout(350); // o painel sobe em 0,22 s
   const box = await resetDialog(page).boundingBox();
   assert(Math.abs(box.y + box.height - 844) <= 1 && box.width >= 389, `painel preso ao pé da tela (${JSON.stringify(box)})`);
   for (const name of ['Continuar editando', 'Apagar escolhas e recomeçar', 'Fechar e continuar editando']) {
-    const b = await resetDialog(page).getByRole('button', { name }).boundingBox();
+    const b = await resetDialog(page).getByRole('button', { name, exact: true }).boundingBox();
     assert(b.height >= 44 && b.width >= 44, `${name}: toque confortável`);
   }
   assert.equal(await page.evaluate(() => scrollY), y, 'abrir não rola a página');
