@@ -4,12 +4,15 @@
    monta a prévia nos layouts existentes. Só aparece com NEXT_PUBLIC_AI_ENDPOINT.
 
    Estados explícitos — um de cada vez, com uma ação principal por vez:
-   escolher  → "Gravar minha ideia" ou "Prefiro digitar"
+   texto     → (início) campo aberto para digitar, com orientação curta e um
+               exemplo que não é preenchido; "Gravar minha ideia" fica à
+               vista como alternativa. A digitação nunca depende do áudio.
    iniciando → pedindo o microfone (só depois do clique em gravar)
    gravando  → tempo, "Parar gravação" e "Cancelar gravação"; "Gerar minha
                prévia" aparece desabilitado, com o motivo ao lado
    transcrevendo → "Transcrevendo seu áudio…"; gerar continua desabilitado
-   texto     → campo editável + "Gerar minha prévia" (e "Gravar novamente")
+   texto     → depois do áudio: o texto transcrito para conferir + "Gerar minha
+               prévia" (e "Gravar novamente")
    A geração em si mora no Builder (sobrevive à troca de etapa); aqui só se
    mostra "Montando sua prévia…" e o erro, sem perder o texto.
    O áudio não é guardado; o microfone é liberado ao parar, cancelar, sair
@@ -19,7 +22,7 @@
    um aviso explica que o microfone pode não funcionar e oferece digitar.
    ========================================================================== */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Keyboard, LoaderCircle, Mic, Sparkles, Square } from 'lucide-react';
+import { LoaderCircle, Mic, Sparkles, Square } from 'lucide-react';
 import { integrations } from '@/config/integrations';
 import { DESCRIPTION_MAX, DESCRIPTION_MIN, hasContactData, suggestNameFromText } from '@/lib/aiPreview';
 import { AUDIO_MAX_SECONDS, AUDIO_MIN_SECONDS, audioReasonText, audioSupported, blobToWav, recordingMime, requestTranscript, toBase64 } from '@/lib/aiAudio';
@@ -34,7 +37,10 @@ export const DRAFT_KEY = 'bp.descricao.v1';
 const inAppBrowser = () => typeof navigator !== 'undefined' && /Instagram|FBAN|FBAV|FB_IAB|FBIOS/i.test(navigator.userAgent);
 const clock = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 type AudioProblem = keyof typeof audioReasonText;
-export type DescribePhase = 'escolher' | 'iniciando' | 'gravando' | 'transcrevendo' | 'texto';
+export type DescribePhase = 'iniciando' | 'gravando' | 'transcrevendo' | 'texto';
+
+/** Exemplo de descrição — só orientação, nunca preenchido como resposta. */
+export const DESCRIBE_EXAMPLE = 'Tenho uma empresa de reformas. Quero mostrar meus serviços, fotos dos trabalhos e receber pedidos pelo WhatsApp.';
 
 export function Describe({
   generating,
@@ -61,7 +67,7 @@ export function Describe({
   clearError: () => void;
 }) {
   const [text, setText] = useState('');
-  const [phase, setPhaseState] = useState<DescribePhase>('escolher');
+  const [phase, setPhaseState] = useState<DescribePhase>('texto');
   const [fromAudio, setFromAudio] = useState(false);
   const [audioOk, setAudioOk] = useState(true);
   const [error, setError] = useState('');
@@ -98,7 +104,7 @@ export function Describe({
       /* sem sessionStorage: o campo começa vazio */
     }
     setText(draft);
-    setPhase(draft || !ok ? 'texto' : 'escolher');
+    setPhase('texto');
     alive.current = true;
     const onHide = () => cancelRecording();
     window.addEventListener('pagehide', onHide);
@@ -152,7 +158,7 @@ export function Describe({
   }
 
   async function startRecording() {
-    if (generating || (phase !== 'escolher' && phase !== 'texto')) return;
+    if (generating || phase !== 'texto') return;
     setError('');
     clearError();
     setStatus('');
@@ -221,8 +227,8 @@ export function Describe({
   function cancelByUser() {
     cancelRecording();
     setStatus('Gravação cancelada. Nada foi enviado.');
-    setPhase(textNow.current.trim() ? 'texto' : 'escolher');
-    focusSoon(mainButton);
+    setPhase('texto');
+    focusSoon(field);
   }
 
   async function finishRecording(mime: string) {
@@ -276,26 +282,7 @@ export function Describe({
         Sua ideia para o site
       </h2>
 
-      {(phase === 'escolher' || phase === 'texto') && nameSlot}
-
-      {phase === 'escolher' && (
-        <div className={b.choose}>
-          <p className={b.describeHint}>Conte o que sua empresa faz e como você quer receber clientes.</p>
-          <button ref={mainButton} type="button" id="gravar-audio" className={`${s.primary} ${b.micMain}`} onClick={startRecording}>
-            <Mic aria-hidden="true" /> Gravar minha ideia
-          </button>
-          <button type="button" className={`${s.secondary} ${b.wideBtn}`} onClick={() => toText()}>
-            <Keyboard aria-hidden="true" /> Prefiro digitar
-          </button>
-          <p className={b.micNote}>O microfone só é usado depois que você tocar em gravar.</p>
-          {inApp && (
-            <p className={b.micNote} role="note">
-              No navegador do Instagram ou do Facebook, o microfone pode não funcionar. Se não funcionar, toque em “Prefiro digitar” ou abra esta página no
-              navegador do celular (menu ⋯ → Abrir no navegador).
-            </p>
-          )}
-        </div>
-      )}
+      {phase === 'texto' && nameSlot}
 
       {(phase === 'iniciando' || phase === 'gravando') && (
         <div className={b.recording} role="group" aria-labelledby="gravando-titulo">
@@ -345,22 +332,31 @@ export function Describe({
 
       {phase === 'texto' && (
         <>
-          {!audioOk && <p className={b.micNote}>A gravação de áudio não está disponível neste navegador. Escreva sua ideia abaixo.</p>}
-          <label className={s.field}>
-            {fromAudio ? 'Seu áudio virou este texto' : 'Sua ideia para o site'}
+          <label className={s.field} htmlFor="descricao-ia">
+            {fromAudio ? 'Seu áudio virou este texto' : 'Conte sobre a sua empresa e o site que você quer'}
+          </label>
+          {!fromAudio && (
+            <div className={b.describeGuide} id="guia-descricao">
+              <p>Em poucas frases: o que a empresa faz, o que o site deve mostrar e como os clientes devem entrar em contato.</p>
+              <p className={b.describeExample}>
+                <span>Exemplo:</span> “{DESCRIBE_EXAMPLE}”
+              </p>
+            </div>
+          )}
+          <div className={s.field}>
             <textarea
               ref={field}
               id="descricao-ia"
               rows={5}
               maxLength={DESCRIPTION_MAX}
               value={text}
-              placeholder="Ex.: Faço instalação e manutenção de ar-condicionado para casas e empresas. Quero que o site mostre os serviços e receba pedidos de orçamento. Gosto de azul e de um visual moderno."
+              placeholder="Escreva aqui sobre a sua empresa…"
               aria-invalid={Boolean(shownError)}
-              aria-describedby={shownError ? 'erro-descricao' : 'dica-descricao'}
+              aria-describedby={shownError ? 'erro-descricao' : fromAudio ? 'dica-descricao' : 'guia-descricao dica-descricao'}
               readOnly={generating}
               onChange={(ev) => change(ev.target.value)}
             />
-          </label>
+          </div>
           {foundName && (
             <p className={b.nameFound} role="status">
               Encontramos <strong>“{foundName}”</strong> na sua descrição.{' '}
@@ -400,10 +396,21 @@ export function Describe({
             )}
           </button>
           {audioOk && !generating && (
-            <button type="button" className={`${s.secondary} ${b.wideBtn}`} onClick={startRecording}>
-              <Mic aria-hidden="true" /> {fromAudio ? 'Gravar novamente' : 'Gravar minha ideia'}
-            </button>
+            <div className={b.audioAlt}>
+              {!fromAudio && <p className={b.audioAltLabel}>Prefere falar?</p>}
+              <button type="button" id="gravar-audio" className={`${s.secondary} ${b.wideBtn}`} onClick={startRecording}>
+                <Mic aria-hidden="true" /> {fromAudio ? 'Gravar novamente' : 'Gravar minha ideia'}
+              </button>
+              <p className={b.micNote}>O microfone só é usado depois que você tocar em gravar. Se ele não funcionar, é só digitar.</p>
+              {inApp && (
+                <p className={b.micNote} role="note">
+                  No navegador do Instagram ou do Facebook, o microfone pode não funcionar. Se preferir gravar, abra esta página no navegador do celular (menu ⋯ → Abrir no
+                  navegador).
+                </p>
+              )}
+            </div>
           )}
+          {!audioOk && <p className={b.micNote}>A gravação de áudio não está disponível neste navegador — a descrição por texto funciona normalmente.</p>}
         </>
       )}
 

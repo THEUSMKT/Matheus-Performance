@@ -18,6 +18,8 @@ export type Package = {
   price: number;
   /** Uma frase: para quem o pacote serve. */
   forWhom: string;
+  /** A necessidade que o pacote resolve, antes das quantidades (cartões da página de pacotes e da inicial). */
+  purpose: string;
   /** Blocos principais da página (cada um conta como seção). */
   maxSections: number;
   /** Imagens fornecidas pelo cliente na galeria (0 = sem galeria). */
@@ -41,6 +43,7 @@ export const packages: Package[] = [
     name: 'Essencial',
     price: 500,
     forWhom: 'Para apresentar a empresa e os serviços com clareza.',
+    purpose: 'Apresentar a empresa e os serviços.',
     maxSections: 5,
     galleryImages: 0,
     showcaseItems: 0,
@@ -61,6 +64,7 @@ export const packages: Package[] = [
     name: 'Profissional',
     price: 750,
     forWhom: 'Para receber pedidos mais organizados e mostrar mais do seu trabalho.',
+    purpose: 'Mostrar trabalhos e organizar solicitações.',
     maxSections: 7,
     galleryImages: 8,
     showcaseItems: 0,
@@ -79,6 +83,7 @@ export const packages: Package[] = [
     name: 'Completo',
     price: 1000,
     forWhom: 'Para apresentar produtos ou muitos serviços com mais detalhe.',
+    purpose: 'Apresentar produtos ou serviços com mais detalhe.',
     maxSections: 8,
     galleryImages: 15,
     showcaseItems: 10,
@@ -119,6 +124,31 @@ export function packageDiffs(pkg: Package): string[] {
   if (pkg.galleryImages) list.push(`Galeria com até ${pkg.galleryImages} fotos para apresentar trabalhos`);
   if (pkg.form) list.push(pkg.showcaseItems ? 'Formulário, perguntas frequentes e depoimentos, como no Profissional' : 'Formulário que organiza a solicitação antes do WhatsApp');
   if (pkg.form && !pkg.showcaseItems) list.push('Perguntas frequentes e depoimentos reais');
+  return list.slice(0, 4);
+}
+
+/**
+ * O que o pacote permite fazer, com o benefício antes da quantidade (3 ou 4
+ * linhas, derivadas dos limites): parte principal dos cartões de pacote.
+ */
+export function packageKeyPoints(pkg: Package): string[] {
+  const below = packages[packageOrder.indexOf(pkg.id) - 1];
+  const list: string[] = [];
+  if (!below) {
+    list.push(`Apresentação, serviços, sobre e contato (até ${pkg.maxSections} seções)`);
+    list.push('Sua logo, suas cores e o estilo escolhido');
+    list.push('Botão de WhatsApp e links para as redes');
+    return list;
+  }
+  if (pkg.showcaseItems > below.showcaseItems) list.push(`Vitrine para apresentar produtos ou serviços, com pedido pelo WhatsApp (até ${pkg.showcaseItems} itens)`);
+  if (pkg.galleryImages > below.galleryImages)
+    list.push(below.galleryImages ? `Galeria maior para mostrar trabalhos (até ${pkg.galleryImages} fotos)` : `Galeria para mostrar seus trabalhos (até ${pkg.galleryImages} fotos)`);
+  if (pkg.form && !below.form) {
+    list.push('Formulário que organiza as solicitações antes do WhatsApp');
+    list.push('Perguntas frequentes e depoimentos reais');
+  }
+  if (pkg.id === 'completo') list.push('Conteúdo organizado com mais detalhe');
+  list.push(`Até ${pkg.maxSections} seções na página${below.form && pkg.form ? ', com formulário, perguntas e depoimentos' : ''}`);
   return list.slice(0, 4);
 }
 
@@ -231,6 +261,22 @@ export const customNeeds = [
   { id: 'idiomas', name: 'Site em mais de um idioma' },
   { id: 'producao', name: 'Produção de fotos, vídeos ou textos' },
 ] as const;
+
+/**
+ * Regras comerciais em linguagem simples, lidas pela página inicial, pela de
+ * pacotes e pelas perguntas frequentes. Só o que já está definido; o que
+ * ainda não tem regra (limite da revisão de textos, o que conta como uma
+ * rodada, valor de alterações depois da entrega) fica em aberto no
+ * UPGRADE.md, sem virar promessa aqui.
+ */
+export const serviceTerms = {
+  textReview:
+    'Os textos sugeridos na prévia, inclusive os da IA, são um ponto de partida: antes de entrarem no site, são revisados com você a partir das informações da sua empresa.',
+  contentProduction: 'Produção de conteúdo — escrever textos novos, fotografar ou gravar vídeos — não está incluída nos pacotes e é combinada à parte.',
+  revisions: `${revisionRounds} rodadas de ajustes antes da publicação, em todos os pacotes. Mudanças de escopo depois da aprovação são orçadas à parte.`,
+  afterDelivery: 'Depois da publicação, alterações e manutenção são pedidas pelo WhatsApp e orçadas à parte, antes de serem feitas. Não há mensalidade de desenvolvimento.',
+  domainHosting: 'Domínio e hospedagem não entram no valor do desenvolvimento: são pagos à parte, direto aos fornecedores.',
+} as const;
 
 /** Custos que nunca entram no valor do desenvolvimento. */
 export const externalCosts = [

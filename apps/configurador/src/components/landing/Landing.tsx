@@ -1,21 +1,26 @@
 'use client';
 /* ==========================================================================
-   Página inicial — objetiva, pensada primeiro para o celular:
-   1. apresentação e benefício, com "Criar minha prévia grátis" (ou
-      "Continuar minha prévia" quando há um projeto salvo);
-   2. dois projetos reais ("Da ideia ao ar");
-   3. como funciona, em três passos;
-   4. acessos às páginas internas: "Explorar exemplos de sites" e "Ver
-      pacotes e valores";
-   5. quem desenvolve; 6. dúvidas essenciais e chamada final.
+   Página inicial — pensada primeiro para o celular, em oito blocos:
+   1. benefício principal, destaque visual (captura real publicada) e dois
+      caminhos: "Criar minha prévia grátis" (ou "Continuar minha prévia"
+      quando há um projeto salvo) e "Conversar sobre meu projeto";
+   2. projetos reais ("Da ideia ao ar");
+   3. benefícios concretos; 4. como funciona, com a demonstração do
+      configurador identificada como ilustrativa;
+   5. dois caminhos de contratação: pacotes e projeto sob medida;
+   6. Matheus Beck e o atendimento direto; 7. dúvidas essenciais;
+   8. chamada final com prévia e contato direto.
    A galeria completa de modelos e a comparação dos pacotes ficam em
-   /exemplos/ e /pacotes/. Nada flutua sobre o conteúdo.
+   /exemplos/ e /pacotes/. Preços e condições vêm de config/packages.ts.
+   Todos os caminhos principais são links comuns: funcionam mesmo se o
+   JavaScript não carregar.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { ArrowRight, BadgeCheck, LayoutList, MessageCircle, MessagesSquare, Palette, Sparkles } from 'lucide-react';
 import { contact } from '@/config/contact';
-import { brl, packages, priceNotes, priceRange } from '@/config/packages';
+import { brl, packages, priceRange } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
+import { realProjects } from '@/config/proof';
 import { ctaVariants, heroVariants } from '@/config/experiments';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
@@ -24,19 +29,52 @@ import { HeroShowcase } from './HeroShowcase';
 import { RealProjectCards } from './RealProjects';
 import { useProject } from './useProject';
 import s from './Landing.module.css';
+import h from './Home.module.css';
 
-const processSteps = [
-  ['Crie sua prévia', 'Conte sobre o negócio por texto ou áudio e veja o site montado. Grátis e sem cadastro.'],
-  ['Ajuste e escolha o pacote', 'Mude estilo, cores, textos e seções. O valor do pacote fica sempre à vista.'],
-  ['Converse e confirme', 'O resumo abre no WhatsApp. Escopo, prazo e valor são confirmados por escrito antes de começar.'],
+const steps = [
+  ['Conte sobre o negócio', 'Digite ou grave, em poucas frases, o que a empresa faz. Grátis e sem cadastro.'],
+  ['Veja e ajuste a prévia', 'O site aparece montado. Se quiser, mude estilo, cores, textos e seções.'],
+  ['Converse e confirme', 'Escopo, prazo e valor são confirmados por escrito antes de começar.'],
+] as const;
+
+const benefits = [
+  {
+    icon: LayoutList,
+    tone: 'blue',
+    title: 'Serviços bem apresentados',
+    text: 'Cada serviço explicado com clareza, na ordem que ajuda o cliente a entender o que você faz.',
+  },
+  {
+    icon: Palette,
+    tone: 'lavender',
+    title: 'A identidade do seu negócio',
+    text: 'Sua logo, suas cores e um estilo coerente com a empresa, no celular e no computador.',
+  },
+  {
+    icon: MessageCircle,
+    tone: 'sky',
+    title: 'Contato em poucos toques',
+    text: 'Botão de WhatsApp e caminhos claros para pedir orçamento, agendar ou tirar uma dúvida.',
+  },
 ] as const;
 
 const FAQ_PREVIEW = 6;
+const hero = realProjects[0];
+
+/** Link do WhatsApp que registra o clique (não o envio da mensagem). */
+function Talk({ message, context, className, children }: { message: string; context: string; className: string; children: React.ReactNode }) {
+  return (
+    <a className={className} href={whatsappLink(message)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context })}>
+      {children}
+      <span className={s.srOnly}> (abre o WhatsApp em nova aba)</span>
+    </a>
+  );
+}
 
 export default function Landing() {
   const state = useProject({ readHash: false });
   const { resumable, variants } = state;
-  const hero = heroVariants[variants.hero as keyof typeof heroVariants] ?? heroVariants.a;
+  const title = heroVariants[variants.hero as keyof typeof heroVariants] ?? heroVariants.a;
   const cta = ctaVariants[variants.cta as keyof typeof ctaVariants] ?? ctaVariants.a;
   const primaryLabel = resumable ? 'Continuar minha prévia' : cta.primary;
   const start = (context: string) => () => track('start_click', { context });
@@ -46,124 +84,235 @@ export default function Landing() {
   // Links antigos: o configurador ficava nesta página (#configurador, #projeto=…),
   // e os exemplos e pacotes eram seções dela (#exemplos, #investimento).
   useEffect(() => {
-    const h = location.hash;
-    if (h.startsWith('#projeto=')) location.replace(builderHref + h);
-    else if (h === '#configurador') location.replace(builderHref);
-    else if (h === '#exemplos') location.replace(examplesHref + location.search);
-    else if (h === '#investimento' || h === '#pacotes') location.replace(packagesHref);
+    const hash = location.hash;
+    if (hash.startsWith('#projeto=')) location.replace(builderHref + hash);
+    else if (hash === '#configurador') location.replace(builderHref);
+    else if (hash === '#exemplos') location.replace(examplesHref + location.search);
+    else if (hash === '#investimento' || hash === '#pacotes') location.replace(packagesHref);
   }, []);
 
   return (
-    <div className={s.page} id="topo">
+    <div className={`${s.page} ${s.bright}`} id="topo">
       <Header ctaLabel={primaryLabel} onStart={start('cabecalho')} />
       <main id="conteudo">
-        <section className={`${s.wrap} ${s.hero}`} aria-labelledby="hero-titulo">
-          <div className={s.heroCopy}>
-            <h1 id="hero-titulo">
-              {/* No celular, o título curto (o longo continua para leitores de tela). */}
-              <span className={s.titleLong}>{hero.title}</span>
-              <span className={s.titleShort} aria-hidden="true">
-                {hero.short}
-              </span>
-            </h1>
-            <p className={s.heroLead}>Veja uma prévia grátis. Depois, a Beck Performance desenvolve seu site com a identidade e as informações do seu negócio.</p>
-            <p className={s.heroPrice}>
-              Desenvolvimento de <strong>{priceRange}</strong>.
-            </p>
-            <p className={s.priceNote}>{priceNotes.payment}</p>
-            <div className={s.heroActions}>
-              <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')} data-main-cta="">
-                <span>{primaryLabel}</span>
-              </a>
-            </div>
-            <p className={s.micro}>Sem cadastro. Sem compromisso.</p>
-            <p className={s.heroLinks}>
-              <a className={s.quiet} href="#projetos">
-                Ver sites que já criamos
-              </a>
-              {resumable && (
-                <a className={s.quiet} href={`${builderHref}#novo`}>
-                  Começar uma nova prévia
+        {/* 1. Benefício principal e os dois caminhos */}
+        <section className={h.hero} aria-labelledby="hero-titulo">
+          <div className={`${s.wrap} ${h.heroGrid}`}>
+            <div className={h.heroCopy}>
+              <p className={h.pill}>
+                <Sparkles aria-hidden="true" /> Prévia gratuita do seu site
+              </p>
+              <h1 id="hero-titulo" className={h.heroTitle}>
+                {title.lines.map((line, i) => (
+                  <span key={line} className={h.line}>
+                    <Marked text={line} mark={title.mark} />
+                    {i < title.lines.length - 1 ? ' ' : ''}
+                  </span>
+                ))}
+              </h1>
+              <p className={h.lead}>
+                Um site com a identidade do seu negócio, serviços organizados e um caminho fácil para pedir orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.
+              </p>
+              <div className={h.actions}>
+                <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')} data-main-cta="">
+                  <span>{primaryLabel}</span>
                 </a>
+                <Talk className={s.secondary} message={contact.whatsappConversa} context="inicio">
+                  <MessageCircle aria-hidden="true" /> Conversar sobre meu projeto
+                </Talk>
+              </div>
+              <p className={h.micro}>Sem cadastro para criar a prévia. Sem compromisso.</p>
+              {resumable && (
+                <p className={h.newPreview}>
+                  <a href={`${builderHref}#novo`}>Começar uma nova prévia</a>
+                </p>
               )}
-            </p>
+              <div className={h.offer}>
+                <p className={h.offerMain}>
+                  Sites de página única de <span className={h.price}>{priceRange}</span>.
+                </p>
+                <p className={h.offerMain}>Projetos com outras necessidades: orçamento sob medida.</p>
+                <p className={h.offerNote}>Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.</p>
+              </div>
+            </div>
+            <HeroVisual />
           </div>
-          <HeroShowcase />
         </section>
 
-        <section className={`${s.section} ${s.projectsBand}`} id="projetos" aria-labelledby="projetos-titulo">
+        {/* 2. Projetos reais */}
+        <section className={`${s.section} ${h.projects}`} id="projetos" aria-labelledby="projetos-titulo">
           <div className={s.wrap}>
-            <div className={s.sectionHead}>
-              <h2 id="projetos-titulo">Da ideia ao ar: conheça sites que criamos.</h2>
-              <p>Explore dois projetos desenvolvidos pela Beck Performance e veja diferentes formas de apresentar um negócio na internet.</p>
+            <div className={h.head}>
+              <p className={h.pill}>
+                <BadgeCheck aria-hidden="true" /> Projetos publicados
+              </p>
+              <h2 id="projetos-titulo">
+                Da ideia ao ar: <em className={h.mark}>conheça sites que criamos.</em>
+              </h2>
+              <p>Dois sites no ar, desenvolvidos pela Beck Performance: um de cliente e um da própria marca.</p>
             </div>
             <RealProjectCards context="inicio" />
+            {/* O id mantém o atalho antigo #exemplos mesmo sem script. */}
+            <p className={h.more} id="exemplos">
+              <a href={examplesLink} onClick={() => track('nav_click', { target: 'exemplos', context: 'inicio' })}>
+                Explorar exemplos de sites <ArrowRight aria-hidden="true" />
+              </a>
+            </p>
           </div>
         </section>
 
-        <section className={s.section} id="como-funciona" aria-labelledby="processo-titulo">
+        {/* 3. Benefícios concretos */}
+        <section className={`${s.section} ${h.benefitsBand}`} id="beneficios" aria-labelledby="beneficios-titulo">
           <div className={s.wrap}>
-            <div className={s.sectionHead}>
-              <h2 id="processo-titulo">Como funciona</h2>
+            <div className={h.head}>
+              <h2 id="beneficios-titulo">
+                O que o seu site <em className={h.mark}>faz pela sua empresa</em>
+              </h2>
             </div>
-            <ol className={s.process}>
-              {processSteps.map(([title, text]) => (
-                <li key={title}>
+            <ul className={h.benefits}>
+              {benefits.map(({ icon: Icon, tone, title, text }) => (
+                <li key={title} className={h.benefit}>
+                  <span className={h.icon} data-tone={tone} aria-hidden="true">
+                    <Icon />
+                  </span>
                   <h3>{title}</h3>
                   <p>{text}</p>
                 </li>
               ))}
-            </ol>
+            </ul>
           </div>
         </section>
 
-        <section className={s.section} id="explorar" aria-labelledby="explorar-titulo">
+        {/* 4. Como funciona */}
+        <section className={s.section} id="como-funciona" aria-labelledby="processo-titulo">
+          <div className={`${s.wrap} ${h.howGrid}`}>
+            <div>
+              <div className={h.head}>
+                <h2 id="processo-titulo">Como funciona</h2>
+                <p>Três passos curtos, e você decide com calma.</p>
+              </div>
+              <ol className={h.steps}>
+                {steps.map(([title, text]) => (
+                  <li key={title}>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className={h.demo}>
+              <p className={h.demoLabel}>
+                <span className={h.pill} data-tone="lavender">
+                  <Sparkles aria-hidden="true" /> Exemplo ilustrativo do configurador
+                </span>
+              </p>
+              <HeroShowcase />
+            </div>
+          </div>
+        </section>
+
+        {/* 5. Dois caminhos de contratação. */}
+        <section className={`${s.section} ${h.pathsBand}`} id="contratar" aria-labelledby="caminhos-titulo">
           <div className={s.wrap}>
-            <div className={s.sectionHead}>
-              <h2 id="explorar-titulo">Antes de começar, compare com calma</h2>
+            <div className={h.head}>
+              <h2 id="caminhos-titulo">
+                Dois caminhos para <em className={h.mark}>contratar</em>
+              </h2>
+              <p>Escolha pelo que o site precisa fazer, não pelo tamanho da empresa.</p>
             </div>
-            <div className={s.paths}>
-              {/* Os ids mantêm os atalhos antigos (#exemplos, #investimento) mesmo sem script. */}
-              <article className={s.path} data-path="exemplos" id="exemplos">
-                <h3>Modelos por segmento</h3>
-                <p>Serviços locais, beleza, consultoria, alimentação, arquitetura e imóveis. Veja cada modelo no computador e no celular e comece a sua prévia com o que mais combina com você.</p>
-                <a className={s.primary} href={examplesLink} onClick={() => track('nav_click', { target: 'exemplos', context: 'inicio' })}>
-                  Explorar exemplos de sites
-                </a>
-              </article>
-              <article className={s.path} data-path="pacotes" id="investimento">
-                <h3>Três pacotes, valor fechado</h3>
-                <p className={s.pathPrices}>
+            <div className={h.paths}>
+              <article className={h.path} data-kind="pacotes" aria-labelledby="pacotes-resumo">
+                <p className={h.pill}>Página única · valor fechado</p>
+                <h3 id="pacotes-resumo">Pacotes com preço definido</h3>
+                <ul className={h.pkgList}>
                   {packages.map((pkg) => (
-                    <span key={pkg.id}>
-                      {pkg.name} <strong>{brl(pkg.price)}</strong>
-                    </span>
+                    <li key={pkg.id}>
+                      <span className={h.pkgName}>{pkg.name}</span>
+                      <span className={h.pkgPurpose}>{pkg.purpose}</span>
+                      <span className={h.pkgPrice}>{brl(pkg.price)}</span>
+                    </li>
                   ))}
+                </ul>
+                <p className={h.pathNote}>Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.</p>
+                <div className={h.pathActions}>
+                  <a className={s.primary} href={packagesHref} onClick={() => track('nav_click', { target: 'pacotes', context: 'inicio' })}>
+                    Ver pacotes e valores
+                  </a>
+                </div>
+              </article>
+              <article className={h.path} data-kind="custom" aria-labelledby="sob-medida-titulo">
+                <p className={h.pill} data-tone="lavender">
+                  Sob medida
                 </p>
-                <p>Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte. Veja o que cada pacote inclui, os prazos e as condições.</p>
-                <a className={s.primary} href={packagesHref} onClick={() => track('nav_click', { target: 'pacotes', context: 'inicio' })}>
-                  Ver pacotes e valores
-                </a>
+                <h3 id="sob-medida-titulo">Seu projeto precisa ir além de uma página?</h3>
+                <p>Conte o que sua empresa precisa. Definimos o escopo e preparamos uma proposta de acordo com o projeto.</p>
+                <ul className={h.needList}>
+                  <li>Um site com mais de uma página</li>
+                  <li>Informações de várias unidades ou equipes</li>
+                  <li>Um conteúdo que não cabe nos limites dos pacotes</li>
+                </ul>
+                <p className={h.pathNote}>O que é possível fazer e o valor são definidos na conversa, antes de qualquer compromisso.</p>
+                <div className={h.pathActions}>
+                  <Talk className={s.secondary} message={contact.whatsappSobMedida} context="sob_medida">
+                    <MessagesSquare aria-hidden="true" /> Conversar sobre um projeto sob medida
+                  </Talk>
+                </div>
               </article>
             </div>
           </div>
         </section>
 
-        <About />
+        {/* 6. Matheus Beck */}
+        <section className={s.section} id="quem-atende" aria-labelledby="sobre-titulo">
+          <div className={`${s.wrap} ${h.about}`}>
+            <div className={h.photoWrap}>
+              <img className={h.photo} src={asset('/brand/matheus-beck.webp')} alt={`Foto de ${contact.owner}`} width={260} height={310} loading="lazy" decoding="async" />
+            </div>
+            <div>
+              <p className={h.pill}>
+                <BadgeCheck aria-hidden="true" /> Atendimento direto
+              </p>
+              <h2 id="sobre-titulo">Quem desenvolve o seu site</h2>
+              <p>
+                Sou {contact.owner}, da {contact.brand}. Conduzo seu site do escopo à publicação e falo com você diretamente, sem intermediários.
+              </p>
+              <ul className={h.facts}>
+                <li>
+                  <BadgeCheck aria-hidden="true" /> Escopo, valor e prazo por escrito antes do início
+                </li>
+                <li>
+                  <BadgeCheck aria-hidden="true" /> Orientação para reunir logo, fotos e informações
+                </li>
+                <li>
+                  <BadgeCheck aria-hidden="true" /> WhatsApp {contact.whatsappDisplay}
+                </li>
+              </ul>
+              <div className={h.aboutAction}>
+                <Talk className={s.secondary} message={contact.whatsappConversa} context="sobre">
+                  <MessageCircle aria-hidden="true" /> Conversar com o Matheus
+                </Talk>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 7. Dúvidas essenciais */}
         <Faq />
 
+        {/* 8. Chamada final */}
         <section className={s.final} aria-labelledby="final-titulo">
           <div className={s.wrap}>
-            <h2 id="final-titulo">Veja o site da sua empresa antes de contratar.</h2>
-            <p>Prévia grátis em poucos passos. Desenvolvimento de {priceRange}, com escopo confirmado por escrito.</p>
-            <div className={s.finalActions}>
+            <h2 id="final-titulo" className={h.finalTitle}>
+              Veja o site da sua empresa <em className={h.mark}>antes de contratar.</em>
+            </h2>
+            <p>Crie uma prévia grátis, sem cadastro, ou converse direto sobre o seu projeto.</p>
+            <div className={`${s.finalActions} ${h.finalActions}`}>
               <a className={s.primary} href={builderHref} onClick={start('final')} data-main-cta="">
                 {primaryLabel}
               </a>
-              <a className={s.quietLight} href={whatsappLink(contact.whatsappCurta)} target="_blank" rel="noopener noreferrer" onClick={() => track('whatsapp_open', { context: 'final' })}>
-                <MessageCircle aria-hidden="true" /> Tirar uma dúvida no WhatsApp
-                <span className={s.srOnly}> (abre em nova aba)</span>
-              </a>
+              <Talk className={s.secondary} message={contact.whatsappConversa} context="final">
+                <MessageCircle aria-hidden="true" /> Conversar sobre meu projeto
+              </Talk>
             </div>
           </div>
         </section>
@@ -173,22 +322,67 @@ export default function Landing() {
   );
 }
 
-function About() {
+/** Texto com a expressão-chave destacada (quando ela aparece na linha). */
+function Marked({ text, mark }: { text: string; mark: string }) {
+  const at = text.indexOf(mark);
+  if (at < 0) return <>{text}</>;
   return (
-    <section className={`${s.section} ${s.band}`} id="quem-atende" aria-labelledby="sobre-titulo">
-      <div className={`${s.wrap} ${s.about}`}>
-        <img className={s.aboutPhoto} src={asset('/brand/matheus-beck.webp')} alt={`Foto de ${contact.owner}`} width={280} height={334} loading="lazy" />
-        <div>
-          <h2 id="sobre-titulo">Quem desenvolve seu site</h2>
-          <p>Sou {contact.owner}, da Beck Performance. Conduzo seu site do escopo à publicação, com atendimento direto.</p>
-          <ul className={`${s.checkList} ${s.aboutFacts}`}>
-            <li>Escopo, valor e prazo por escrito antes do início</li>
-            <li>Orientação para reunir logo, fotos e informações</li>
-            <li>WhatsApp {contact.whatsappDisplay}</li>
-          </ul>
+    <>
+      {text.slice(0, at)}
+      <em className={h.mark}>{mark}</em>
+      {text.slice(at + mark.length)}
+    </>
+  );
+}
+
+/**
+ * Destaque visual: a captura do primeiro projeto real (computador e celular),
+ * com o selo "Projeto publicado". Decorativo por fora (halo e moldura); a
+ * imagem tem texto alternativo e a legenda leva ao cartão do projeto.
+ */
+function HeroVisual() {
+  return (
+    <figure className={h.visual} aria-labelledby="hero-legenda">
+      <div className={h.stage}>
+      <span className={h.halo} aria-hidden="true" />
+      <div className={h.browser}>
+        <div className={h.browserBar} aria-hidden="true">
+          <span className={h.dots}>
+            <i />
+            <i />
+            <i />
+          </span>
+          <span className={h.url}>{hero.domain}</span>
         </div>
+        <img
+          src={asset(`${hero.image}-640.webp`)}
+          srcSet={`${asset(`${hero.image}-640.webp`)} 640w, ${asset(`${hero.image}-1080.webp`)} 1080w`}
+          sizes="(min-width: 1000px) 540px, (min-width: 560px) 460px, calc(100vw - 54px)"
+          width={1280}
+          height={800}
+          alt={`${hero.alt}, no computador`}
+          decoding="async"
+        />
       </div>
-    </section>
+      <div className={h.phone}>
+        <img
+          src={asset(`${hero.image}-celular-300.webp`)}
+          srcSet={`${asset(`${hero.image}-celular-300.webp`)} 300w, ${asset(`${hero.image}-celular-600.webp`)} 600w`}
+          sizes="150px"
+          width={300}
+          height={600}
+          alt={`${hero.alt}, no celular`}
+          decoding="async"
+        />
+      </div>
+      <span className={h.published}>
+        <i aria-hidden="true" /> Projeto publicado
+      </span>
+      </div>
+      <figcaption id="hero-legenda" className={h.visualCaption}>
+        {hero.name} — site no ar. <a href="#projetos">Ver projetos reais</a>
+      </figcaption>
+    </figure>
   );
 }
 
@@ -202,10 +396,10 @@ function Faq() {
   }, [all]);
 
   return (
-    <section className={s.section} id="perguntas" aria-labelledby="faq-titulo">
+    <section className={`${s.section} ${h.projects}`} id="perguntas" aria-labelledby="faq-titulo">
       <div className={s.wrap}>
-        <div className={s.sectionHead}>
-          <h2 id="faq-titulo">Perguntas frequentes</h2>
+        <div className={h.head}>
+          <h2 id="faq-titulo">Dúvidas essenciais</h2>
         </div>
         <div className={s.faq} id="lista-perguntas">
           {shown.map(([q, a], i) => (

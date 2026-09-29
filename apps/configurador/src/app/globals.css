@@ -551,3 +551,40 @@
 /* Cada bloco novo entra suavemente: é a resposta visual à escolha. */
 .pv-extras > * { animation: pv-in 0.26s var(--ease-out) both; }
 :root { --font-jakarta: Arial, sans-serif; --font-inter: Arial, sans-serif; --font-playfair: Georgia, serif; --font-grotesk: Arial, sans-serif; --font-instrument: Georgia, serif; }
+
+/* Aviso quando o JavaScript da página não inicia (components/AppFallback.tsx):
+   no fluxo da página, acima do cabeçalho — nunca por cima de botões. */
+.app-fallback[hidden],
+.app-fallback-code[hidden] {
+  display: none;
+}
+.app-fallback {
+  padding: 14px 16px;
+  background: #fff7e6;
+  border-bottom: 1px solid #f1d8b4;
+  color: #3b2a07;
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+.app-fallback p {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.app-fallback p.app-fallback-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin-top: 6px;
+}
+.app-fallback a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #1d4ed8;
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.app-fallback p.app-fallback-code {
+  margin-top: 4px;
+  color: #6b5220;
+  font-size: 13px;
+}

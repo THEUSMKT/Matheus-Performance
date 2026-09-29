@@ -1,5 +1,23 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — apresentação, dois caminhos de contratação e conversa direta (29/09, noite)
+
+**Página inicial** (`src/components/landing/Landing.tsx` + `Home.module.css`): nova primeira seção ("Sua empresa bem apresentada. O próximo contato começa aqui."), com "Criar minha prévia grátis" (ou "Continuar minha prévia") e **"Conversar sobre meu projeto"** (WhatsApp direto, sem passar pelo configurador), o microtexto "Sem cadastro para criar a prévia. Sem compromisso." e a informação comercial junto da oferta: "Sites de página única de R$ 500 a R$ 1.000. Projetos com outras necessidades: orçamento sob medida." — com domínio e hospedagem à parte logo abaixo. O destaque visual é a captura real da Schay Corretora (computador e celular, selo "Projeto publicado", halo azul); a demonstração do configurador foi para "Como funciona", identificada como ilustrativa. Ordem: projetos reais → benefícios → como funciona → dois caminhos (pacotes e **"Seu projeto precisa ir além de uma página?"**) → Matheus Beck → dúvidas → chamada final.
+
+**Projetos reais**: cada cartão mostra "Projeto publicado", segmento, nome, a necessidade atendida (`need` em `src/config/proof.ts`), o que foi desenvolvido, "Visitar site" e **"Conversar sobre um projeto assim"** (a mensagem já cita o projeto). Nenhum pacote, preço ou resultado associado.
+
+**Paleta por função** (`--c-*` em `Landing.module.css`, aplicada com `.bright` no início, exemplos, pacotes e páginas legais): títulos `#2563EB`, destaque em títulos grandes `#3B82F6` (só ≥ 24 px, 3,2:1 ou mais), texto `#475569`, links `#1D4ED8`, botões `#2563EB` com texto branco, fundo `#F4F8FF`, superfícies `#EAF2FF` e `#F0EDFF`, brilhos `#38BDF8`/`#93C5FD`. O azul-marinho (`--navy`) não mudou: o configurador e as prévias continuam iguais. Duas famílias tipográficas (Plus Jakarta Sans nos títulos, fonte do sistema no texto).
+
+**Pacotes** (`/pacotes/`): cartões enxutos — nome, valor, "Pagamento único · domínio e hospedagem à parte", "Indicado para" (benefício antes da quantidade: `purpose` e `packageKeyPoints` em `packages.ts`), 3 ou 4 diferenças, a diferença real de R$ 250 para o anterior, prazo, "Criar prévia com este pacote" e **"Conversar sobre este pacote"** (a mensagem leva nome e valor). "Ver tudo que está incluído" é um `<details>` nativo. A comparação completa começa recolhida no celular. Condições reescritas a partir das regras existentes (`serviceTerms`): textos da IA, produção de conteúdo, 2 rodadas, depois da entrega, domínio e hospedagem.
+
+**Configurador**: o campo de descrição já abre pronto para digitar, com orientação curta e o exemplo "Tenho uma empresa de reformas…" (só orientação, nunca preenchido); "Gravar minha ideia" fica à vista como alternativa e a digitação não depende do microfone. Em "Sua prévia está pronta", **"Conversar sobre esta prévia"** vem primeiro (WhatsApp com o resumo do projeto, abertura de conversa) — personalizar continua disponível, sem ser obrigatório.
+
+**Falha ao iniciar** (`src/components/AppFallback.tsx`): se o JavaScript não iniciar (erro, arquivo bloqueado, navegador fora do suporte), aparece um aviso no topo — no fluxo da página, nunca por cima de botões — com WhatsApp, pacotes e "Tentar de novo". A mensagem do WhatsApp leva a versão do iOS e o erro, para confirmar a causa do relato no iPhone 13 com iOS 16. Sem JavaScript, a página de criação mostra o mesmo contato (`<noscript>`).
+
+**Medição**: `whatsapp_open` agora identifica a origem (`inicio`, `projeto_real` + `project`, `pacote` + `package`, `sob_medida`, `previa`, `sobre`, `final`…). Continua sendo clique — não é mensagem enviada nem pedido recebido. Início, sucesso e falha da geração (`ai_generate`) e escolha de pacote (`package_selected`) já existiam; nada foi duplicado.
+
+**Pendências** (sem regra definida — nada foi prometido): limite da revisão dos textos da IA, o que conta como uma rodada de ajustes, prazo/valor de alterações depois da entrega e quais necessidades sob medida são oferecidas (ver OPERACAO.md, seção 7). A indexação continua desligada (`indexarNoGoogle: false`): início, exemplos e pacotes seguem com `noindex` e o `robots.txt` bloqueia tudo até a liberação.
+
 ## Edição — prévias por família visual, contrato 2 da IA e nome antes da prévia (29/09)
 
 **Oito famílias visuais** (`src/config/families.ts`), cada uma com composição própria da primeira dobra, apresentação dos serviços, ritmo das seções e comportamento no celular — as diferenças são estruturais, não só de cor:

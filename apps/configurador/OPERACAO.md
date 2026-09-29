@@ -175,7 +175,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 | `package_selected` | Escolher um pacote (1× por pacote e origem) | `package`, `source` (`apresentacao` quando a prévia começa pelo botão de um pacote) |
 | `package_changed` | Trocar de pacote, sempre depois da confirmação | `from`, `to`, `source` (`objetivo`, `seu_site`, `secoes`, `imagens`, `incluido`) |
 | `request_click` | Clique em “Solicitar desenvolvimento” (**intenção**) | `mode` (`whatsapp`, `formulario`), `package` (ou `personalizado`) |
-| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção, não é pedido recebido**) | `context` (`pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `projeto_personalizado`, `final`, `rodape`) |
+| `whatsapp_open` | Clique para abrir o WhatsApp (**intenção: não é mensagem enviada nem pedido recebido**) | `context` — origem do clique: `inicio` (“Conversar sobre meu projeto” no topo), `sobre`, `final`, `projeto_real` (+ `project`), `pacote` (+ `package`), `sob_medida`, `previa` (“Conversar sobre esta prévia”, com o resumo), `pedido`, `pedido_alternativo`, `ajuda`, `estilo_diferente`, `rodape` |
 | `ai_generate` | Início e resultado de “Gerar minha prévia” e resultado de “Gerar outra sugestão para esta seção” (só com a IA ligada) | `result` (`iniciada`, `ok`, `erro`), `reason` (`secao` quando é só uma seção) |
 | `ai_audio` | Resultado de “Gravar minha ideia” (transcrição; cancelar não conta) | `result` (`ok`, `erro`), `reason` (`microfone`, `curto`, `sem-fala`…) |
 | `layout_share` / `pdf_save` / `help_open` | Ferramentas secundárias e ajuda | `step` (ajuda) |
@@ -290,3 +290,18 @@ escrever.
   `contact.ts` (decisão mantida). A página de criação nunca é indexada e
   saiu do sitemap.
 - **Prazo de retorno:** nenhum é prometido até `RESPONSE_EXPECTATION` existir.
+- **Regras comerciais ainda sem definição** (a página não promete nada sobre
+  elas; os textos ficam em `serviceTerms`, `src/config/packages.ts`):
+  até onde vai a revisão dos textos sugeridos pela IA (ajuste de fatos x
+  reescrita), o que conta como uma rodada de ajustes, e prazo e valor de
+  alterações depois da entrega.
+- **Projeto sob medida:** a página inicial cita só necessidades de site
+  (mais de uma página, várias unidades, conteúdo além dos limites). Confirme
+  se loja virtual, sistemas, login e integrações — listados em
+  `customNeeds` para encaminhar a "projeto personalizado" — são realmente
+  oferecidos antes de citá-los como exemplo.
+- **Aviso de falha ao iniciar** (`src/components/AppFallback.tsx`): se o
+  JavaScript da página não iniciar (arquivo bloqueado, erro de execução,
+  navegador fora do suporte), aparece um aviso no topo com WhatsApp e
+  pacotes. A mensagem do WhatsApp leva a versão do iOS e a primeira mensagem
+  de erro, para identificar a causa do relato no iPhone 13 com iOS 16.

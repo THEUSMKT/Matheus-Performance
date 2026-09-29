@@ -5,11 +5,13 @@ três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). Páginas:
 
 - **Início (`/`)**, objetiva:
   - apresentação;
-  - dois projetos reais ("Da ideia ao ar");
-  - como funciona;
-  - acessos a exemplos e pacotes;
-  - quem desenvolve;
-  - dúvidas essenciais e chamada final.
+  - dois projetos reais ("Da ideia ao ar"), com "Visitar site" e
+    "Conversar sobre um projeto assim";
+  - benefícios concretos;
+  - como funciona, com a demonstração do configurador (ilustrativa);
+  - dois caminhos de contratação: pacotes e projeto sob medida;
+  - Matheus Beck e o atendimento direto;
+  - dúvidas essenciais e chamada final (prévia ou conversa direta).
 - **Exemplos (`/exemplos/`)**:
   - projetos reais, com "Visitar site";
   - oito modelos demonstrativos, um por família visual, com filtros,
@@ -17,16 +19,22 @@ três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). Páginas:
     modelo".
 - **Pacotes (`/pacotes/`)**:
   - comparação compacta;
-  - cartões completos de cada pacote;
-  - comparação lado a lado;
-  - condições (domínio e hospedagem, depois da entrega, o que não está
-    incluído, projeto personalizado).
+  - cartões enxutos: valor, pagamento único (domínio e hospedagem à
+    parte), para que serve, 3 ou 4 diferenças, prazo, "Criar prévia com
+    este pacote" e "Conversar sobre este pacote"; o detalhamento fica em
+    "Ver tudo que está incluído";
+  - comparação lado a lado (recolhida no celular);
+  - condições (domínio e hospedagem, textos da IA e produção de conteúdo,
+    ajustes e depois da entrega, projeto sob medida).
 - **Criação (`/criar/`)**:
   - começa pelo nome ("Como se chama seu negócio?", com a opção "Ainda não
-    defini o nome.") e pela ideia, por áudio, texto ou passo a passo;
+    defini o nome.") e pela ideia: o campo de texto já aberto, com uma
+    orientação curta e um exemplo; gravar um áudio e o passo a passo
+    ficam como alternativas;
   - monta a prévia numa das oito famílias visuais, de acordo com o tipo de
     negócio (clínica veterinária, banho e tosa, confeitaria, corretor...);
-  - depois vem "Sua prévia está pronta";
+  - depois vem "Sua prévia está pronta", com "Conversar sobre esta prévia"
+    (WhatsApp com o resumo) antes de qualquer personalização;
   - em seguida, uma escolha por tela: pacote, composição e estilo, cores,
     títulos, conteúdo e seções;
   - por fim, a revisão.

@@ -54,4 +54,22 @@ export const contact = {
 
   whatsappCurta:
     'Olá! Vi o site da Beck Performance e gostaria de tirar uma dúvida sobre a criação de um site.',
+
+  /** "Conversar sobre meu projeto" (início da página e chamada final): contratação direta, sem prévia. */
+  whatsappConversa: 'Olá, Matheus! Vi o site da Beck Performance e quero conversar sobre o site da minha empresa.',
+  /** "Conversar sobre um projeto sob medida": necessidades além de uma página. */
+  whatsappSobMedida:
+    'Olá, Matheus! Vi o site da Beck Performance e meu projeto precisa ir além de uma página. Posso contar o que a minha empresa precisa?',
+  /** Abertura de "Conversar sobre esta prévia", seguida do resumo do projeto. */
+  whatsappPrevia: 'Olá, Matheus! Criei uma prévia do site da minha empresa no configurador e quero conversar sobre ela.',
+  /** Fechamento de "Conversar sobre esta prévia". */
+  whatsappPreviaClosing: 'Podemos conversar sobre esta prévia e os próximos passos?',
 } as const;
+
+/** "Conversar sobre um projeto assim": leva o nome do projeto real na mensagem. */
+export const projectInterestMessage = (projectName: string) =>
+  `Olá, Matheus! Vi o projeto “${projectName}” no site da Beck Performance e quero conversar sobre um site assim para a minha empresa.`;
+
+/** "Conversar sobre este pacote": leva o nome e o valor do pacote na mensagem. */
+export const packageInterestMessage = (packageName: string, price: string) =>
+  `Olá, Matheus! Tenho interesse no pacote ${packageName} (${price}) e quero conversar sobre o site da minha empresa.`;

@@ -4,7 +4,7 @@ import s from './landing/Landing.module.css';
 
 export function LegalPage({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   return (
-    <div className={s.page}>
+    <div className={`${s.page} ${s.bright}`}>
       <Header where="outra" />
       <main className={`${s.wrap} ${s.legal}`}>
         <a href={homeHref} className={s.linkButton}>

@@ -14,6 +14,8 @@ export type RealProject = {
   category: string;
   /** Uma frase: o que o site apresenta (sem resultados nem métricas). */
   description: string;
+  /** A necessidade que o site atende, em uma frase (sem resultados nem métricas). */
+  need: string;
   /** Endereço publicado; abre em nova aba. */
   url: string;
   /** Domínio exibido na barra da captura. */
@@ -41,6 +43,7 @@ export const realProjects: RealProject[] = [
     name: 'Schay Corretora',
     category: 'Mercado imobiliário',
     description: 'Site imobiliário com apresentação profissional, vitrine de imóveis e caminhos de contato pelo WhatsApp.',
+    need: 'Apresentar a corretora e os imóveis com credibilidade e levar quem procura um imóvel direto para a conversa.',
     url: 'https://schaycorretora.com.br/',
     domain: 'schaycorretora.com.br',
     image: '/projetos/schay-corretora',
@@ -52,6 +55,7 @@ export const realProjects: RealProject[] = [
     name: 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital',
     category: 'Marketing e serviços profissionais',
     description: 'Site de serviços com apresentação da marca, metodologia de trabalho, pacotes e chamadas para atendimento.',
+    need: 'Explicar os serviços de gestão de tráfego e o método de trabalho, com caminhos claros para pedir atendimento.',
     url: 'https://theusmkt.github.io/Matheus-Performance/',
     domain: 'theusmkt.github.io/Matheus-Performance',
     ownBrand: true,

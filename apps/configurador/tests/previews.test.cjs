@@ -451,6 +451,18 @@ test('WhatsApp: resumo legível, com composição e tipo de negócio, codificado
   assert(!/%25[0-9A-F]{2}/.test(url.search), 'sem codificação dupla');
 });
 
+test('Aviso de falha ao iniciar: script em ES5, escondido por padrão, contato por link comum', () => {
+  const { startWatch, AppFallback } = require('../src/components/AppFallback.tsx');
+  const acorn = require('next/dist/compiled/acorn');
+  // Precisa rodar mesmo onde o restante do código não roda.
+  assert.doesNotThrow(() => acorn.parse(startWatch, { ecmaVersion: 5 }), 'sintaxe ES5');
+  assert(!/=>|`|\blet\b|\bconst\b|\?\.|\?\?/.test(startWatch));
+  const html = renderToStaticMarkup(React.createElement(AppFallback));
+  assert(/id="app-fallback"[^>]*hidden/.test(html), 'escondido até a verificação');
+  assert(/href="https:\/\/wa\.me\/\d+\?text=/.test(html) && /\/pacotes\//.test(html), 'WhatsApp e pacotes sem depender de script');
+  assert(!/position:\s*fixed/.test(fs.readFileSync(path.join(__dirname, '../src/app/globals.css'), 'utf8').split('.app-fallback')[1] ?? ''), 'no fluxo da página, sem cobrir botões');
+});
+
 Promise.all(pending).then(() => console.log(`${count} testes de prévias passaram.`)).catch((e) => {
   console.error(e);
   process.exit(1);

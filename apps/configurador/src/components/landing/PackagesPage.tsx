@@ -5,19 +5,37 @@
    1. Abertura com a comparação compacta do maior para o menor (Completo →
       Profissional → Essencial): uma frase por pacote, para qual
       necessidade ele serve. O Completo ancora o escopo e o valor.
-   2. Cartões completos — cada um se explica sozinho, sem "tudo do
-      anterior". No celular a ordem é Profissional, Essencial, Completo (é
-      também a ordem do documento, para leitor de tela e teclado); no
-      computador a grade põe Essencial, Profissional e Completo lado a lado.
-   3. Comparação completa, condições (domínio, hospedagem, depois da
-      entrega, o que não está incluído) e projeto personalizado.
+   2. Cartões enxutos — nome, valor total, pagamento único (com domínio e
+      hospedagem à parte, sempre à vista), a necessidade que o pacote
+      resolve, 3 ou 4 diferenças, prazo e as ações "Criar prévia com este
+      pacote" e "Conversar sobre este pacote". O detalhamento completo fica
+      em "Ver tudo que está incluído" (<details>: abre por toque, clique ou
+      teclado, e sem script). No celular a ordem é Profissional, Essencial,
+      Completo (também a do documento); no computador, Essencial,
+      Profissional e Completo lado a lado.
+   3. Comparação completa, condições (textos da IA, conteúdo, ajustes,
+      depois da entrega, domínio e hospedagem) e projeto sob medida.
 
-   Valores, limites e prazos vêm de config/packages.ts. Nada de preço
-   riscado, desconto, contador, escassez ou "mais vendido".
+   Valores, limites, prazos e regras vêm de config/packages.ts. Nada de
+   preço riscado, desconto, contador, escassez ou "mais vendido".
    ========================================================================== */
-import { Check, MessageCircle, Plus } from 'lucide-react';
-import { contact } from '@/config/contact';
-import { brl, customNeeds, externalCosts, packageById, packageFeatures, packages, priceNotes, revisionRounds, upgradeNote, type Package, type PackageId } from '@/config/packages';
+import { useEffect, useRef } from 'react';
+import { Check, ChevronDown, MessageCircle, MessagesSquare, Plus } from 'lucide-react';
+import { contact, packageInterestMessage } from '@/config/contact';
+import {
+  brl,
+  externalCosts,
+  packageById,
+  packageFeatures,
+  packageKeyPoints,
+  packages,
+  priceNotes,
+  revisionRounds,
+  serviceTerms,
+  upgradeNote,
+  type Package,
+  type PackageId,
+} from '@/config/packages';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { PackageCompare } from '../builder/Packages';
@@ -68,41 +86,78 @@ function TierCard({ pkg }: { pkg: Package }) {
       <h3 className={s.tierName}>{pkg.name}</h3>
       <p className={s.tierPrice}>
         <strong>{brl(pkg.price)}</strong>
-        <span>pagamento único pelo desenvolvimento</span>
+        <span>Pagamento único · domínio e hospedagem à parte</span>
       </p>
-      <p className={s.tierFor}>{pkg.forWhom}</p>
       {up && (
-        <p className={s.tierUp}>
-          <strong>
-            {brl(up.diff)} a mais que o {up.from}:
-          </strong>{' '}
-          {listSentence(up.gains)}.
+        <p className={s.tierStep}>
+          {brl(up.diff)} a mais que o {up.from}
         </p>
       )}
-      <Limits pkg={pkg} />
-      <h4 className={s.tierListTitle}>Recursos incluídos</h4>
-      <ul className={s.tierFeatures}>
-        {features.map((f) => (
-          <li key={f.text} data-extra={f.extra ? '' : undefined}>
-            {f.extra ? <Plus aria-hidden="true" /> : <Check aria-hidden="true" />}
-            <span>
-              {f.text}
-              {f.extra && up && <span className={s.srOnly}> (a mais que o {up.from})</span>}
-            </span>
+      <p className={s.tierFor}>
+        <span>Indicado para</span> {pkg.purpose}
+      </p>
+      <ul className={s.tierKey} aria-label={`Destaques do ${pkg.name}`}>
+        {packageKeyPoints(pkg).map((text) => (
+          <li key={text}>
+            <Check aria-hidden="true" />
+            <span>{text}</span>
           </li>
         ))}
       </ul>
       <p className={s.tierDeadline}>
-        <strong>Prazo:</strong> {pkg.deadline}, {priceNotes.deadlineStart}.
+        <strong>Prazo:</strong> {pkg.deadline} após o envio dos materiais
       </p>
-      <a
-        className={isFeatured ? s.primary : s.secondary}
-        href={packageHref(pkg.id)}
-        onClick={() => track('start_click', { context: 'pacotes', package: pkg.id })}
-        aria-label={`Criar prévia com este pacote: ${pkg.name}`}
-      >
-        Criar prévia com este pacote
-      </a>
+      <div className={s.tierActions}>
+        <a
+          className={isFeatured ? s.primary : s.secondary}
+          href={packageHref(pkg.id)}
+          onClick={() => track('start_click', { context: 'pacotes', package: pkg.id })}
+          aria-label={`Criar prévia com este pacote: ${pkg.name}`}
+        >
+          Criar prévia com este pacote
+        </a>
+        <a
+          className={s.tierTalk}
+          href={whatsappLink(packageInterestMessage(pkg.name, brl(pkg.price)))}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => track('whatsapp_open', { context: 'pacote', package: pkg.id })}
+          aria-label={`Conversar sobre este pacote: ${pkg.name} (abre o WhatsApp em nova aba)`}
+        >
+          <MessageCircle aria-hidden="true" /> Conversar sobre este pacote
+        </a>
+      </div>
+      <details className={s.tierMore}>
+        <summary>
+          Ver tudo que está incluído <ChevronDown aria-hidden="true" />
+        </summary>
+        <div className={s.tierMoreBody}>
+          {up && (
+            <p className={s.tierUp}>
+              <strong>
+                {brl(up.diff)} a mais que o {up.from}:
+              </strong>{' '}
+              {listSentence(up.gains)}.
+            </p>
+          )}
+          <Limits pkg={pkg} />
+          <h4 className={s.tierListTitle}>Recursos incluídos</h4>
+          <ul className={s.tierFeatures}>
+            {features.map((f) => (
+              <li key={f.text} data-extra={f.extra ? '' : undefined}>
+                {f.extra ? <Plus aria-hidden="true" /> : <Check aria-hidden="true" />}
+                <span>
+                  {f.text}
+                  {f.extra && up && <span className={s.srOnly}> (a mais que o {up.from})</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className={s.tierDeadlineFull}>
+            <strong>Prazo:</strong> {pkg.deadline}, {priceNotes.deadlineStart}.
+          </p>
+        </div>
+      </details>
     </li>
   );
 }
@@ -111,9 +166,13 @@ export default function PackagesPage() {
   const state = useProject({ readHash: false });
   const ctaLabel = state.resumable ? 'Continuar minha prévia' : 'Criar minha prévia grátis';
   const anchor = [...packages].reverse();
+  const compareRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (compareRef.current && window.matchMedia('(min-width: 760px)').matches) compareRef.current.open = true;
+  }, []);
 
   return (
-    <div className={`${s.page} ${s.inner}`} id="topo">
+    <div className={`${s.page} ${s.inner} ${s.bright}`} id="topo">
       <Header where="pacotes" ctaLabel={ctaLabel} onStart={() => track('start_click', { context: 'cabecalho' })} />
       <main id="conteudo">
         <section className={s.pageHead} aria-labelledby="pacotes-titulo">
@@ -148,8 +207,7 @@ export default function PackagesPage() {
             <div className={s.sectionHead}>
               <h2 id="detalhes-titulo">O que cada pacote entrega</h2>
               <p>
-                <Plus aria-hidden="true" className={s.inlineIcon} /> marca o que o pacote acrescenta ao anterior. Todos incluem {revisionRounds} rodadas de ajustes antes da
-                publicação.
+                Valor total do desenvolvimento, em pagamento único. Todos incluem {revisionRounds} rodadas de ajustes antes da publicação. Domínio e hospedagem à parte.
               </p>
             </div>
             <ul className={s.tiers}>
@@ -166,9 +224,15 @@ export default function PackagesPage() {
               <h2 id="comparar-titulo">Comparação completa</h2>
               <p>Os mesmos recursos, lado a lado.</p>
             </div>
-            <div className={s.compareBox}>
-              <PackageCompare caption="Comparação dos pacotes" />
-            </div>
+            {/* No celular a comparação completa começa recolhida (os cartões já mostram as diferenças); a partir de 760px, aberta. */}
+            <details className={s.compareMore} ref={compareRef}>
+              <summary>
+                Ver a comparação completa <ChevronDown aria-hidden="true" />
+              </summary>
+              <div className={s.compareBox}>
+                <PackageCompare caption="Comparação dos pacotes" />
+              </div>
+            </details>
           </div>
         </section>
 
@@ -181,7 +245,7 @@ export default function PackagesPage() {
             <div className={s.terms}>
               <article>
                 <h3>Domínio e hospedagem</h3>
-                <p>Pagos à parte, direto aos fornecedores. Não entram no valor do desenvolvimento:</p>
+                <p>{serviceTerms.domainHosting}</p>
                 <ul className={s.dotList}>
                   {externalCosts.map((c) => (
                     <li key={c}>{c}</li>
@@ -189,36 +253,27 @@ export default function PackagesPage() {
                 </ul>
               </article>
               <article>
-                <h3>Depois da entrega</h3>
-                <p>
-                  Antes da publicação, estão incluídas {revisionRounds} rodadas de ajustes. Depois da publicação, alterações e manutenção são combinadas e orçadas à parte.
-                  Não há mensalidade de desenvolvimento.
-                </p>
+                <h3>Textos sugeridos pela IA</h3>
+                <p>{serviceTerms.textReview}</p>
+                <p>{serviceTerms.contentProduction}</p>
               </article>
               <article>
-                <h3>Não incluído nos pacotes</h3>
-                <ul className={s.dotList}>
-                  <li>Produção de textos, fotos ou vídeos</li>
-                  <li>Alterações e manutenção depois da publicação</li>
-                  <li>Mais de uma página, loja virtual com pagamento online, área de login, sistemas e integrações</li>
-                </ul>
+                <h3>Ajustes e depois da entrega</h3>
+                <p>{serviceTerms.revisions}</p>
+                <p>{serviceTerms.afterDelivery}</p>
               </article>
               <article className={s.termsCustom}>
-                <h3>Projeto personalizado</h3>
-                <p>Quando o site precisa de algo fora dos pacotes, o orçamento é separado. Por exemplo:</p>
-                <ul className={s.dotList}>
-                  {customNeeds.slice(0, 6).map((n) => (
-                    <li key={n.id}>{n.name}</li>
-                  ))}
-                </ul>
+                <h3>Seu projeto precisa ir além de uma página?</h3>
+                <p>Conte o que sua empresa precisa. Definimos o escopo e preparamos uma proposta de acordo com o projeto.</p>
+                <p className={s.termsSmall}>Os valores dos pacotes valem para sites de página única; outras necessidades têm orçamento sob medida.</p>
                 <a
                   className={s.secondary}
-                  href={whatsappLink(contact.whatsappProjetoPersonalizado)}
+                  href={whatsappLink(contact.whatsappSobMedida)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => track('whatsapp_open', { context: 'projeto_personalizado' })}
+                  onClick={() => track('whatsapp_open', { context: 'sob_medida' })}
                 >
-                  <MessageCircle aria-hidden="true" /> Falar sobre um projeto personalizado
+                  <MessagesSquare aria-hidden="true" /> Conversar sobre um projeto sob medida
                   <span className={s.srOnly}> (abre o WhatsApp em nova aba)</span>
                 </a>
               </article>
