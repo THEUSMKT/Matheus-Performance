@@ -450,7 +450,7 @@ p{margin:0}
   --tx:clamp(32px,4.6vw,72px);--ty:clamp(40px,5vw,72px);
   position:relative;isolation:isolate;overflow:hidden;
   display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  grid-template-rows:minmax(var(--ty),1fr) auto auto auto minmax(var(--ty),1fr);
+  grid-template-rows:minmax(var(--ty),1fr) auto auto minmax(var(--ty),1fr);
   gap:0;padding:0;background:#010101;border:0;border-radius:calc(var(--r) * 2);
   box-shadow:var(--shadow-l);color:#fff
 }
@@ -466,45 +466,51 @@ p{margin:0}
   mask-image:linear-gradient(to right,transparent,#000 7.5%,#000 92.5%,transparent),linear-gradient(to bottom,transparent,#000 4.5%);
   mask-composite:intersect
 }
-.testimonial--featured .testimonial__eyebrow,
-.testimonial--featured .testimonial__quote,
-.testimonial--featured .testimonial__author{grid-column:1;position:relative;z-index:1;padding-left:var(--tx);margin-right:-5%}
-.testimonial--featured .testimonial__eyebrow{grid-row:2}
-.testimonial--featured .testimonial__quote{grid-row:3;margin:0}
-.testimonial--featured .testimonial__author{grid-row:4;margin-top:0;gap:4px;padding-top:30px}
-.testimonial--featured .testimonial__author::before{
-  content:"";display:block;width:min(240px,70%);height:1px;margin-bottom:24px;
+.testimonial--featured .testimonial__author,
+.testimonial--featured .testimonial__quote{grid-column:1;position:relative;z-index:1;padding-left:var(--tx);margin-right:-5%}
+.testimonial--featured .testimonial__author{grid-row:2;margin-top:0;gap:0}
+.testimonial--featured .testimonial__author::after{
+  content:"";display:block;width:min(240px,70%);height:1px;margin:28px 0 30px;
   background:linear-gradient(90deg,var(--gold),rgba(200,169,106,.05))
 }
+.testimonial--featured .testimonial__quote{grid-row:3;margin:0}
 .testimonial__mark{display:block;height:.46em;font-family:var(--serif);font-size:clamp(66px,6vw,92px);line-height:1;color:var(--gold)}
 .testimonial--featured .testimonial__quote p{font-family:var(--serif);font-size:clamp(19px,1.9vw,24px);line-height:1.5;color:rgba(255,255,255,.9);max-width:34em}
 .testimonial__hl{color:var(--gold)}
-.testimonial--featured .testimonial__name{font-size:clamp(20px,1.8vw,23px);color:#fff}
-.testimonial--featured .testimonial__role{letter-spacing:.2em;color:rgba(255,255,255,.6)}
-.testimonial__insta{
-  display:inline-flex;align-items:center;gap:12px;margin-top:22px;padding:4px 18px 4px 4px;min-height:44px;
-  border:1px solid var(--gold-line);border-radius:999px;color:rgba(255,255,255,.9);font-size:14px;letter-spacing:.02em;
-  transition:border-color .35s,transform .35s var(--ease)
+.testimonial__profile{
+  display:inline-flex;align-items:center;gap:16px;min-height:44px;padding:2px 12px 2px 0;border-radius:999px;
+  transition:transform .35s var(--ease)
 }
-.testimonial__insta:hover,.testimonial__insta:focus-visible{border-color:var(--gold);transform:translateY(-2px)}
-.testimonial__insta:focus-visible{outline-offset:4px;border-radius:999px}
-.testimonial__avatar{flex:none;width:51px;height:51px;padding:3.5px;border-radius:50%;background:linear-gradient(140deg,#f1dfb0,var(--gold) 45%,#8a6a2c)}
-.testimonial__avatar img{width:44px;height:44px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 1.5px #010101}
-.testimonial__ig{width:20px;height:20px;flex:none;color:rgba(255,255,255,.7);transition:color .35s}
-.testimonial__insta:hover .testimonial__ig,.testimonial__insta:focus-visible .testimonial__ig{color:var(--gold)}
+.testimonial__profile:hover,.testimonial__profile:focus-visible{transform:translateY(-2px)}
+.testimonial__profile:focus-visible{outline-offset:6px;border-radius:999px}
+.testimonial__avatar{
+  flex:none;width:72px;height:72px;padding:4px;border-radius:50%;
+  background:linear-gradient(140deg,#f1dfb0,var(--gold) 45%,#8a6a2c);transition:box-shadow .35s
+}
+.testimonial__avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;box-shadow:0 0 0 2px #010101}
+.testimonial__profile:hover .testimonial__avatar,.testimonial__profile:focus-visible .testimonial__avatar{box-shadow:0 0 22px -4px rgba(200,169,106,.7)}
+.testimonial__id{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.testimonial--featured .testimonial__name{font-size:clamp(20px,1.8vw,23px);line-height:1.2;color:#fff}
+.testimonial--featured .testimonial__role{letter-spacing:.2em;color:rgba(255,255,255,.6)}
+.testimonial__handle{display:inline-flex;align-items:center;gap:8px;margin-top:3px;font-size:14px;letter-spacing:.02em;color:rgba(255,255,255,.85);transition:color .35s}
+.testimonial__ig{width:18px;height:18px;flex:none;color:rgba(255,255,255,.7);transition:color .35s}
+.testimonial__profile:hover .testimonial__handle,.testimonial__profile:focus-visible .testimonial__handle,
+.testimonial__profile:hover .testimonial__ig,.testimonial__profile:focus-visible .testimonial__ig{color:var(--gold)}
 
 @media (max-width:899.98px){
   .testimonial--featured{grid-template-columns:minmax(0,1fr);grid-template-rows:none}
-  .testimonial__media{grid-column:1;grid-row:auto;align-self:start}
+  .testimonial__media{grid-column:1;align-self:start}
   .testimonial__media img{
     -webkit-mask-image:linear-gradient(to right,transparent,#000 7.5%,#000 92.5%,transparent);
     mask-image:linear-gradient(to right,transparent,#000 7.5%,#000 92.5%,transparent)
   }
-  .testimonial--featured .testimonial__eyebrow,
   .testimonial--featured .testimonial__quote,
-  .testimonial--featured .testimonial__author{grid-column:1;grid-row:auto;padding-inline:var(--pad);margin-right:0}
-  .testimonial--featured .testimonial__eyebrow{padding-top:clamp(22px,5vw,32px)}
-  .testimonial--featured .testimonial__author{padding-bottom:calc(var(--pad) + 12px)}
+  .testimonial--featured .testimonial__author{grid-column:1;padding-inline:var(--pad);margin-right:0}
+  .testimonial__media{grid-row:1}
+  .testimonial--featured .testimonial__author{grid-row:2;padding-top:clamp(22px,5vw,32px)}
+  .testimonial--featured .testimonial__quote{grid-row:3;padding-bottom:calc(var(--pad) + 12px)}
+  .testimonial__avatar{width:63px;height:63px;padding:3.5px}
+  .testimonial__profile{gap:14px}
   .testimonial--featured .testimonial__quote p{font-size:clamp(17px,4.6vw,20px)}
 }
 
