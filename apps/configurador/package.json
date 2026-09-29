@@ -9,7 +9,7 @@
     "start": "node scripts/preview.cjs",
     "preview": "node scripts/preview.cjs",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/project.test.cjs",
+    "test": "node tests/project.test.cjs && node tests/previews.test.cjs",
     "check:compat": "node scripts/compat-check.cjs"
   },
   "dependencies": {

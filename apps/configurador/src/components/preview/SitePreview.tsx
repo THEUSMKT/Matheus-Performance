@@ -1,137 +1,623 @@
 /* ==========================================================================
-   Prévia do site do visitante, montada a partir das escolhas reais: nome e
-   logo, segmento, serviço principal, objetivo (botão e caminho de contato),
-   estilo, cores e seções na ordem escolhida.
+   Prévia do site do visitante. Tudo vem do plano (lib/plan.ts): a família
+   visual define a composição (topo, serviços, ritmo das seções, celular), o
+   estilo define tons e formas, o pacote define quais seções existem.
 
-   É uma demonstração: nenhum botão abre contato ou envia formulário, e todo
-   conteúdo sugerido aparece marcado como sugestão. Nada de depoimentos,
-   números, selos ou endereços inventados. Cada estilo muda a composição
-   (não só as cores) e o layout se adapta à largura do próprio componente.
+   É uma demonstração: nenhum botão abre contato ou envia formulário, e
+   nada é inventado (depoimentos, números, selos, endereços, preços). As
+   imagens são ilustrações do catálogo (config/assets.ts), identificadas
+   como ilustrativas; sem imagem adequada, o topo é tipográfico. O layout
+   se adapta à largura do próprio componente (container query).
    ========================================================================== */
 import type { CSSProperties, ReactNode } from 'react';
-import { Clock, HelpCircle, ImageIcon, MapPin, MessageCircle, Quote } from 'lucide-react';
-import { contrastInk, headFont, objectiveOf, palettes, sectionName, segmentOf, siteContent, type Project } from '@/lib/project';
-import { asset } from '../landing/Chrome';
+import {
+  ArrowRight,
+  Bath,
+  Briefcase,
+  Cake,
+  Calculator,
+  CalendarCheck,
+  Camera,
+  Car,
+  Check,
+  ChefHat,
+  ClipboardList,
+  Clock,
+  Compass,
+  Dumbbell,
+  GraduationCap,
+  HandHeart,
+  House,
+  KeyRound,
+  MapPin,
+  MessageCircle,
+  Package,
+  Paintbrush,
+  Palette,
+  PenTool,
+  Plus,
+  Quote,
+  Ruler,
+  Scale,
+  Scissors,
+  ShoppingBag,
+  Snowflake,
+  Sofa,
+  Sparkles,
+  SprayCan,
+  Stethoscope,
+  Syringe,
+  UtensilsCrossed,
+  Wrench,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { ASSET_HEIGHT, ASSET_WIDTH, type Asset, type AssetCrop } from '@/config/assets';
+import { currentPackage, previewTexts as texts, type Project } from '@/lib/project';
+import { previewPlan, type PreviewPlan } from '@/lib/plan';
+import { asset as assetUrl } from '../landing/Chrome';
 import s from './Preview.module.css';
 
-const styleClass: Record<string, string> = {
-  marcante: s.moderno,
-  elegante: s.elegante,
-  essencial: s.minimal,
-  tecnologico: s.tecnologico,
-  sofisticado: s.sofisticado,
-  escuro: s.escuro,
-};
-const darkHeader = new Set(['marcante', 'tecnologico', 'escuro', 'sofisticado']);
+/** Mantido para quem importava daqui: os textos das seções como a prévia mostra. */
+export const previewTexts = texts;
 
-function Tag({ children }: { children: ReactNode }) {
-  return <span className={s.tag}>{children}</span>;
-}
+const cx = (...list: (string | false | null | undefined)[]) => list.filter(Boolean).join(' ');
 
-const segmentCopy: Record<string, { about: string; serviceDetails: string[]; differentials: string[]; processSteps: string[]; faqQuestions: string[] }> = {
-  imoveis: {
-    about: 'Uma apresentação clara do seu trabalho como corretor, dos perfis de imóvel que atende e de como orienta cada pessoa durante a busca, a visita e a negociação.',
-    serviceDetails: ['Conversa inicial para entender localização, tipo de imóvel e prioridades da busca.', 'Apresentação do imóvel e organização de uma visita, conforme disponibilidade confirmada.', 'Orientação para comparar opções e entender os próximos passos da negociação.'],
-    differentials: ['Busca orientada pelo que você procura', 'Informações claras antes da visita', 'Acompanhamento em cada etapa da negociação'],
-    processSteps: ['Conte o que procura', 'Converse sobre opções e visita', 'Avalie os próximos passos'],
-    faqQuestions: ['Quais informações ajudam a começar a busca?', 'Como funciona uma visita ao imóvel?', 'Posso conversar antes de escolher um imóvel?'],
-  },
-  consultoria: {
-    about: 'Conheça as frentes de atuação, entenda como começa o atendimento e veja qual tipo de orientação pode fazer sentido para o seu momento.',
-    serviceDetails: ['Uma primeira conversa para entender o contexto e alinhar o que precisa ser resolvido.', 'Organização de prioridades e próximos passos a partir das informações compartilhadas.', 'Acompanhamento combinado conforme o escopo definido entre as partes.'],
-    differentials: ['Escopo alinhado antes do início', 'Etapas explicadas com clareza', 'Contato direto para tirar dúvidas'],
-    processSteps: ['Compartilhe seu contexto', 'Alinhe escopo e prioridades', 'Defina os próximos passos'],
-    faqQuestions: ['O que devo levar para a primeira conversa?', 'Como é definido o escopo do trabalho?', 'O atendimento pode ser feito online?'],
-  },
-  beleza: {
-    about: 'Veja os cuidados disponíveis, escolha o que combina com seu objetivo e consulte os detalhes antes de pedir um horário.',
-    serviceDetails: ['Converse sobre a rotina de cuidados e o serviço mais adequado ao que procura.', 'Entenda as opções de cuidado e os detalhes antes de marcar.', 'Escolha um horário para o atendimento e confirme os detalhes diretamente.'],
-    differentials: ['Escolha do cuidado com orientação', 'Detalhes explicados antes do horário', 'Atendimento organizado por agendamento'],
-    processSteps: ['Escolha o cuidado', 'Tire suas dúvidas', 'Peça um horário'],
-    faqQuestions: ['Como escolho o cuidado mais adequado?', 'Quanto tempo devo reservar para o atendimento?', 'Como remarco um horário?'],
-  },
-  local: {
-    about: 'Entenda quais serviços estão disponíveis, conte o que precisa ser feito e combine uma avaliação antes de definir os próximos passos.',
-    serviceDetails: ['Explique o que precisa e, se possível, envie fotos ou detalhes para orientar a avaliação.', 'Combine o serviço considerando o local, o acesso e as condições do ambiente.', 'Tire dúvidas sobre o que está incluído e os cuidados depois do serviço.'],
-    differentials: ['Pedido organizado desde o primeiro contato', 'Escopo combinado antes da execução', 'Orientações claras sobre as etapas'],
-    processSteps: ['Conte o que precisa', 'Combine a avaliação', 'Aprove o escopo do serviço'],
-    faqQuestions: ['Quais detalhes ajudam a avaliar o serviço?', 'O atendimento cobre minha região?', 'Como recebo o orçamento?'],
-  },
-  alimentacao: {
-    about: 'Conheça as opções do cardápio, veja os detalhes de cada pedido e converse para confirmar disponibilidade e retirada ou entrega.',
-    serviceDetails: ['Conheça as opções preparadas pela casa e consulte os detalhes do dia.', 'Veja tamanhos, sabores e possibilidades antes de fazer uma encomenda.', 'Informe a data e a quantidade para consultar disponibilidade.'],
-    differentials: ['Opções apresentadas de forma clara', 'Pedido confirmado diretamente', 'Detalhes da encomenda alinhados antes'],
-    processSteps: ['Escolha os itens', 'Consulte disponibilidade', 'Confirme os detalhes do pedido'],
-    faqQuestions: ['Como consulto os itens disponíveis?', 'Com quanta antecedência devo pedir?', 'Quais são as opções de retirada ou entrega?'],
-  },
-  criativo: {
-    about: 'Explore projetos, conheça as etapas de criação e compartilhe referências para iniciar uma conversa sobre o que você quer desenvolver.',
-    serviceDetails: ['Conheça projetos e etapas de trabalho relacionados ao espaço que imagina.', 'Organize referências, necessidades e prioridades para a criação do projeto.', 'Defina escopo e entregas em uma conversa antes de iniciar.'],
-    differentials: ['Processo apresentado por etapas', 'Referências consideradas no briefing', 'Escopo alinhado antes da criação'],
-    processSteps: ['Compartilhe referências', 'Alinhe escopo e direção', 'Acompanhe as etapas do projeto'],
-    faqQuestions: ['Que referências devo enviar?', 'Quais informações entram no briefing?', 'Como são combinadas as etapas do projeto?'],
-  },
-  default: {
-    about: 'Apresente o que sua empresa faz, para quem trabalha e como uma pessoa interessada pode dar o primeiro passo.',
-    serviceDetails: ['Entenda os detalhes do serviço e converse sobre o que precisa.', 'Veja as opções disponíveis e tire dúvidas antes de escolher.', 'Combine o atendimento e os próximos passos diretamente.'],
-    differentials: ['Informações organizadas para facilitar sua escolha', 'Etapas alinhadas antes de começar', 'Contato direto para esclarecer dúvidas'],
-    processSteps: ['Conte o que procura', 'Alinhe os detalhes', 'Combine os próximos passos'],
-    faqQuestions: ['Como funciona o primeiro contato?', 'Quais informações devo enviar?', 'Como são combinados os próximos passos?'],
-  },
-};
+/* ── Ícones dos serviços (só quando a palavra combina; senão, um marcador neutro) ── */
 
-const isRealEstateProject = (p: Project) => p.segment === 'imoveis' || /corretor|im[oó]ve|imobili[aá]ri|compra e venda|avalia[cç][aã]o de im[oó]ve/i.test(p.service);
+const ICONS: [RegExp, LucideIcon][] = [
+  [/vacin/i, Syringe],
+  [/consulta|cl[ií]nic|veterin|check-?up|exame|preventiv/i, Stethoscope],
+  [/banho|hidrata/i, Bath],
+  [/tosa|corte|barba|cabel/i, Scissors],
+  [/ra[cç][aã]o|produto|acess[oó]rio|brinquedo|petisco|loja|novidade|pe[cç]as/i, ShoppingBag],
+  [/limpeza|faxina|higieniza/i, SprayCan],
+  [/organiza/i, Package],
+  [/pintur|textura/i, Paintbrush],
+  [/el[eé]tric|disjuntor|tomada/i, Zap],
+  [/ar-?condicionado|climatiza|refrigera/i, Snowflake],
+  [/reparo|instala|reforma|manuten|conserto/i, Wrench],
+  [/bolo|doce|confeit|torta|sobremesa/i, Cake],
+  [/marmita|refei|prato|card[aá]pio|buffet|almo[cç]o|coffee/i, UtensilsCrossed],
+  [/p[aã]es|padaria|caf[eé]/i, ChefHat],
+  [/interior|decora/i, Sofa],
+  [/projeto|arquitet|planta/i, Ruler],
+  [/foto|ensaio/i, Camera],
+  [/design|identidade|marca|arte/i, Palette],
+  [/im[oó]ve|compra|venda|loca[cç]|aluguel/i, House],
+  [/visita/i, KeyRound],
+  [/contab|imposto|fiscal/i, Calculator],
+  [/jur[ií]d|contrato|processo judicial/i, Scale],
+  [/diagn[oó]stic|planejamento|estrat[eé]g/i, Compass],
+  [/consultoria|acompanhamento|mentoria/i, Briefcase],
+  [/treino|aula em grupo|avalia[cç][aã]o f[ií]sica|pilates/i, Dumbbell],
+  [/aula|curso|turma|viol[aã]o|piano|canto|idioma/i, GraduationCap],
+  [/revis[aã]o|[oó]leo|freio|pneu|motor/i, Car],
+  [/est[eé]tica|pele|sobrancelh|facial|unha|manicure|pedicure/i, Sparkles],
+  [/cuidado|orienta/i, HandHeart],
+  [/conversa|atendimento/i, MessageCircle],
+  [/proposta|or[cç]amento/i, ClipboardList],
+  [/escrita|texto|redação/i, PenTool],
+];
+const iconFor = (name: string): LucideIcon => ICONS.find(([re]) => re.test(name))?.[1] ?? Check;
 
-/** Lista própria com lacunas preenchidas pelo exemplo; vazia = exemplo inteiro. */
-const fill = (own: string[], example: string[]) => (own.some((t) => t.trim()) ? own.map((t, i) => t.trim() || example[i] || '').filter(Boolean) : example);
+/* ── Peças comuns ─────────────────────────────────────────────────────────── */
 
-/**
- * Textos das seções exatamente como a prévia mostra: os do visitante (ou da
- * IA) e, no que faltar, os de exemplo do segmento. Usado também como
- * sugestão nos campos de edição.
- */
-export function previewTexts(p: Project): Project['previewCopy'] {
-  const c = siteContent(p);
-  const detail = isRealEstateProject(p) ? segmentCopy.imoveis : segmentCopy[p.segment] ?? segmentCopy.default;
-  return {
-    about: c.previewCopy.about || detail.about,
-    serviceDetails: c.services.map((_, i) => c.previewCopy.serviceDetails[i] || detail.serviceDetails[i] || detail.serviceDetails[0]),
-    differentials: fill(c.previewCopy.differentials, detail.differentials),
-    processSteps: fill(c.previewCopy.processSteps, detail.processSteps),
-    faqQuestions: fill(c.previewCopy.faqQuestions, detail.faqQuestions),
-  };
-}
-
-/**
- * Ilustrações do segmento para galeria e itens, quando a prévia é mesmo
- * desse segmento (a imagem do topo é dele). Sem repetir a imagem do topo.
- */
-function artFor(p: Project, heroImage: string) {
-  const seg = segmentOf(p);
-  const own = heroImage === seg.image || [...seg.art.gallery, ...seg.art.items].some(([img]) => img === heroImage);
-  if (!own) return { gallery: [] as [string, string][], items: [] as [string, string][] };
-  return { gallery: seg.art.gallery.filter(([img]) => img !== heroImage), items: seg.art.items.filter(([img]) => img !== heroImage) };
-}
-
-/** Foto ilustrativa com legenda curta (exemplo, não trabalho real). */
-function Illustration({ src, caption, className }: { src: string; caption?: string; className: string }) {
+/** Imagem do catálogo com corte e ponto focal. Ilustrativa: o texto alternativo diz o que é. */
+function Media({ item, crop, className, lazy, caption }: { item: Asset; crop: AssetCrop; className?: string; lazy?: boolean; caption?: string }) {
   return (
-    <figure className={`${className} ${s.illus}`}>
-      <img src={asset(`/demo/${src}.svg`)} alt="" loading="lazy" width={480} height={360} />
+    <figure className={cx(s.media, className)} data-crop={crop}>
+      <img
+        src={assetUrl(`/demo/${item.id}.svg`)}
+        alt={item.alt}
+        width={ASSET_WIDTH}
+        height={ASSET_HEIGHT}
+        loading={lazy ? 'lazy' : undefined}
+        decoding="async"
+        style={{ objectPosition: item.focal }}
+      />
       {caption && <figcaption>{caption}</figcaption>}
     </figure>
   );
 }
 
-/** Espaço de foto, claramente marcado: nunca a mesma ilustração repetida como se fossem trabalhos diferentes. */
-function PhotoSlot({ label, className }: { label: string; className: string }) {
+const initials = (name: string) =>
+  name
+    .replace(/&/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 2 || /^[A-ZÁÉÍÓÚ]/.test(w))
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join('') || name.slice(0, 1).toUpperCase();
+
+/** Topo sem imagem: a marca e os serviços viram a composição (nunca uma imagem errada). */
+function TypePanel({ plan, className }: { plan: PreviewPlan; className?: string }) {
+  const letters = plan.name.provisional ? null : initials(plan.name.text);
+  const Icon = iconFor(`${plan.subsegment.name} ${plan.content.services[0] ?? ''}`);
   return (
-    <span className={`${className} ${s.slot}`}>
-      <ImageIcon aria-hidden="true" />
-      <span>{label}</span>
+    <div className={cx(s.typePanel, className)} aria-hidden="true">
+      <span className={s.typeMark}>{letters ?? <Icon />}</span>
+      <span className={s.typeList}>
+        {plan.content.services.slice(0, 3).map((x) => (
+          <span key={x}>{x}</span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+function Actions({ plan, className }: { plan: PreviewPlan; className?: string }) {
+  return (
+    <span className={cx(s.actions, className)}>
+      <span className={s.btn}>
+        {!plan.ctaNavigates && <MessageCircle aria-hidden="true" />}
+        {plan.cta}
+      </span>
+      {plan.secondary && (
+        <span className={s.link}>
+          {plan.secondary} <ArrowRight aria-hidden="true" />
+        </span>
+      )}
     </span>
   );
 }
+
+function HeroCopy({ plan, className, children, titleClass }: { plan: PreviewPlan; className?: string; children?: ReactNode; titleClass?: string }) {
+  return (
+    <div className={cx(s.heroCopy, className)}>
+      <span className={s.eyebrow}>{plan.content.segmentName}</span>
+      <span className={cx(s.title, titleClass)}>
+        {plan.content.title}
+      </span>
+      <span className={s.lead}>{plan.content.intro}</span>
+      <Actions plan={plan} />
+      {children}
+    </div>
+  );
+}
+
+function HeroImage({ plan, crop, className, lazy }: { plan: PreviewPlan; crop: AssetCrop; className?: string; lazy?: boolean }) {
+  return plan.heroAsset ? <Media item={plan.heroAsset} crop={crop} className={className} lazy={lazy} /> : <TypePanel plan={plan} className={className} />;
+}
+
+/* ── Primeira dobra de cada família ───────────────────────────────────────── */
+
+function Hero({ plan, lazy }: { plan: PreviewPlan; lazy: boolean }) {
+  const { family, variant, content } = plan;
+  const services = content.services.slice(0, 3);
+  const id = `${family.id}/${variant.id}`;
+
+  switch (id) {
+    case 'local/oferta':
+      return (
+        <section className={cx(s.hero, s.heroSplit)}>
+          <HeroCopy plan={plan}>
+            <ul className={s.checks}>
+              {services.map((x) => (
+                <li key={x}>
+                  <Check aria-hidden="true" /> {x}
+                </li>
+              ))}
+            </ul>
+          </HeroCopy>
+          <HeroImage plan={plan} crop="4:3" className={s.heroMedia} lazy={lazy} />
+        </section>
+      );
+    case 'local/faixa':
+    case 'alimentacao/mesa':
+    case 'imobiliario/orientacao':
+      return (
+        <section className={cx(s.hero, s.heroBand)}>
+          <HeroImage plan={plan} crop="16:9" className={s.bandMedia} lazy={lazy} />
+          <HeroCopy plan={plan} className={s.card}>
+            {family.id === 'imobiliario' && (
+              <ol className={s.miniSteps}>
+                {plan.texts.processSteps.slice(0, 3).map((x, i) => (
+                  <li key={x}>
+                    <b>{i + 1}</b> {x}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </HeroCopy>
+          {family.id !== 'imobiliario' && (
+            <ul className={s.chips}>
+              {services.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+      );
+    case 'beleza/editorial':
+      return (
+        <section className={cx(s.hero, s.heroCover, !plan.heroAsset && s.noImage)}>
+          {plan.heroAsset && <Media item={plan.heroAsset} crop="3:4" className={s.coverMedia} lazy={lazy} />}
+          <HeroCopy plan={plan} className={s.coverCopy} />
+        </section>
+      );
+    case 'beleza/retrato':
+      return (
+        <section className={cx(s.hero, s.heroPortrait)}>
+          <HeroImage plan={plan} crop="3:4" className={s.arch} lazy={lazy} />
+          <HeroCopy plan={plan} />
+        </section>
+      );
+    case 'consultoria/declaracao':
+      return (
+        <section className={cx(s.hero, s.heroStatement)}>
+          <span className={s.eyebrow}>{content.segmentName}</span>
+          <span className={cx(s.title, s.statement)}>
+            {content.title}
+          </span>
+          <div className={s.statementRow}>
+            <span className={s.lead}>{content.intro}</span>
+            <Actions plan={plan} />
+          </div>
+          <ol className={s.areas} aria-label={plan.titles.servicos}>
+            {services.map((x, i) => (
+              <li key={x}>
+                <b>{String(i + 1).padStart(2, '0')}</b> {x}
+              </li>
+            ))}
+          </ol>
+        </section>
+      );
+    case 'portfolio/galeria':
+      return (
+        <section className={cx(s.hero, s.heroOpening)}>
+          <HeroImage plan={plan} crop="16:9" className={s.openingMedia} lazy={lazy} />
+          <div className={s.openingText}>
+            <span className={s.caption}>{plan.heroAsset ? `${plan.heroAsset.caption} · imagem ilustrativa` : content.segmentName}</span>
+            <span className={cx(s.title, s.light)}>
+              {content.title}
+            </span>
+            <div className={s.openingSide}>
+              <span className={s.lead}>{content.intro}</span>
+              <Actions plan={plan} />
+            </div>
+          </div>
+        </section>
+      );
+    case 'portfolio/indice':
+      return (
+        <section className={cx(s.hero, s.heroIndex)}>
+          <span className={s.eyebrow}>{content.segmentName}</span>
+          <span className={cx(s.title, s.light)}>
+            {content.title}
+          </span>
+          <div className={s.indexRow}>
+            <ol className={s.index}>
+              {services.map((x, i) => (
+                <li key={x}>
+                  <b>{String(i + 1).padStart(2, '0')}</b> {x}
+                </li>
+              ))}
+            </ol>
+            <div className={s.indexSide}>
+              <span className={s.lead}>{content.intro}</span>
+              <Actions plan={plan} />
+            </div>
+          </div>
+          {plan.heroAsset && <Media item={plan.heroAsset} crop="16:9" className={s.indexBand} lazy={lazy} />}
+        </section>
+      );
+    case 'imobiliario/apresentacao': {
+      const Icon = iconFor(plan.subsegment.name);
+      return (
+        <section className={cx(s.hero, s.heroSplit, s.heroAgent)}>
+          <HeroCopy plan={plan}>
+            <span className={s.agent}>
+              <span className={s.monogram} aria-hidden="true">
+                {plan.name.provisional ? <Icon /> : initials(plan.name.text)}
+              </span>
+              <span>
+                <b>{plan.name.text}</b>
+                <small>{plan.subsegment.generic ? content.segmentName : plan.subsegment.name}</small>
+              </span>
+            </span>
+          </HeroCopy>
+          <HeroImage plan={plan} crop="4:3" className={s.heroMedia} lazy={lazy} />
+        </section>
+      );
+    }
+    case 'pet/acolhimento':
+      return (
+        <section className={cx(s.hero, s.heroSplit, s.heroCare)}>
+          <HeroCopy plan={plan} />
+          <div className={s.careMedia}>
+            <HeroImage plan={plan} crop="4:3" className={s.heroMedia} lazy={lazy} />
+            <span className={s.carePill}>
+              <CalendarCheck aria-hidden="true" /> {plan.subsegment.id === 'pet-shop' || plan.ctaNavigates ? 'Pedidos pelo WhatsApp' : 'Horário combinado pelo WhatsApp'}
+            </span>
+          </div>
+        </section>
+      );
+    case 'pet/cuidados':
+      return (
+        <section className={cx(s.hero, s.heroTiles)}>
+          <HeroCopy plan={plan} />
+          <ul className={s.tiles}>
+            {services.map((x) => {
+              const Icon = iconFor(x);
+              return (
+                <li key={x}>
+                  <Icon aria-hidden="true" /> {x}
+                </li>
+              );
+            })}
+          </ul>
+          <HeroImage plan={plan} crop="16:9" className={s.tilesMedia} lazy={lazy} />
+        </section>
+      );
+    case 'alimentacao/cardapio':
+      return (
+        <section className={cx(s.hero, s.heroSplit, s.heroMenu)}>
+          <HeroCopy plan={plan}>
+            <ul className={s.menuList}>
+              {services.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+          </HeroCopy>
+          <HeroImage plan={plan} crop="1:1" className={s.plate} lazy={lazy} />
+        </section>
+      );
+    case 'institucional/tipografico':
+      return (
+        <section className={cx(s.hero, s.heroSplit, s.heroMonogram)}>
+          <HeroCopy plan={plan} />
+          <TypePanel plan={plan} className={s.heroMedia} />
+        </section>
+      );
+    case 'consultoria/painel':
+    case 'institucional/equilibrio':
+    default:
+      return (
+        <section className={cx(s.hero, s.heroSplit)}>
+          <HeroCopy plan={plan} />
+          <HeroImage plan={plan} crop="4:3" className={s.heroMedia} lazy={lazy} />
+        </section>
+      );
+  }
+}
+
+/* ── Seções ───────────────────────────────────────────────────────────────── */
+
+function Section({ id, title, children, className, note }: { id: string; title: string; children: ReactNode; className?: string; note?: string }) {
+  return (
+    <section className={cx(s.section, className)} data-section={id}>
+      <span className={s.h}>
+        {title}
+      </span>
+      {children}
+      {note && <span className={s.note}>{note}</span>}
+    </section>
+  );
+}
+
+/** Serviços na apresentação da família. Com poucos serviços, a grade se ajusta (nada de espaço vazio). */
+function Services({ plan, lazy }: { plan: PreviewPlan; lazy: boolean }) {
+  const list = plan.content.services;
+  const details = plan.texts.serviceDetails;
+  const layout = plan.showcase ? 'produtos' : plan.family.services;
+  const count = { '--n': Math.min(list.length, 3) } as CSSProperties;
+  const n = list.length;
+
+  if (layout === 'produtos') {
+    return (
+      <ul className={s.products} style={count} data-count={n}>
+        {list.map((x, i) => {
+          const img = plan.items[i];
+          return (
+            <li key={`${x}-${i}`}>
+              {img ? (
+                <Media item={img} crop="4:3" className={s.productMedia} lazy={lazy} />
+              ) : (
+                <span className={s.productType} aria-hidden="true">
+                  {x.slice(0, 1)}
+                </span>
+              )}
+              <span className={s.productText}>
+                <b>{x}</b>
+                {details[i] && <span>{details[i]}</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+  if (layout === 'menu') {
+    return (
+      <ul className={s.menu} style={count} data-count={n}>
+        {list.map((x, i) => (
+          <li key={`${x}-${i}`}>
+            <b>{x}</b>
+            {details[i] && <span>{details[i]}</span>}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (layout === 'colunas' || layout === 'indice') {
+    return (
+      <ol className={layout === 'colunas' ? s.columns : s.indexList} style={count} data-count={n}>
+        {list.map((x, i) => (
+          <li key={`${x}-${i}`}>
+            <em>{String(i + 1).padStart(2, '0')}</em>
+            <b>{x}</b>
+            {details[i] && <span>{details[i]}</span>}
+          </li>
+        ))}
+      </ol>
+    );
+  }
+  // lista (serviços locais), icones (pet), cartoes (imobiliário, institucional)
+  const cls = layout === 'lista' ? s.list : layout === 'icones' ? s.iconTiles : s.cards;
+  return (
+    <ul className={cls} style={count} data-count={n}>
+      {list.map((x, i) => {
+        const Icon = iconFor(x);
+        return (
+          <li key={`${x}-${i}`}>
+            {layout === 'cartoes' && plan.family.id === 'institucional' ? (
+              <em aria-hidden="true">{String(i + 1).padStart(2, '0')}</em>
+            ) : (
+              <i aria-hidden="true">
+                <Icon />
+              </i>
+            )}
+            <b>{x}</b>
+            {details[i] && <span>{details[i]}</span>}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function Blocks({ plan, p, id, lazy }: { plan: PreviewPlan; p: Project; id: string; lazy: boolean }): ReactNode {
+  const t = plan.titles;
+  const region = p.details.region.trim();
+  switch (id) {
+    case 'servicos':
+      return (
+        <Section id={id} title={t.servicos} key={id} className={s.sServices}>
+          <Services plan={plan} lazy={lazy} />
+        </Section>
+      );
+    case 'sobre': {
+      // Uma imagem de apoio só onde a família pede e se sobrar uma adequada.
+      const side = ['beleza', 'alimentacao', 'portfolio'].includes(plan.family.id) ? plan.aside : null;
+      return (
+        <Section id={id} title={t.sobre} key={id} className={cx(s.sAbout, side && s.withSide)}>
+          <span className={s.text}>{plan.texts.about}</span>
+          {side && <Media item={side} crop="4:3" className={s.sideMedia} lazy />}
+        </Section>
+      );
+    }
+    case 'diferenciais':
+      return (
+        <Section id={id} title={t.diferenciais} key={id} className={s.sDiffs}>
+          <ul className={s.diffs}>
+            {plan.texts.differentials.map((d) => (
+              <li key={d}>
+                <Check aria-hidden="true" /> {d}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      );
+    case 'atendimento':
+      return (
+        <Section id={id} title={t.atendimento} key={id} className={s.sInfo}>
+          <ul className={s.info}>
+            <li>
+              <MessageCircle aria-hidden="true" /> {plan.contactNote}
+            </li>
+            {region && (
+              <li>
+                <MapPin aria-hidden="true" /> Atende em {region}
+              </li>
+            )}
+            <li className={s.muted}>
+              <Clock aria-hidden="true" /> {region ? 'Dias e horários: você informa antes da publicação.' : 'Endereço, região e horários: você informa antes da publicação.'}
+            </li>
+          </ul>
+        </Section>
+      );
+    case 'processo':
+      return (
+        <Section id={id} title={t.processo} key={id} className={s.sSteps}>
+          <ol className={s.steps}>
+            {plan.texts.processSteps.map((x, i) => (
+              <li key={x}>
+                <b>{i + 1}</b>
+                <span>{x}</span>
+              </li>
+            ))}
+          </ol>
+        </Section>
+      );
+    case 'galeria': {
+      const tiles = plan.gallery;
+      const size = Math.min(p.gallery, currentPackage(p).galleryImages || p.gallery);
+      return (
+        <Section id={id} title={t.galeria} key={id} className={s.sGallery} note={`Imagens ilustrativas · no site entram até ${size} fotos suas.`}>
+          {tiles.length ? (
+            <div className={s.gallery} data-count={tiles.length}>
+              {tiles.map((x) => (
+                <Media key={x.id} item={x} crop="4:3" className={s.tile} lazy caption={x.caption} />
+              ))}
+            </div>
+          ) : (
+            <div className={s.galleryEmpty} aria-hidden="true">
+              <Camera /> Suas fotos, organizadas nesta galeria
+            </div>
+          )}
+        </Section>
+      );
+    }
+    case 'faq':
+      return (
+        <Section id={id} title={t.faq} key={id} className={s.sFaq} note="Perguntas de exemplo · as respostas são suas.">
+          <ul className={s.faq}>
+            {plan.texts.faqQuestions.map((q) => (
+              <li key={q}>
+                {q} <Plus aria-hidden="true" />
+              </li>
+            ))}
+          </ul>
+        </Section>
+      );
+    case 'depoimentos':
+      return (
+        <Section id={id} title={t.depoimentos} key={id} className={s.sQuotes}>
+          <div className={s.quote}>
+            <Quote aria-hidden="true" />
+            <span>Relatos reais dos seus clientes entram aqui, com a autorização de cada pessoa. A prévia não inventa depoimentos.</span>
+          </div>
+        </Section>
+      );
+    case 'vitrine': {
+      const realEstate = plan.family.id === 'imobiliario';
+      const items = plan.items.slice(0, 6);
+      const max = currentPackage(p).showcaseItems || 10;
+      return (
+        <Section
+          id={id}
+          title={t.vitrine}
+          key={id}
+          className={s.sShowcase}
+          note={realEstate ? `Imóveis ilustrativos · sem preço, endereço ou disponibilidade · até ${max} no site.` : `Itens ilustrativos · até ${max} no site · pedido pelo WhatsApp, sem pagamento online.`}
+        >
+          <ul className={s.products} style={{ '--n': 3 } as CSSProperties}>
+            {(items.length ? items : plan.content.services.map(() => null)).map((x, i) => (
+              <li key={x?.id ?? i}>
+                {x ? (
+                  <Media item={x} crop="4:3" className={s.productMedia} lazy />
+                ) : (
+                  <span className={s.productType} aria-hidden="true">
+                    {plan.content.services[i]?.slice(0, 1)}
+                  </span>
+                )}
+                <span className={s.productText}>
+                  <b>{x?.caption ?? plan.content.services[i]}</b>
+                  <span>{realEstate ? 'Imóvel ilustrativo · bairro e detalhes informados por você' : 'Detalhes e disponibilidade pelo WhatsApp'}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      );
+    }
+    default:
+      return null;
+  }
+}
+
+/* ── Componente ───────────────────────────────────────────────────────────── */
 
 export function SitePreview({
   project: p,
@@ -150,228 +636,41 @@ export function SitePreview({
   mobile?: boolean;
   /** Sem barra de navegador (tela cheia ou celular). */
   bare?: boolean;
-  /** Exemplo da apresentação: usa o nome fictício do segmento. */
+  /** Exemplo da apresentação: usa o nome fictício do tipo de negócio. */
   demo?: boolean;
   /** Imagem carregada só perto da tela (miniaturas abaixo da dobra). */
   lazy?: boolean;
 }) {
-  const c = siteContent(p, { demo });
-  const obj = objectiveOf(p);
-  const palette = palettes.find((x) => x.id === p.palette) ?? palettes[0];
-  const accent = p.custom ?? palette.accent;
-  const image = asset(`/demo/${c.image}.svg`);
-  const head = headFont(p.font, p.direction);
+  const plan = previewPlan(p, { demo });
+  const { family, variant, name } = plan;
   const vars = {
-    '--acc': accent,
-    '--on': contrastInk(accent),
-    '--soft': p.custom ? `color-mix(in srgb, ${accent} 8%, #fff)` : palette.bg,
-    '--head': head,
+    '--acc': plan.accent,
+    '--on': plan.on,
+    ...(plan.soft ? { '--soft': plan.soft } : {}),
+    '--head': plan.headStack,
   } as CSSProperties;
-
-  const middle = p.sections.filter((id) => id !== 'apresentacao' && id !== 'contato');
-  const navLinks = middle.slice(0, 3).map((id) => sectionName(p, id).replace(/ em destaque$/, '').replace('Informações de atendimento', 'Atendimento'));
-  const showcase = p.objective === 'produtos' || p.objective === 'trabalhos';
-  const isRealEstate = isRealEstateProject(p);
-  const texts = previewTexts(p);
-  const serviceDetails = texts.serviceDetails;
-  const region = p.details.region.trim();
-  const art = artFor(p, c.image);
-
-  // Composição por segmento: títulos e blocos próprios, só com o que o pacote cobre.
-  const seg = isRealEstate ? 'imoveis' : p.segment;
-  const servicesTitle =
-    seg === 'consultoria' ? 'Áreas de atuação' : seg === 'imoveis' ? 'Como posso ajudar' : seg === 'alimentacao' && !showcase ? 'Destaques da casa' : p.objective === 'orcamento' ? 'O que fazemos' : sectionName(p, 'servicos');
-  const bookable = p.objective === 'agendamento';
-
-  const blocks: Record<string, () => ReactNode> = {
-    servicos: () => (
-      <div className={s.section} key="servicos">
-        <span className={s.h}>{servicesTitle}</span>
-        <div className={showcase ? s.products : s.cards}>
-          {c.services.map((sv, i) =>
-            showcase ? (
-              <div key={`${sv}-${i}`} className={s.product}>
-                {art.items[i] ? (
-                  <Illustration className={s.productImg} src={art.items[i][0]} />
-                ) : (
-                  <PhotoSlot className={s.productImg} label={p.objective === 'trabalhos' ? 'Foto do trabalho' : 'Foto do produto'} />
-                )}
-                <span className={s.cardTitle}>{sv}</span>
-              </div>
-            ) : (
-              <div key={`${sv}-${i}`} className={s.card}>
-                <span className={s.num}>0{i + 1}</span>
-                <span className={s.cardTitle}>{sv}</span>
-                <span className={s.cardText}>{serviceDetails[i]}</span>
-                {bookable && <span className={s.pill}>Pedir um horário</span>}
-              </div>
-            ),
-          )}
-        </div>
-      </div>
-    ),
-    sobre: () => (
-      <div className={`${s.section} ${s.about}`} key="sobre">
-        <span className={s.h}>Sobre {c.name}</span>
-        <span className={s.text}>{texts.about}</span>
-      </div>
-    ),
-    diferenciais: () => (
-      <div className={s.section} key="diferenciais">
-        <span className={s.h}>Por que escolher {c.name}</span>
-        <ul className={s.list}>
-          {texts.differentials.map((d) => (
-            <li key={d}>{d}</li>
-          ))}
-        </ul>
-      </div>
-    ),
-    atendimento: () => (
-      <div className={s.section} key="atendimento">
-        <span className={s.h}>Atendimento</span>
-        <div className={s.info}>
-          <span>
-            <Clock aria-hidden="true" /> Seus dias e horários
-          </span>
-          <span>
-            <MapPin aria-hidden="true" /> {region || 'Sua região ou endereço'}
-          </span>
-          <span>
-            <MessageCircle aria-hidden="true" /> {p.objective === 'agendamento' ? 'Pedido de horário pelo WhatsApp' : 'Contato pelo WhatsApp'}
-          </span>
-        </div>
-        <Tag>Você informa estes dados</Tag>
-      </div>
-    ),
-    processo: () => (
-      <div className={s.section} key="processo">
-        <span className={s.h}>Como funciona</span>
-        <ol className={s.steps}>
-          {texts.processSteps.map((t, i) => (
-            <li key={t}>
-              <b>{i + 1}</b>
-              {t}
-            </li>
-          ))}
-        </ol>
-      </div>
-    ),
-    galeria: () => {
-      // Ilustrações do segmento (4 a 6); sem elas, espaços marcados para as fotos do visitante.
-      const tiles = art.gallery.slice(0, 6);
-      const slots = Math.max(0, 4 - tiles.length);
-      const n = tiles.length + slots;
-      const portfolio = (seg === 'criativo' || p.objective === 'trabalhos') && n === 5;
-      return (
-        <div className={s.section} key="galeria">
-          <span className={s.h}>{seg === 'criativo' ? 'Projetos' : seg === 'imoveis' ? 'Fotos' : p.objective === 'trabalhos' ? 'Trabalhos' : 'Galeria'}</span>
-          <div
-            className={`${s.gallery} ${portfolio ? s.portfolio : ''}`}
-            style={{ '--gm': portfolio || n % 3 !== 0 ? 2 : 3, '--gd': portfolio ? 4 : n } as CSSProperties}
-          >
-            {tiles.map(([img, caption]) => (
-              <Illustration key={img} className={s.tile} src={img} caption={caption} />
-            ))}
-            {Array.from({ length: slots }, (_, i) => (
-              <PhotoSlot key={`slot-${i}`} className={s.tile} label={`Sua foto ${tiles.length + i + 1}`} />
-            ))}
-          </div>
-          <Tag>
-            <ImageIcon aria-hidden="true" /> {tiles.length ? 'Imagens ilustrativas · no site final entram as suas fotos' : 'Suas fotos entram aqui'} · até {p.gallery} fotos
-          </Tag>
-        </div>
-      );
-    },
-    faq: () => (
-      <div className={s.section} key="faq">
-        <span className={s.h}>Perguntas frequentes</span>
-        <div className={s.faq}>
-          {texts.faqQuestions.map((q) => (
-            <span key={q}>{q}</span>
-          ))}
-        </div>
-        <Tag>
-          <HelpCircle aria-hidden="true" /> Perguntas de exemplo · as respostas são suas
-        </Tag>
-      </div>
-    ),
-    depoimentos: () => (
-      <div className={s.section} key="depoimentos">
-        <span className={s.h}>Depoimentos</span>
-        <div className={s.quote}>
-          <Quote aria-hidden="true" />
-          <span className={s.text}>Espaço reservado para relatos reais dos seus clientes, com autorização. A prévia não inventa depoimentos.</span>
-        </div>
-      </div>
-    ),
-    vitrine: () =>
-      seg === 'imoveis' ? (
-        // Imóveis: vitrine demonstrativa, sem preço, endereço ou disponibilidade inventados.
-        <div className={s.section} key="vitrine">
-          <span className={s.h}>Imóveis em destaque</span>
-          <div className={s.products}>
-            {[0, 1, 2].map((n) => (
-              <div key={n} className={s.product}>
-                {art.items[n] ? <Illustration className={s.productImg} src={art.items[n][0]} /> : <PhotoSlot className={s.productImg} label="Foto do imóvel" />}
-                <span className={s.cardTitle}>{art.items[n]?.[1] ?? `Imóvel ilustrativo ${n + 1}`}</span>
-                <span className={s.meta}>Bairro e detalhes informados por você</span>
-                <span className={s.pill}>{bookable ? 'Agendar visita pelo WhatsApp' : 'Consultar pelo WhatsApp'}</span>
-              </div>
-            ))}
-          </div>
-          <Tag>Imóveis ilustrativos · sem preços nem disponibilidade · até 10 no site</Tag>
-        </div>
-      ) : seg === 'alimentacao' ? (
-        // Alimentação: itens por categoria, pedido pelo WhatsApp, sem pagamento online.
-        <div className={s.section} key="vitrine">
-          <span className={s.h}>Cardápio</span>
-          <div className={s.categories}>
-            {c.services.map((cat, i) => (
-              <span key={`${cat}-${i}`} data-on={i === 0 || undefined}>
-                {cat}
-              </span>
-            ))}
-          </div>
-          <div className={s.products}>
-            {(art.items.length ? art.items : [['', 'Item 1'], ['', 'Item 2'], ['', 'Item 3']]).map(([img, name]) => (
-              <div key={name} className={s.product}>
-                {img ? <Illustration className={s.productImg} src={img} /> : <PhotoSlot className={s.productImg} label="Foto do item" />}
-                <span className={s.cardTitle}>{name}</span>
-                <span className={s.pill}>Pedir pelo WhatsApp</span>
-              </div>
-            ))}
-          </div>
-          <Tag>Itens ilustrativos · até 10 no site · pedido pelo WhatsApp, sem pagamento online</Tag>
-        </div>
-      ) : (
-        <div className={s.section} key="vitrine">
-          <span className={s.h}>{p.objective === 'produtos' ? 'Vitrine' : 'Escolha o seu'}</span>
-          <div className={s.products}>
-            {[...c.services, 'Item 4', 'Item 5', 'Item 6'].slice(0, Math.max(3, art.items.length || 6)).map((sv, i) => (
-              <div key={`${sv}-${i}`} className={s.product}>
-                {art.items[i] ? <Illustration className={s.productImg} src={art.items[i][0]} /> : <PhotoSlot className={s.productImg} label="Foto do item" />}
-                <span className={s.cardTitle}>{sv}</span>
-                <span className={s.pill}>Pedir pelo WhatsApp</span>
-              </div>
-            ))}
-          </div>
-          <Tag>Itens de exemplo · até 10 · pedido pelo WhatsApp, sem pagamento online</Tag>
-        </div>
-      ),
-  };
-
-  const contactTitle = { orcamento: 'Peça seu orçamento', agendamento: 'Peça seu horário', produtos: 'Faça seu pedido' }[p.objective] ?? 'Vamos conversar?';
+  const navLinks = plan.sections.slice(0, 3).map((id) => plan.titles[id]);
+  const shown = compact ? plan.sections.slice(0, 1) : plan.sections;
 
   return (
     <div
-      className={`${s.root} ${styleClass[p.direction] ?? s.minimal} ${isRealEstate ? s.realEstate : ''} ${mobile ? s.forceMobile : ''} ${bare ? s.bare : ''}`}
+      className={cx(s.root, s[`f_${family.id}`], s[`d_${p.direction}`], s[`t_${plan.typography}`], p.custom && s.customColor, mobile && s.forceMobile, bare && s.bare)}
       style={vars}
       role="group"
       aria-roledescription="prévia"
-      aria-label={`Prévia do site de ${c.name}`}
+      aria-label={`Prévia do site de ${name.text}${name.provisional ? ' (nome provisório)' : ''}`}
+      data-family={family.id}
+      data-layout={variant.id}
+      data-hero={plan.hero}
+      data-subsegment={plan.subsegment.id}
+      data-image={plan.heroAsset?.id ?? ''}
     >
       {bare ? (
-        !compact && <div className={s.strip}>Prévia demonstrativa · textos sugeridos para você revisar</div>
+        !compact && (
+          <div className={s.strip}>
+            Prévia demonstrativa{name.provisional ? ' · nome provisório' : ''}
+          </div>
+        )
       ) : (
         <div className={s.bar} aria-hidden="true">
           <span className={s.dots}>
@@ -379,7 +678,7 @@ export function SitePreview({
             <i />
             <i />
           </span>
-          <span className={s.url}>{c.name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '') || 'suaempresa'}.com.br</span>
+          <span className={s.url}>prévia ilustrativa · endereço definido na publicação</span>
           <span className={s.badge}>Prévia</span>
         </div>
       )}
@@ -387,64 +686,57 @@ export function SitePreview({
       <div className={s.site}>
         <div className={s.nav}>
           {logo ? (
-            <span className={`${s.logoBox} ${darkHeader.has(p.direction) ? s.logoOnDark : ''}`}>
-              <img className={s.logo} src={logo} alt={c.name} />
+            <span className={s.logoBox}>
+              <img className={s.logo} src={logo} alt={name.text} />
             </span>
           ) : (
-            <span className={s.brand}>{c.name}</span>
+            <span className={cx(s.brand, name.provisional && s.provisional)}>{name.text}</span>
           )}
           <span className={s.links}>
             {navLinks.map((l) => (
               <span key={l}>{l}</span>
             ))}
           </span>
-          <span className={s.navCta}>{c.cta}</span>
+          <span className={s.navCta}>{plan.cta}</span>
         </div>
 
-        <div className={s.hero}>
-          <img className={s.heroImg} src={image} alt="" width={480} height={360} loading={lazy ? 'lazy' : undefined} />
-          <div className={s.heroText}>
-            <span className={s.eyebrow}>{c.segmentName}</span>
-            <span className={s.title}>{c.title}</span>
-            <span className={s.lead}>{c.intro}</span>
-            <span className={s.actions}>
-              <span className={s.btn}>{c.cta}</span>
-              <span className={s.btnGhost}>
-                <MessageCircle aria-hidden="true" /> WhatsApp
+        <Hero plan={plan} lazy={lazy} />
+
+        {shown.map((id) => (
+          <Blocks key={id} plan={plan} p={p} id={id} lazy={lazy || compact} />
+        ))}
+
+        {!compact && (
+          <>
+            <section className={cx(s.section, s.contact)} data-section="contato">
+              <span className={s.h}>
+                {plan.contactTitle}
               </span>
-            </span>
-          </div>
-        </div>
-
-        {compact
-          ? middle.slice(0, 1).map((id) => blocks[id]?.())
-          : (
-            <>
-              {middle.map((id) => blocks[id]?.())}
-              <div className={`${s.section} ${s.contact}`}>
-                <span className={s.h}>{contactTitle}</span>
-                {p.form ? (
-                  <div className={s.form}>
-                    <span className={s.input}>Seu nome</span>
-                    <span className={s.input}>{p.objective === 'agendamento' ? 'Serviço e melhor dia' : p.objective === 'produtos' ? 'O que você quer pedir' : 'O que você precisa'}</span>
-                    <span className={`${s.input} ${s.area}`}>Mensagem</span>
-                    <span className={s.btn}>Enviar pelo WhatsApp</span>
-                  </div>
-                ) : (
-                  <span className={s.actions}>
-                    <span className={s.btn}>
-                      <MessageCircle aria-hidden="true" /> {c.cta} pelo WhatsApp
-                    </span>
+              <span className={s.text}>{plan.contactNote}</span>
+              {p.form ? (
+                <span className={s.form}>
+                  <span className={s.input}>Seu nome</span>
+                  <span className={s.input}>{p.objective === 'agendamento' ? 'Serviço e melhor dia' : p.objective === 'produtos' ? 'O que você quer pedir' : 'O que você precisa'}</span>
+                  <span className={cx(s.input, s.area)}>Mensagem</span>
+                  <span className={s.btn}>Enviar pelo WhatsApp</span>
+                </span>
+              ) : (
+                <span className={s.actions}>
+                  <span className={s.btn}>
+                    <MessageCircle aria-hidden="true" /> {plan.ctaNavigates ? 'Falar pelo WhatsApp' : plan.cta}
                   </span>
-                )}
-                <span className={s.text}>{obj.contactPath}.</span>
-              </div>
-              <div className={s.footer}>
-                <span>© {c.name}</span>
-                <span>Prévia demonstrativa · textos sugeridos e imagens ilustrativas, revisados antes de publicar</span>
-              </div>
-            </>
-          )}
+                </span>
+              )}
+            </section>
+            <div className={s.footer}>
+              <span>
+                © {name.text}
+                {name.provisional ? ' · nome provisório' : ''}
+              </span>
+              <span>Prévia demonstrativa · textos sugeridos e imagens ilustrativas, revisados antes de publicar</span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -21,7 +21,9 @@ import {
   exportFileName,
   exportProject,
   fontLabel,
+  compositionLabel,
   importProject,
+  subsegmentOf,
   decisionRoles,
   desiredDeadlines,
   investmentLabel,
@@ -54,12 +56,14 @@ type Row = { label: string; value: string; step?: number };
 export function summaryRows(p: Project, { logo = false } = {}): Row[] {
   const pkg = currentPackage(p);
   return [
-    { label: 'Empresa', value: p.name.trim() || 'A informar', step: STEP.conteudo },
+    { label: 'Empresa', value: p.name.trim() || `Nome provisório: ${subsegmentOf(p).provisional}`, step: STEP.conteudo },
     { label: 'Segmento', value: segmentLabel(p), step: STEP.negocio },
+    ...(p.segment && !subsegmentOf(p).generic ? [{ label: 'Tipo de negócio', value: subsegmentOf(p).name, step: STEP.negocio }] : []),
     { label: 'Serviço ou produto principal', value: serviceLabel(p), step: STEP.negocio },
     { label: 'Objetivo', value: objectiveOf(p).name, step: STEP.objetivo },
     { label: 'Pacote', value: isCustom(p) ? `Projeto personalizado (referência: ${pkg.name})` : `${pkg.name} · ${investmentLabel(p)}`, step: STEP.pacote },
     { label: 'Valor do desenvolvimento', value: investmentLabel(p) },
+    { label: 'Composição', value: compositionLabel(p), step: STEP.estilo },
     { label: 'Estilo', value: `${directions.find((d) => d.id === p.direction)!.name}${logo ? ' · com logo' : ''}`, step: STEP.estilo },
     { label: 'Cores', value: colorLabel(p), step: STEP.cores },
     { label: 'Fonte dos títulos', value: fontLabel(p), step: STEP.titulos },
@@ -207,7 +211,7 @@ export function StepSite({
 
   return (
     <>
-      <p className={b.projectName}>Site de {content.name}</p>
+      <p className={b.projectName}>{content.nameProvisional ? `Site de ${content.name.charAt(0).toLowerCase()}${content.name.slice(1)} (nome provisório)` : `Site de ${content.name}`}</p>
       <p className={b.projectGoal}>Objetivo: {objectiveOf(p).name}</p>
 
       <div className={b.invest}>

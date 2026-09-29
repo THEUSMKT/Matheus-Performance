@@ -18,10 +18,10 @@
    para a transcrição. Nos navegadores internos do Instagram e do Facebook,
    um aviso explica que o microfone pode não funcionar e oferece digitar.
    ========================================================================== */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Keyboard, LoaderCircle, Mic, Sparkles, Square } from 'lucide-react';
 import { integrations } from '@/config/integrations';
-import { DESCRIPTION_MAX, DESCRIPTION_MIN, hasContactData } from '@/lib/aiPreview';
+import { DESCRIPTION_MAX, DESCRIPTION_MIN, hasContactData, suggestNameFromText } from '@/lib/aiPreview';
 import { AUDIO_MAX_SECONDS, AUDIO_MIN_SECONDS, audioReasonText, audioSupported, blobToWav, recordingMime, requestTranscript, toBase64 } from '@/lib/aiAudio';
 import { track } from '@/lib/analytics';
 import { asset } from '../landing/Chrome';
@@ -42,7 +42,16 @@ export function Describe({
   onGenerate,
   onPhase,
   clearError,
+  nameSlot = null,
+  hasName = true,
+  onUseName,
 }: {
+  /** "Como se chama seu negócio?" — aparece junto com a ideia, sem virar outra etapa. */
+  nameSlot?: ReactNode;
+  /** Já há nome (ou "ainda não defini"): não sugerir outro. */
+  hasName?: boolean;
+  /** Usar o nome encontrado na descrição. */
+  onUseName?: (name: string) => void;
   generating: boolean;
   /** Erro da geração (vem do Builder). */
   error: string;
@@ -259,12 +268,15 @@ export function Describe({
   }
 
   const shownError = error || genError;
+  const foundName = !hasName && onUseName && phase === 'texto' ? suggestNameFromText(text) : '';
 
   return (
     <section className={b.describe} aria-labelledby="descrever-titulo" data-phase={generating ? 'gerando' : phase}>
       <h2 id="descrever-titulo" className={s.srOnly}>
         Sua ideia para o site
       </h2>
+
+      {(phase === 'escolher' || phase === 'texto') && nameSlot}
 
       {phase === 'escolher' && (
         <div className={b.choose}>
@@ -349,6 +361,14 @@ export function Describe({
               onChange={(ev) => change(ev.target.value)}
             />
           </label>
+          {foundName && (
+            <p className={b.nameFound} role="status">
+              Encontramos <strong>“{foundName}”</strong> na sua descrição.{' '}
+              <button type="button" className={b.textButton} onClick={() => onUseName?.(foundName)}>
+                Usar este nome
+              </button>
+            </p>
+          )}
           <div className={b.audioRow}>
             {fromAudio ? <p className={b.checkText}>Confira o texto antes de gerar.</p> : <span />}
             <p className={b.counter} aria-hidden="true">

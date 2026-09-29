@@ -3,15 +3,18 @@
    Caminho passo a passo (sem descrição): Seu negócio e Seu objetivo.
    Só nome e segmento são obrigatórios; o resto tem sugestão pronta.
    ========================================================================== */
-import type { RefObject } from 'react';
+import { useRef, type RefObject } from 'react';
 import { Building2, CalendarClock, Images, LayoutGrid, ReceiptText, ShoppingBag, Sparkles } from 'lucide-react';
 import { brl, packageById, rank } from '@/config/packages';
 import {
+  ctaOf,
   dropStaleCopy,
   objectiveOf,
   objectives,
   recommendation,
+  renameInTexts,
   segmentOf,
+  subsegmentOf,
   segments,
   selectedSections,
   withObjective,
@@ -34,6 +37,69 @@ const objectiveIcon: Record<string, typeof ReceiptText> = {
 };
 
 export type StepErrors = { name?: string; segment?: string };
+
+/**
+ * "Como se chama seu negócio?" — antes da prévia, no caminho por descrição e
+ * no passo a passo. "Ainda não defini o nome." usa um nome provisório do
+ * tipo de negócio ("Sua clínica") e não impede a prévia. Ao terminar de
+ * editar, o nome antigo é trocado pelo novo só nos textos sugeridos pela IA.
+ */
+export function NameField({
+  p,
+  replace,
+  id = 'nome-empresa',
+  error,
+  inputRef,
+}: {
+  p: Project;
+  replace: Replace;
+  id?: string;
+  error?: string;
+  inputRef?: RefObject<HTMLInputElement | null>;
+}) {
+  const before = useRef(p.name);
+  const provisional = subsegmentOf(p).provisional;
+  const errorId = `erro-${id}`;
+  return (
+    <div className={b.nameField}>
+      <label className={s.field}>
+        Como se chama seu negócio?
+        <small id={`${id}-ajuda`}>Esse nome aparece na prévia.</small>
+        <input
+          ref={inputRef}
+          id={id}
+          maxLength={80}
+          value={p.name}
+          disabled={p.nameLater}
+          placeholder={p.nameLater ? `Nome provisório: ${provisional}` : 'Ex.: Clínica Vila Pet'}
+          autoComplete="organization"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? errorId : `${id}-ajuda`}
+          onFocus={() => (before.current = p.name)}
+          onChange={(ev) => replace({ ...p, name: ev.target.value, aiFilled: { ...p.aiFilled, name: p.aiFilled.name === ev.target.value ? p.aiFilled.name : '' } })}
+          onBlur={() => {
+            if (before.current.trim() && before.current !== p.name) replace(renameInTexts(p, before.current, p.name));
+            before.current = p.name;
+          }}
+        />
+        {error && (
+          <span className={s.fieldError} id={errorId}>
+            {error}
+          </span>
+        )}
+      </label>
+      <label className={b.laterRow}>
+        <input type="checkbox" checked={p.nameLater} onChange={(ev) => replace({ ...p, nameLater: ev.target.checked, name: ev.target.checked ? '' : p.name, aiFilled: { ...p.aiFilled, name: '' } })} />
+        <span>Ainda não defini o nome.</span>
+      </label>
+      {p.nameLater && (
+        <p className={b.muted} role="status">
+          A prévia usa “{provisional}” como nome provisório. Troque quando decidir — o nome muda em todo o site e no pedido.
+        </p>
+      )}
+    </div>
+  );
+}
 
 /* ── Etapa 1 — Seu negócio ─────────────────────────────────────────────── */
 
@@ -64,25 +130,7 @@ export function StepBusiness({
   return (
     <>
       <div className={b.group}>
-        <label className={s.field}>
-          Nome da empresa
-          <input
-            ref={nameRef}
-            id="nome-empresa"
-            maxLength={80}
-            value={p.name}
-            placeholder="Ex.: Clima Sul Refrigeração"
-            autoComplete="organization"
-            aria-invalid={Boolean(errors.name)}
-            aria-describedby={errors.name ? 'erro-nome-empresa' : undefined}
-            onChange={(ev) => edit({ name: ev.target.value })}
-          />
-          {errors.name && (
-            <span className={s.fieldError} id="erro-nome-empresa">
-              {errors.name}
-            </span>
-          )}
-        </label>
+        <NameField p={p} replace={replace} error={errors.name} inputRef={nameRef} />
       </div>
 
       <Radios
@@ -171,7 +219,7 @@ export function StepObjective({ p, replace, onUpgrade }: { p: Project; replace: 
         <dl>
           <div>
             <dt>Botão principal</dt>
-            <dd>“{obj.cta}”</dd>
+            <dd>“{ctaOf(p)}”</dd>
           </div>
           <div>
             <dt>Contato</dt>

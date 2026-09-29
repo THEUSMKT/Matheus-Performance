@@ -1,6 +1,8 @@
 'use client';
 /* ==========================================================================
-   Modelos demonstrativos por segmento (página de exemplos).
+   Modelos demonstrativos por segmento (página de exemplos): um para cada
+   família visual, montados pelo mesmo plano da criação (lib/plan.ts) — a
+   miniatura, o exemplo aberto e a prévia criada a partir dele são iguais.
 
    Grade — uma coluna no celular, sem rolagem lateral para descobrir os
    modelos. Filtros quebram linha e têm área de toque de 44px.
@@ -13,7 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Monitor, Smartphone, X } from 'lucide-react';
 import { brl, packageById } from '@/config/packages';
-import { exampleProject, segments } from '@/lib/project';
+import { exampleProject, familyOf, segments, subsegmentOf } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { SitePreview } from '../preview/SitePreview';
 import { builderHref } from './Chrome';
@@ -21,13 +23,19 @@ import { DesktopFrame, PhoneFrame } from './DemoFrames';
 import { useNarrow } from './useProject';
 import s from './Landing.module.css';
 
-export const demoSegments = segments.filter((x) => x.id !== 'outro');
+export const demoSegments = segments;
 
 /** Link da criação já com o modelo (a criação confirma antes de trocar um rascunho). */
 export const modelHref = (id: string) => `${builderHref}?modelo=${id}`;
 
 function packageOf(id: string) {
   return packageById(exampleProject(id).pkg);
+}
+
+/** Nome fictício e família do exemplo (os mesmos que a prévia mostra). */
+function exampleInfo(id: string) {
+  const p = exampleProject(id);
+  return { demo: subsegmentOf(p).demo, family: familyOf(p) };
 }
 
 export function ExampleGallery({ initialFilter = 'todos' }: { initialFilter?: string }) {
@@ -38,7 +46,7 @@ export function ExampleGallery({ initialFilter = 'todos' }: { initialFilter?: st
   const small = useNarrow('(max-width: 759px)');
   const [deviceChoice, setDevice] = useState<'desktop' | 'mobile' | null>(null);
   const device = deviceChoice ?? (small ? 'mobile' : 'desktop');
-  /** Filtro por segmento ("todos" mostra também o cartão "Outro segmento"). */
+  /** Filtro por segmento. */
   const [filter, setFilter] = useState('todos');
   const shown = demoSegments.map((_, i) => i).filter((i) => filter === 'todos' || demoSegments[i].id === filter);
 
@@ -87,13 +95,14 @@ export function ExampleGallery({ initialFilter = 'todos' }: { initialFilter?: st
         ))}
       </div>
       <p className={s.srOnly} aria-live="polite">
-        {filter === 'todos' ? `${demoSegments.length} modelos e a opção de outro segmento.` : `Mostrando o modelo de ${demoSegments.find((x) => x.id === filter)?.name}.`}
+        {filter === 'todos' ? `${demoSegments.length} modelos, cada um com uma composição própria.` : `Mostrando o modelo de ${demoSegments.find((x) => x.id === filter)?.name}.`}
       </p>
 
       <ul className={s.exampleGrid}>
         {shown.map((i) => {
           const x = demoSegments[i];
           const pkg = packageOf(x.id);
+          const info = exampleInfo(x.id);
           return (
             <li key={x.id} className={s.exampleCard}>
               <button
@@ -112,7 +121,8 @@ export function ExampleGallery({ initialFilter = 'todos' }: { initialFilter?: st
                 <h3 className={s.exampleName}>{x.name}</h3>
                 <p className={s.examplePurpose}>{x.purpose}</p>
                 <p className={s.exampleDemo}>
-                  Nome fictício: {x.demo}. Montado no pacote {pkg.name} <span className={s.keep}>({brl(pkg.price)})</span>.
+                  Composição {info.family.name.toLowerCase()} — {info.family.concept.toLowerCase()}. Nome fictício: {info.demo}. Montado no pacote {pkg.name}{' '}
+                  <span className={s.keep}>({brl(pkg.price)})</span>.
                 </p>
               </div>
               <div className={s.exampleActions}>
@@ -134,17 +144,6 @@ export function ExampleGallery({ initialFilter = 'todos' }: { initialFilter?: st
             </li>
           );
         })}
-        {filter === 'todos' && (
-          <li className={`${s.exampleCard} ${s.otherCard}`}>
-            <h3 className={s.exampleName}>Outro segmento</h3>
-            <p className={s.examplePurpose}>Comece por um modelo neutro e conte qual é o seu negócio. Você escolhe estilo, cores e seções na criação.</p>
-            <div className={s.exampleActions}>
-              <a className={s.primary} href={modelHref('outro')} onClick={() => track('start_click', { context: 'exemplo' })}>
-                Começar com outro segmento
-              </a>
-            </div>
-          </li>
-        )}
       </ul>
 
       <dialog ref={dialog} className={s.dialog} aria-labelledby="exemplo-titulo" onClose={onClose} onClick={(ev) => ev.target === dialog.current && dialog.current?.close()}>
@@ -153,7 +152,7 @@ export function ExampleGallery({ initialFilter = 'todos' }: { initialFilter?: st
             <div className={s.demoHead}>
               <div>
                 <h3 id="exemplo-titulo">{opened.name}</h3>
-                <p>Modelo demonstrativo, com o nome fictício {opened.demo}</p>
+                <p>Modelo demonstrativo, com o nome fictício {exampleInfo(opened.id).demo}</p>
               </div>
               <button type="button" className={s.closeButton} onClick={() => dialog.current?.close()} aria-label="Fechar exemplo" autoFocus>
                 <X aria-hidden="true" />

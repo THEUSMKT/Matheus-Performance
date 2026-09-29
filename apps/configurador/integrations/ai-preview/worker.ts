@@ -11,8 +11,13 @@
    recebe um áudio WAV curto e devolve só o texto transcrito (sem contatos).
    Descrição e áudio não são gravados nem registrados em log. Ver README.md
    desta pasta.
+
+   Versões: aceita pedidos `schema: 1` (páginas antigas) e `schema: 2`. Os
+   dois usam o mesmo prompt; a resposta à versão 1 vem no formato antigo
+   (toLegacySuggestion), então página e servidor não precisam ser
+   atualizados no mesmo instante.
    ========================================================================== */
-import { AI_SCHEMA_VERSION, DESCRIPTION_MAX, DESCRIPTION_MIN, geminiRequest, parseGeminiResponse, sanitizeSuggestion } from '../../src/lib/aiPreview';
+import { AI_SCHEMA_ACCEPTED, DESCRIPTION_MAX, DESCRIPTION_MIN, geminiRequest, parseGeminiResponse, sanitizeSuggestion, toLegacySuggestion } from '../../src/lib/aiPreview';
 import { AUDIO_MAX_BASE64, AUDIO_MIME, cleanTranscript, transcriptionRequest } from '../../src/lib/aiAudio';
 import { packageOrder, type PackageId } from '../../src/config/packages';
 
@@ -80,7 +85,8 @@ export async function handle(request: Request, env: Env, fetchImpl: FetchLike = 
   } catch {
     return reply(400, { ok: false, error: 'json' }, allowedOrigin);
   }
-  if (data.schema !== AI_SCHEMA_VERSION) return reply(422, { ok: false, error: 'versao' }, allowedOrigin);
+  if (typeof data.schema !== 'number' || !AI_SCHEMA_ACCEPTED.includes(data.schema)) return reply(422, { ok: false, error: 'versao' }, allowedOrigin);
+  const schema = data.schema;
 
   let body: unknown;
   let accept: (value: unknown) => Attempt;
@@ -101,8 +107,8 @@ export async function handle(request: Request, env: Env, fetchImpl: FetchLike = 
     const pkg: PackageId = packageOrder.includes(data.pkg as PackageId) ? (data.pkg as PackageId) : 'essencial';
     body = geminiRequest(description);
     accept = (value) => {
-      const suggestion = sanitizeSuggestion(value, pkg);
-      if (suggestion) return { ok: true, payload: { suggestion } };
+      const suggestion = sanitizeSuggestion(value, pkg, { description });
+      if (suggestion) return { ok: true, payload: { suggestion: schema === 1 ? toLegacySuggestion(suggestion) : suggestion } };
       log('resposta do Gemini recusada', { reason: 'formato' });
       return { ok: false, status: 502, error: 'formato', retry: true };
     };
