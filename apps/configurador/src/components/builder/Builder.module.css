@@ -2261,6 +2261,8 @@
   }
   .progress {
     justify-content: flex-end;
+    /* Espaço do "Salvo" reservado: ele aparece depois de carregar sem empurrar a página. */
+    min-height: 19px;
   }
   .stepMenu {
     display: block;
@@ -2344,4 +2346,104 @@
 }
 .saveGroup .tools {
   margin-top: 0;
+}
+
+/* ── Nome da empresa (antes da prévia) ─────────────────────────────────── */
+.nameField {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.laterRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  width: fit-content;
+  padding-right: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.laterRow input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--blue);
+}
+.nameFound {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+.nameFound .textButton {
+  display: inline;
+  min-height: 0;
+  padding: 0;
+}
+.subTitle {
+  margin-top: 22px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+/* ── Celular: "Ver minha prévia" usa a largura útil inteira ────────────── */
+@media (max-width: 1079px) {
+  .grid[data-view='preview'] .previewPane {
+    margin-inline: calc(var(--gutter) * -1);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .grid[data-view='preview'] .readyBanner,
+  .grid[data-view='preview'] .previewTop {
+    margin-inline: var(--gutter);
+  }
+  .grid[data-view='preview'] .previewArea {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .grid[data-view='preview'] .screen {
+    border-inline: 0;
+    border-radius: 0;
+  }
+}
+
+/* Celular, logo depois de gerar: a prévia sobe — fica só o pacote com o preço e a confirmação. */
+@media (max-width: 1079px) {
+  .main[data-view='preview'] .progress,
+  .main[data-view='preview'] .stepMenu,
+  .main[data-view='preview'] .where {
+    display: none;
+  }
+  .main[data-view='preview'] .readyText {
+    display: none;
+  }
+  .main[data-view='preview'] .readyBanner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 12px;
+  }
+}
+
+/* Nome e pergunta logo acima da prévia (celular). */
+.readyExtras {
+  flex-basis: 100%;
+  display: grid;
+  gap: 8px;
+}
+.readyExtras > * {
+  margin: 0;
+}
+.nameNote {
+  font-size: 14px;
+}
+.nameNote .textButton {
+  display: inline;
+  min-height: 0;
+  padding: 0;
 }

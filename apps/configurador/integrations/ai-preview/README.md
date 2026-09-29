@@ -18,6 +18,33 @@ usar a geração detalhada. O contrato continua compatível com o Worker atual;
 se ele ainda não tiver sido atualizado, a página mostra os textos de apoio
 específicos de cada segmento.
 
+## Versões do contrato (1 e 2) — o que publicar
+
+A rodada das **famílias visuais** mudou o prompt e o formato da resposta
+(tipo de negócio, família, variante, topo com ou sem imagem, fonte,
+categoria de imagem, origem do nome e uma pergunta opcional). O Worker
+importa esse contrato de `src/lib/aiPreview.ts`, então **é preciso publicar
+o Worker de novo** para a IA passar a escolher esses campos:
+
+```bash
+cd apps/configurador/integrations/ai-preview
+npx wrangler deploy
+```
+
+Nada muda em segredos, variáveis, modelo ou limites (`GEMINI_API_KEY`,
+`GEMINI_MODEL`, `ALLOWED_ORIGINS` e `RATE_LIMITER` continuam iguais).
+
+Página e Worker **não precisam** ser atualizados ao mesmo tempo:
+
+| Página | Worker | O que acontece |
+|---|---|---|
+| nova | antigo | A página pede `schema: 2`; o Worker antigo recusa com `versao` (antes do limite de uso e sem chamar o Gemini) e a página repete com `schema: 1`. A resposta antiga não traz tipo de negócio nem família: a página os completa a partir da descrição (ex.: "clínica veterinária" em "Outro" vira o segmento pet). |
+| nova | novo | Resposta completa (`contract: 2`), validada de novo na página. |
+| antiga (em cache) | novo | O Worker aceita `schema: 1` e responde no formato antigo (`toLegacySuggestion`): o segmento pet vira "Outro · Clínica veterinária" e as paletas novas viram a mais próxima. |
+
+A IA nunca decide preço, pacote nem recursos: pedidos assim na descrição
+são ignorados, e seções de outro pacote voltam só como sugestão.
+
 ## 1. Criar a chave do Gemini (Google AI Studio)
 
 1. Entre em <https://aistudio.google.com> com a conta Google da empresa.
@@ -64,7 +91,7 @@ Teste rápido (troque o endereço):
 ```bash
 curl -s https://beck-configurador-ia.SEU-USUARIO.workers.dev \
   -H 'Origin: https://theusmkt.github.io' -H 'Content-Type: application/json' \
-  -d '{"schema":1,"description":"Faço bolos e doces sob encomenda e quero receber pedidos pelo WhatsApp."}'
+  -d '{"schema":2,"description":"Faço bolos e doces sob encomenda e quero receber pedidos pelo WhatsApp."}'
 ```
 
 Deve voltar `{"ok":true,"suggestion":{...}}`.
@@ -86,7 +113,7 @@ página de criação. Para desligar, apague a variável e publique de novo.
 | 5 gerações/minuto por IP (transcrições contam à parte, com o mesmo limite) | `[[ratelimits]]` |
 | Descrição de 20 a 1.200 caracteres, corpo até 6 KB | `worker.ts` |
 | E-mails e telefones removidos antes do Gemini | `redact()` em `src/lib/aiPreview.ts` |
-| Resposta validada: ids do catálogo, textos limitados, sem alegações inventadas, pacote nunca muda | `sanitizeSuggestion()` / `applySuggestion()` |
+| Resposta validada: ids do catálogo (tipo de negócio, família, variante, imagem, fonte), textos limitados e cortados em palavra inteira, sem marcação nem script, sem alegações inventadas (anos, clientes, 24 horas, credenciais), nome só se estiver na descrição, pacote e preço nunca mudam | `sanitizeSuggestion()` / `applySuggestion()` |
 | Áudio: só WAV mono 16 kHz, até 90 s (~4 MB em base64); a transcrição volta sem e-mails e telefones | `worker.ts` + `src/lib/aiAudio.ts` |
 | Nada do texto nem do áudio vai para log ou armazenamento | `worker.ts` registra só códigos de status |
 

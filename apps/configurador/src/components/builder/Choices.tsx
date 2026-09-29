@@ -6,21 +6,22 @@
    (a pessoa compara e só então clica em "Continuar"). Mudanças que pedem
    outro pacote passam pela confirmação de sempre (scope/gate).
    ========================================================================== */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, Check as CheckIcon, MessageCircle, Sparkles } from 'lucide-react';
 import { contact } from '@/config/contact';
 import { customNeeds, packageById, packages, rank } from '@/config/packages';
-import { currentPackage, directions, formBenefit, moveSection, sectionName, sections, segmentOf, segments, siteContent, suggestedServices, type Project } from '@/lib/project';
+import { currentPackage, directions, familyOf, formBenefit, moveSection, previewTexts, sectionName, sections, segmentOf, segments, siteContent, suggestedServices, variantOf, type Project } from '@/lib/project';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { Check } from '../landing/Controls';
-import { ColorPicker, FontPicker, LogoField, StylePicker } from './Pickers';
+import { ColorPicker, FontPicker, LayoutPicker, LogoField, StylePicker } from './Pickers';
+import { NameField } from './Steps';
 import { ParkedNote } from './Packages';
-import { previewTexts } from '../preview/SitePreview';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
 type Edit = (patch: Partial<Project>) => void;
+type Replace = (next: Project) => void;
 export type Scope = (patch: Partial<Project>, anchor: string) => void;
 type Gate = (anchor: string) => ReactNode;
 
@@ -37,10 +38,103 @@ const editedNames: Record<Project['edited'][number], string> = {
   faqQuestions: 'perguntas frequentes',
 };
 
+/** Uma pergunta que muda a prévia (ex.: consultas, banho e tosa ou os dois), com respostas de um toque. */
+export type ReadyQuestion = { text: string; options: { label: string; apply: () => void }[]; onDescribe?: () => void };
+
+/**
+ * Nome (confirmar o que veio da descrição, ou informar) e a pergunta única.
+ * Aparece na tela "Sua prévia está pronta" e, no celular, também logo acima
+ * da prévia — onde a pessoa está olhando depois de gerar. `compact`: sem
+ * campo de texto; "Informar o nome" leva ao campo (`onEditName`).
+ */
+export function ReadyExtras({
+  p,
+  replace,
+  question = null,
+  compact = false,
+  onEditName,
+  fixing,
+  onFix,
+}: {
+  p: Project;
+  replace: Replace;
+  question?: ReadyQuestion | null;
+  compact?: boolean;
+  onEditName?: () => void;
+  /** "Corrigir o nome" controlado por fora (a faixa do celular abre o campo desta tela). */
+  fixing?: boolean;
+  onFix?: (on: boolean) => void;
+}) {
+  const [localFix, setLocalFix] = useState(false);
+  const fixName = fixing ?? localFix;
+  const setFixName = onFix ?? setLocalFix;
+  const fromAi = Boolean(p.name.trim()) && p.aiFilled.name === p.name;
+  const shown = siteContent(p);
+  const qid = compact ? 'pergunta-previa-topo' : 'pergunta-previa';
+  return (
+    <>
+      {fromAi && !fixName ? (
+        <div className={b.keptEdits} role="status">
+          <p>
+            Usamos o nome <strong>“{p.name}”</strong>, citado na sua descrição.
+          </p>
+          <div className={s.actionRow}>
+            <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => replace({ ...p, aiFilled: { ...p.aiFilled, name: '' } })}>
+              Está certo
+            </button>
+            <button type="button" className={b.textButton} onClick={() => (compact && onEditName ? onEditName() : setFixName(true))}>
+              Corrigir o nome
+            </button>
+          </div>
+        </div>
+      ) : compact ? (
+        shown.nameProvisional && (
+          <p className={b.nameNote}>
+            Nome provisório: <strong>“{shown.name}”</strong>.{' '}
+            {onEditName && (
+              <button type="button" className={b.textButton} onClick={onEditName}>
+                Informar o nome
+              </button>
+            )}
+          </p>
+        )
+      ) : (
+        (!p.name.trim() || fixName) && (
+          <div className={b.group}>
+            <NameField p={p} replace={replace} id="nome-pronta" />
+          </div>
+        )
+      )}
+      {question && (
+        <div className={b.keptEdits} role="group" aria-labelledby={qid}>
+          <p id={qid}>
+            <strong>Uma pergunta para acertar a prévia:</strong> {question.text}
+          </p>
+          <div className={s.actionRow}>
+            {question.options.map((o) => (
+              <button key={o.label} type="button" className={`${s.secondary} ${s.small}`} onClick={o.apply}>
+                {o.label}
+              </button>
+            ))}
+            {question.onDescribe && (
+              <button type="button" className={b.textButton} onClick={question.onDescribe}>
+                Responder na descrição
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 export function StepReady({
   p,
-  edit,
+  replace,
   notes,
+  question = null,
+  fixingName,
+  onFixName,
   onPersonalize,
   onEditDescription,
   editLabel,
@@ -51,9 +145,12 @@ export function StepReady({
   segConflict = null,
 }: {
   p: Project;
-  edit: Edit;
+  replace: Replace;
   /** Observações da geração (seções de outro pacote, itens fora dos pacotes). */
   notes: string[];
+  question?: ReadyQuestion | null;
+  fixingName?: boolean;
+  onFixName?: (on: boolean) => void;
   /** Textos editados à mão que a nova geração manteve. */
   keptEdits?: Project['edited'];
   onUseNewTexts?: () => void;
@@ -68,14 +165,9 @@ export function StepReady({
   return (
     <div className={b.ready}>
       <p className={b.readyLead}>
-        <Sparkles aria-hidden="true" /> {narrow ? 'Toque em “Ver meu site” para explorar.' : 'Explore o site ao lado.'} Você pode mudar estilo, cores, títulos, textos e seções.
+        <Sparkles aria-hidden="true" /> {narrow ? 'Toque em “Ver minha prévia” para ver o site inteiro.' : 'Explore o site ao lado.'} Você pode mudar estilo, cores, títulos, textos e seções.
       </p>
-      {!p.name.trim() && (
-        <label className={`${s.field} ${b.group}`}>
-          Nome da empresa <small>Aparece no topo do site</small>
-          <input id="nome-pronta" maxLength={80} value={p.name} autoComplete="organization" placeholder="Ex.: Clima Sul Refrigeração" onChange={(ev) => edit({ name: ev.target.value })} />
-        </label>
-      )}
+      <ReadyExtras p={p} replace={replace} question={question} fixing={fixingName} onFix={onFixName} />
       {notes.length > 0 && (
         <ul className={b.readyNotes}>
           {notes.map((n) => (
@@ -129,13 +221,25 @@ export function StepStyle({ p, edit }: { p: Project; edit: Edit }) {
   const suggested = seg.styles;
   const ordered = [...suggested, ...directions.map((d) => d.id).filter((id) => !suggested.includes(id))];
   const current = directions.find((d) => d.id === p.direction)!;
+  const fam = familyOf(p);
   return (
     <>
-      <p className={b.hint}>Cada estilo muda a composição do site. Toque para comparar; a prévia muda na hora.</p>
+      <p className={b.hint}>A composição organiza a página para o seu tipo de negócio; o estilo muda tons, formas e títulos. Toque para comparar: a prévia muda na hora, sem perder textos.</p>
+      <h2 className={b.subTitle} id="rotulo-composicao">
+        Composição
+      </h2>
+      <p className={b.currentPick} aria-live="polite">
+        {fam.name} — <strong>{variantOf(p).name}</strong>
+        {p.hero === 'tipografico' ? ', topo sem imagem' : ''}
+      </p>
+      <LayoutPicker p={p} labelledBy="rotulo-composicao" onChange={(patch) => edit({ ...patch, identitySet: true })} />
+      <h2 className={b.subTitle} id="rotulo-estilo">
+        Estilo
+      </h2>
       <p className={b.currentPick} aria-live="polite">
         Escolhido: <strong>{current.name}</strong> — {current.description}
       </p>
-      <StylePicker p={p} ids={ordered} suggested={suggested} labelledBy="etapa-titulo" onChange={(id) => edit({ direction: id, identitySet: true })} />
+      <StylePicker p={p} ids={ordered} suggested={suggested} labelledBy="rotulo-estilo" onChange={(id) => edit({ direction: id, identitySet: true })} />
       <a
         className={b.otherStyle}
         href={whatsappLink(contact.whatsappEstilo)}
@@ -187,6 +291,7 @@ type BroadEdit = (label: string, patch: Partial<Project>) => void;
 export function StepContent({
   p,
   edit,
+  replace,
   logo,
   setLogo,
   broadEdit,
@@ -194,6 +299,7 @@ export function StepContent({
 }: {
   p: Project;
   edit: Edit;
+  replace: Replace;
   logo: string | null;
   setLogo: (v: string | null) => void;
   /** Mudança ampla que pode ser desfeita. */
@@ -212,11 +318,8 @@ export function StepContent({
   return (
     <>
       <p className={b.hint}>Campos vazios usam a sugestão que aparece na prévia.</p>
-      <div className={`${s.fields} ${b.group}`}>
-        <label className={s.field}>
-          Nome da empresa
-          <input id="nome-conteudo" maxLength={80} value={p.name} autoComplete="organization" placeholder="Ex.: Clima Sul Refrigeração" onChange={(ev) => edit({ name: ev.target.value })} />
-        </label>
+      <div className={b.group}>
+        <NameField p={p} replace={replace} id="nome-conteudo" />
       </div>
       <div className={b.group}>
         <span className={b.label}>

@@ -8,7 +8,9 @@
    ========================================================================== */
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ImagePlus } from 'lucide-react';
-import { contrastInk, directions, fonts, headFont, normalizeProject, palettes, siteContent, type Project } from '@/lib/project';
+import { contrastInk, directions, familyOf, fonts, headFont, normalizeProject, palettes, siteContent, subsegmentOf, variantOf, type Project } from '@/lib/project';
+import { familyById } from '@/config/families';
+import { previewPlan } from '@/lib/plan';
 import { logoErrorText, prepareLogo, type LogoError } from '@/lib/logo';
 import { SitePreview } from '../preview/SitePreview';
 import { DesktopFrame } from '../landing/DemoFrames';
@@ -79,6 +81,57 @@ export function StylePicker({
           <span className={b.styleName} aria-hidden="true">
             {d.name}
             {suggested.includes(d.id) && <small className={b.badge}>Sugerido</small>}
+          </span>
+          <span className={b.optCheck} aria-hidden="true" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type LayoutOption = { key: string; name: string; description: string; patch: Partial<Project> };
+
+/**
+ * Composição: as variantes da família do tipo de negócio, o topo sem imagem
+ * (quando existe imagem adequada) e a institucional versátil. Cada opção é a
+ * própria prévia em miniatura — o mesmo componente da prévia grande.
+ */
+export function LayoutPicker({ p, labelledBy, onChange }: { p: Project; labelledBy: string; onChange: (patch: Partial<Project>) => void }) {
+  const auto = familyById(subsegmentOf(p).family)!;
+  const options: LayoutOption[] = auto.variants.map((v) => ({ key: v.id, name: v.name, description: v.description, patch: { family: '', layout: v.id, hero: '' } }));
+  if (previewPlan({ ...p, hero: '' }).heroAsset)
+    options.push({ key: 'tipografico', name: 'Topo sem imagem', description: 'A marca e os serviços viram a composição do topo.', patch: { hero: 'tipografico' } });
+  if (auto.id !== 'institucional') {
+    const inst = familyById('institucional')!;
+    options.push({ key: 'institucional', name: inst.name, description: inst.description, patch: { family: 'institucional', layout: '', hero: '' } });
+  }
+  const current = p.hero === 'tipografico' ? 'tipografico' : familyOf(p).id !== auto.id ? 'institucional' : variantOf(p).id;
+  const index = options.findIndex((o) => o.key === current);
+  const { refs, onKey, tabIndex } = useRovingKeys(options, index, (i) => onChange(options[i].patch));
+  return (
+    <div className={b.styles} role="radiogroup" aria-labelledby={labelledBy}>
+      {options.map((o, i) => (
+        <div
+          key={o.key}
+          ref={(el) => {
+            refs.current[i] = el;
+          }}
+          role="radio"
+          aria-checked={i === index}
+          aria-label={`${o.name}: ${o.description}`}
+          tabIndex={tabIndex(i)}
+          className={b.styleOpt}
+          onClick={() => onChange(o.patch)}
+          onKeyDown={(e) => onKey(e, i)}
+        >
+          <div className={b.styleThumb} aria-hidden="true">
+            <DesktopFrame width={330}>
+              <SitePreview project={normalizeProject({ ...p, ...o.patch })} compact bare lazy />
+            </DesktopFrame>
+          </div>
+          <span className={b.styleName} aria-hidden="true">
+            {o.name}
+            {i === 0 && <small className={b.badge}>Sugerida</small>}
           </span>
           <span className={b.optCheck} aria-hidden="true" />
         </div>
@@ -183,7 +236,7 @@ export function FontPicker({ p, onChange }: { p: Project; onChange: (id: string)
           onClick={() => onChange(f.id)}
           onKeyDown={(e) => onKey(e, i)}
         >
-          <span className={b.fontSample} style={{ fontFamily: headFont(f.id, p.direction) }} aria-hidden="true">
+          <span className={b.fontSample} style={{ fontFamily: headFont(f.id, p.direction, familyOf(p).typography) }} aria-hidden="true">
             {sample}
           </span>
           <span className={b.fontName}>

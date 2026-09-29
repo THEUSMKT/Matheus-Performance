@@ -1,0 +1,593 @@
+{
+  "_sobre": "Casos fictícios (sem dados pessoais) usados nos testes de seleção, nas capturas antes/depois e no e2e. 'resposta' imita o JSON devolvido pelo Gemini no contrato 2; 'espera' é o que a prévia precisa mostrar.",
+  "casos": [
+    {
+      "id": "clinica-veterinaria",
+      "titulo": "Clínica veterinária com consultas e vacinas",
+      "descricao": "A Clínica Vila Pet atende cães e gatos com consultas, vacinação e exames de rotina. Quero que os tutores peçam um horário de consulta pelo WhatsApp.",
+      "resposta": {
+        "name": "Clínica Vila Pet",
+        "nameOrigin": "descricao",
+        "segment": "pet",
+        "subsegment": "clinica-veterinaria",
+        "segmentOther": "",
+        "service": "Consultas veterinárias",
+        "objective": "agendamento",
+        "headline": "Consultas e vacinas para cães e gatos, com hora marcada",
+        "description": "Peça um horário de consulta pelo WhatsApp e tire dúvidas sobre a vacinação do seu pet.",
+        "services": [
+          "Consultas",
+          "Vacinação",
+          "Exames de rotina"
+        ],
+        "about": "Atendimento clínico para cães e gatos, com consultas agendadas, vacinação e exames de rotina solicitados durante o acompanhamento.",
+        "serviceDetails": [
+          "Avaliação clínica do seu pet, com orientação sobre cuidados e próximos passos.",
+          "Aplicação de vacinas e orientação sobre o calendário de vacinação.",
+          "Exames de rotina solicitados conforme a avaliação clínica."
+        ],
+        "differentials": [
+          "Consultas com horário combinado",
+          "Orientação clara para o tutor",
+          "Cães e gatos"
+        ],
+        "processSteps": [
+          "Peça um horário pelo WhatsApp",
+          "Confirme o dia da consulta",
+          "Leve seu pet à clínica"
+        ],
+        "faqQuestions": [
+          "Como peço um horário de consulta?",
+          "Quais informações devo levar na primeira consulta?",
+          "Como sei quais vacinas meu pet precisa?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "sobre"
+        ],
+        "direction": "essencial",
+        "palette": "petroleo",
+        "typography": "auto",
+        "familyId": "pet",
+        "layoutVariantId": "acolhimento",
+        "heroVariantId": "imagem",
+        "assetCategory": "clinica-veterinaria",
+        "brandColor": "",
+        "needs": [],
+        "missing": [],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "pet",
+        "subsegmento": "clinica-veterinaria",
+        "familia": "pet",
+        "botao": "Agendar consulta",
+        "imagem": "pet-clinica",
+        "semImagem": [
+          "pet",
+          "pet-tosa"
+        ],
+        "semTexto": [
+          "24 horas",
+          "24h",
+          "emergência",
+          "especialidade"
+        ]
+      }
+    },
+    {
+      "id": "banho-e-tosa",
+      "titulo": "Banho e tosa sem atendimento clínico",
+      "descricao": "Meu espaço faz banho e tosa para cães de pequeno e médio porte, com hidratação e tosa higiênica. Não temos atendimento veterinário. Quero receber pedidos de horário.",
+      "resposta": {
+        "name": "",
+        "nameOrigin": "nenhum",
+        "segment": "pet",
+        "subsegment": "banho-e-tosa",
+        "segmentOther": "",
+        "service": "Banho e tosa",
+        "objective": "agendamento",
+        "headline": "Banho e tosa para cães de pequeno e médio porte",
+        "description": "Escolha o cuidado e peça um horário pelo WhatsApp.",
+        "services": [
+          "Banho",
+          "Tosa higiênica",
+          "Hidratação"
+        ],
+        "about": "Um espaço dedicado à higiene e ao bem-estar de cães de pequeno e médio porte, com banho, tosa higiênica e hidratação.",
+        "serviceDetails": [
+          "Banho com produtos adequados ao tipo de pelagem.",
+          "Tosa higiênica para mais conforto no dia a dia.",
+          "Hidratação para pelagens que precisam de cuidado extra."
+        ],
+        "differentials": [
+          "Cães de pequeno e médio porte",
+          "Horário combinado com antecedência",
+          "Cuidados explicados ao tutor"
+        ],
+        "processSteps": [
+          "Escolha o serviço",
+          "Peça um horário pelo WhatsApp",
+          "Traga seu pet no dia combinado"
+        ],
+        "faqQuestions": [
+          "Quanto tempo leva o banho e tosa?",
+          "Vocês atendem cães de grande porte?",
+          "Como peço um horário?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "sobre"
+        ],
+        "direction": "elegante",
+        "palette": "azul",
+        "typography": "auto",
+        "familyId": "pet",
+        "layoutVariantId": "cuidados",
+        "heroVariantId": "imagem",
+        "assetCategory": "banho-e-tosa",
+        "brandColor": "",
+        "needs": [],
+        "missing": [
+          "nome"
+        ],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "pet",
+        "subsegmento": "banho-e-tosa",
+        "familia": "pet",
+        "botao": "Agendar banho e tosa",
+        "imagem": "pet",
+        "semImagem": [
+          "pet-clinica"
+        ],
+        "semTexto": [
+          "veterinári",
+          "consulta",
+          "vacina"
+        ]
+      }
+    },
+    {
+      "id": "corretor",
+      "titulo": "Corretor com consultoria e pedidos de visita",
+      "descricao": "Sou corretor de imóveis e ofereço consultoria imobiliária gratuita para quem vai comprar o primeiro imóvel. Também organizo visitas. Quero que as pessoas peçam uma conversa ou uma visita.",
+      "resposta": {
+        "name": "",
+        "nameOrigin": "nenhum",
+        "segment": "imoveis",
+        "subsegment": "corretor",
+        "segmentOther": "",
+        "service": "Consultoria imobiliária",
+        "objective": "agendamento",
+        "headline": "Orientação para comprar seu primeiro imóvel",
+        "description": "Converse sobre o que você procura e peça uma visita quando encontrar uma opção.",
+        "services": [
+          "Consultoria imobiliária",
+          "Organização de visitas",
+          "Orientação na negociação"
+        ],
+        "about": "Atendimento para quem vai comprar o primeiro imóvel: uma conversa para entender a busca, visitas organizadas e orientação até a negociação.",
+        "serviceDetails": [
+          "Uma conversa sem custo para entender região, tipo de imóvel e momento da compra.",
+          "Visitas organizadas conforme a disponibilidade confirmada de cada imóvel.",
+          "Orientação para comparar opções e entender os próximos passos."
+        ],
+        "differentials": [
+          "Primeira conversa sem custo",
+          "Visitas organizadas",
+          "Explicação de cada etapa"
+        ],
+        "processSteps": [
+          "Conte o que procura",
+          "Converse sobre as opções",
+          "Agende uma visita"
+        ],
+        "faqQuestions": [
+          "A consultoria tem custo?",
+          "Como funciona uma visita?",
+          "Que informações ajudam a começar a busca?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "sobre"
+        ],
+        "direction": "sofisticado",
+        "palette": "azul",
+        "typography": "auto",
+        "familyId": "imobiliario",
+        "layoutVariantId": "apresentacao",
+        "heroVariantId": "imagem",
+        "assetCategory": "imoveis",
+        "brandColor": "",
+        "needs": [],
+        "missing": [
+          "nome"
+        ],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "imoveis",
+        "subsegmento": "corretor",
+        "familia": "imobiliario",
+        "botao": "Agendar uma visita",
+        "imagem": "imoveis",
+        "semSecao": [
+          "vitrine"
+        ],
+        "semTexto": [
+          "CRECI",
+          "R$",
+          "m²",
+          "disponível"
+        ]
+      }
+    },
+    {
+      "id": "confeitaria",
+      "titulo": "Confeitaria que recebe encomendas",
+      "descricao": "A Doce Ateliê faz bolos decorados e doces finos por encomenda para aniversários e casamentos. Quero mostrar os produtos e receber encomendas pelo WhatsApp.",
+      "resposta": {
+        "name": "Doce Ateliê",
+        "nameOrigin": "descricao",
+        "segment": "alimentacao",
+        "subsegment": "confeitaria",
+        "segmentOther": "",
+        "service": "Bolos decorados",
+        "objective": "produtos",
+        "headline": "Bolos decorados e doces finos por encomenda",
+        "description": "Veja as opções e faça sua encomenda para aniversários e casamentos pelo WhatsApp.",
+        "services": [
+          "Bolos decorados",
+          "Doces finos",
+          "Encomendas para festas"
+        ],
+        "about": "Bolos decorados e doces finos feitos por encomenda, pensados para aniversários, casamentos e outras celebrações.",
+        "serviceDetails": [
+          "Bolos decorados conforme o tema e o tamanho da festa.",
+          "Doces finos para mesas de aniversário e casamento.",
+          "Encomendas combinadas com antecedência pelo WhatsApp."
+        ],
+        "differentials": [
+          "Feito por encomenda",
+          "Detalhes combinados antes",
+          "Para aniversários e casamentos"
+        ],
+        "processSteps": [
+          "Escolha o bolo ou os doces",
+          "Informe a data e a quantidade",
+          "Confirme a encomenda pelo WhatsApp"
+        ],
+        "faqQuestions": [
+          "Com quanta antecedência devo encomendar?",
+          "Posso escolher o tema da decoração?",
+          "Como funciona a retirada?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "sobre"
+        ],
+        "direction": "sofisticado",
+        "palette": "terracota",
+        "typography": "auto",
+        "familyId": "alimentacao",
+        "layoutVariantId": "mesa",
+        "heroVariantId": "imagem",
+        "assetCategory": "confeitaria",
+        "brandColor": "",
+        "needs": [],
+        "missing": [],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "alimentacao",
+        "subsegmento": "confeitaria",
+        "familia": "alimentacao",
+        "botao": "Fazer uma encomenda",
+        "imagem": "confeitaria-bolo",
+        "semImagem": [
+          "restaurante-salao",
+          "prato-massa"
+        ],
+        "semTexto": [
+          "reserva",
+          "reservar mesa",
+          "carrinho",
+          "comprar online",
+          "pague online"
+        ]
+      }
+    },
+    {
+      "id": "limpeza",
+      "titulo": "Empresa de limpeza residencial",
+      "descricao": "Empresa de limpeza residencial: faxina completa, limpeza pós-obra e organização de armários, para casas e apartamentos. Quero receber pedidos de orçamento.",
+      "resposta": {
+        "name": "",
+        "nameOrigin": "nenhum",
+        "segment": "local",
+        "subsegment": "limpeza",
+        "segmentOther": "",
+        "service": "Limpeza residencial",
+        "objective": "orcamento",
+        "headline": "Limpeza residencial para casas e apartamentos",
+        "description": "Conte o tamanho do imóvel e o tipo de limpeza e peça seu orçamento pelo WhatsApp.",
+        "services": [
+          "Faxina completa",
+          "Limpeza pós-obra",
+          "Organização de armários"
+        ],
+        "about": "Limpeza residencial para casas e apartamentos, com faxina completa, limpeza pós-obra e organização de armários.",
+        "serviceDetails": [
+          "Limpeza de todos os ambientes, do chão aos detalhes da cozinha e do banheiro.",
+          "Remoção de pó e resíduos depois de reformas e pequenas obras.",
+          "Armários organizados por categoria, para facilitar o dia a dia."
+        ],
+        "differentials": [
+          "Orçamento conforme o tamanho do imóvel",
+          "Tipo de limpeza combinado antes",
+          "Casas e apartamentos"
+        ],
+        "processSteps": [
+          "Conte o tipo de limpeza",
+          "Informe o tamanho do imóvel",
+          "Receba o orçamento"
+        ],
+        "faqQuestions": [
+          "Quais informações ajudam no orçamento?",
+          "Vocês levam os produtos de limpeza?",
+          "Atendem apartamentos pequenos?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "diferenciais"
+        ],
+        "direction": "marcante",
+        "palette": "azul",
+        "typography": "auto",
+        "familyId": "local",
+        "layoutVariantId": "oferta",
+        "heroVariantId": "imagem",
+        "assetCategory": "limpeza",
+        "brandColor": "",
+        "needs": [],
+        "missing": [
+          "nome"
+        ],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "local",
+        "subsegmento": "limpeza",
+        "familia": "local",
+        "botao": "Solicitar orçamento",
+        "imagem": "limpeza",
+        "semImagem": [
+          "reparos",
+          "servico-eletrica"
+        ],
+        "semTexto": [
+          "instalação"
+        ]
+      }
+    },
+    {
+      "id": "consultoria-empresarial",
+      "titulo": "Consultoria empresarial",
+      "descricao": "Consultoria empresarial para pequenas empresas: organização financeira, revisão de processos e planejamento. Quero apresentar as áreas de atuação e que os interessados agendem uma conversa.",
+      "resposta": {
+        "name": "",
+        "nameOrigin": "nenhum",
+        "segment": "consultoria",
+        "subsegment": "consultoria-empresarial",
+        "segmentOther": "",
+        "service": "Consultoria empresarial",
+        "objective": "agendamento",
+        "headline": "Organização financeira e processos para pequenas empresas",
+        "description": "Conheça as áreas de atuação e agende uma conversa para entender o seu contexto.",
+        "services": [
+          "Organização financeira",
+          "Revisão de processos",
+          "Planejamento"
+        ],
+        "about": "Consultoria para pequenas empresas que precisam organizar as finanças, revisar processos e planejar os próximos passos.",
+        "serviceDetails": [
+          "Organização do fluxo de caixa e das rotinas financeiras.",
+          "Mapeamento e revisão dos processos do dia a dia.",
+          "Planejamento de prioridades a partir do diagnóstico."
+        ],
+        "differentials": [
+          "Foco em pequenas empresas",
+          "Escopo combinado antes",
+          "Etapas explicadas"
+        ],
+        "processSteps": [
+          "Conversa inicial",
+          "Diagnóstico do contexto",
+          "Plano de trabalho"
+        ],
+        "faqQuestions": [
+          "Como é a primeira conversa?",
+          "Como o escopo é definido?",
+          "O atendimento pode ser online?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "sobre"
+        ],
+        "direction": "essencial",
+        "palette": "grafite",
+        "typography": "auto",
+        "familyId": "consultoria",
+        "layoutVariantId": "declaracao",
+        "heroVariantId": "tipografico",
+        "assetCategory": "",
+        "brandColor": "",
+        "needs": [],
+        "missing": [
+          "nome"
+        ],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "consultoria",
+        "subsegmento": "consultoria-empresarial",
+        "familia": "consultoria",
+        "botao": "Agendar uma conversa",
+        "imagem": "",
+        "semTexto": [
+          "anos de",
+          "clientes atendidos",
+          "%"
+        ],
+        "imagemV1": "consultoria-graficos"
+      }
+    },
+    {
+      "id": "arquitetura",
+      "titulo": "Estúdio de arquitetura",
+      "descricao": "O Estúdio Linha é um escritório de arquitetura residencial e de interiores. Quero mostrar como trabalhamos e receber pedidos de proposta.",
+      "resposta": {
+        "name": "Estúdio Linha",
+        "nameOrigin": "descricao",
+        "segment": "criativo",
+        "subsegment": "arquitetura",
+        "segmentOther": "",
+        "service": "Arquitetura residencial",
+        "objective": "orcamento",
+        "headline": "Arquitetura residencial e de interiores",
+        "description": "Conheça a forma de trabalho do estúdio e peça uma proposta para o seu projeto.",
+        "services": [
+          "Arquitetura residencial",
+          "Projetos de interiores",
+          "Reformas"
+        ],
+        "about": "Escritório de arquitetura residencial e de interiores que acompanha o projeto do primeiro estudo à entrega.",
+        "serviceDetails": [
+          "Projetos de casas, do estudo inicial ao projeto executivo.",
+          "Interiores pensados para a rotina de quem vai morar.",
+          "Projetos de reforma com etapas combinadas."
+        ],
+        "differentials": [
+          "Etapas claras do estudo à entrega",
+          "Briefing detalhado",
+          "Residencial e interiores"
+        ],
+        "processSteps": [
+          "Briefing",
+          "Estudo preliminar",
+          "Projeto e acompanhamento"
+        ],
+        "faqQuestions": [
+          "Como começa um projeto?",
+          "Quais etapas estão incluídas?",
+          "Vocês fazem projetos de reforma?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "sobre"
+        ],
+        "direction": "essencial",
+        "palette": "grafite",
+        "typography": "auto",
+        "familyId": "portfolio",
+        "layoutVariantId": "galeria",
+        "heroVariantId": "imagem",
+        "assetCategory": "arquitetura",
+        "brandColor": "",
+        "needs": [],
+        "missing": [],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "criativo",
+        "subsegmento": "arquitetura",
+        "familia": "portfolio",
+        "botao": "Solicitar proposta",
+        "imagem": "projeto-fachada",
+        "semTexto": [
+          "cliente",
+          "premiad"
+        ]
+      }
+    },
+    {
+      "id": "fora-do-segmento",
+      "titulo": "Negócio fora dos segmentos principais (escola de música)",
+      "descricao": "Escola de música com aulas de violão, piano e canto para crianças e adultos. Quero que os alunos peçam uma aula experimental.",
+      "resposta": {
+        "name": "",
+        "nameOrigin": "nenhum",
+        "segment": "outro",
+        "subsegment": "aulas",
+        "segmentOther": "Escola de música",
+        "service": "Aulas de música",
+        "objective": "agendamento",
+        "headline": "Aulas de violão, piano e canto para crianças e adultos",
+        "description": "Escolha o instrumento e peça uma aula experimental pelo WhatsApp.",
+        "services": [
+          "Violão",
+          "Piano",
+          "Canto"
+        ],
+        "about": "Escola de música com aulas de violão, piano e canto para crianças e adultos.",
+        "serviceDetails": [
+          "Aulas de violão para quem está começando ou quer evoluir.",
+          "Aulas de piano com repertório escolhido junto com o aluno.",
+          "Aulas de canto para trabalhar voz e respiração."
+        ],
+        "differentials": [
+          "Crianças e adultos",
+          "Aula experimental",
+          "Três instrumentos"
+        ],
+        "processSteps": [
+          "Escolha o instrumento",
+          "Peça a aula experimental",
+          "Combine o horário"
+        ],
+        "faqQuestions": [
+          "Preciso ter instrumento?",
+          "A partir de que idade?",
+          "Como funciona a aula experimental?"
+        ],
+        "sections": [
+          "servicos",
+          "processo",
+          "sobre"
+        ],
+        "direction": "marcante",
+        "palette": "roxo",
+        "typography": "auto",
+        "familyId": "institucional",
+        "layoutVariantId": "tipografico",
+        "heroVariantId": "tipografico",
+        "assetCategory": "",
+        "brandColor": "",
+        "needs": [],
+        "missing": [
+          "nome"
+        ],
+        "question": ""
+      },
+      "espera": {
+        "segmento": "outro",
+        "subsegmento": "aulas",
+        "familia": "institucional",
+        "botao": "Agendar aula experimental",
+        "imagem": "",
+        "semTexto": [
+          "instalação"
+        ]
+      }
+    }
+  ]
+}

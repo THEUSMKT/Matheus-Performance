@@ -37,6 +37,7 @@ import {
   segments,
   stepQuestions,
   steps,
+  subsegmentOf,
   switchPackage,
   type Project,
 } from '@/lib/project';
@@ -53,8 +54,8 @@ import { canResume, useNarrow, useProject } from '../landing/useProject';
 import { SitePreview } from '../preview/SitePreview';
 import { PackageDialog, PriceBar, StepPackage } from './Packages';
 import { PrintSummary, RequestButton, StepSite } from './Site';
-import { StepBusiness, StepObjective, type StepErrors } from './Steps';
-import { StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle } from './Choices';
+import { NameField, StepBusiness, StepObjective, type StepErrors } from './Steps';
+import { ReadyExtras, StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle, type ReadyQuestion } from './Choices';
 import { DRAFT_KEY, Describe, type DescribePhase } from './Describe';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
@@ -95,6 +96,10 @@ export default function Builder() {
   /** Prévia gerada que chegou depois de a pessoa sair da etapa. */
   const [late, setLate] = useState<Suggestion | null>(null);
   const [aiNotes, setAiNotes] = useState<string[]>([]);
+  /** A única pergunta da IA que muda a prévia (quando houver). */
+  const [aiQuestion, setAiQuestion] = useState('');
+  /** "Corrigir o nome" aberto (pela tela da prévia pronta ou pela faixa do celular). */
+  const [fixingName, setFixingName] = useState(false);
   const [updated, setUpdated] = useState(false);
   /** Última mudança ampla (pacote, restauração, nova geração), para desfazer. */
   const [undo, setUndo] = useState<{ label: string; project: Project } | null>(null);
@@ -263,7 +268,7 @@ export default function Builder() {
   /** Passo a passo: nome e segmento antes de sair do negócio. */
   function businessErrors(): StepErrors {
     const found: StepErrors = {};
-    if (p.name.trim().length < 2) found.name = 'Informe o nome da empresa.';
+    if (p.name.trim().length < 2 && !p.nameLater) found.name = 'Informe o nome ou marque “Ainda não defini o nome.”';
     if (!p.segment) found.segment = 'Escolha o segmento da empresa.';
     else if (p.segment === 'outro' && p.segmentOther.trim().length < 2) found.segment = 'Conte qual é o segmento.';
     return found;
@@ -475,6 +480,7 @@ export default function Builder() {
       notes.push(`Sua descrição cita itens fora dos pacotes (${names}). Se precisar deles, marque em “Seções”.`);
     }
     setAiNotes(notes);
+    setAiQuestion(sug.question);
     // Textos editados à mão ficaram; a pessoa pode trocar pelos novos.
     setKeptEdits(before.edited.length ? { base: before, sug } : null);
     // Segmento escolhido à mão foi mantido, mas a descrição aponta outro: pergunta, sem trocar sozinho.
@@ -544,6 +550,30 @@ export default function Builder() {
   const canRegen = aiEnabled && !manual;
   const editLabel = backFromReady() === STEP.negocio ? 'Editar minha descrição' : 'Voltar ao objetivo';
 
+  /** Tipo de negócio respondido pela pessoa: a prévia troca imagens, textos e botão, sem nova geração. */
+  function answerType(id: string, extraService = '') {
+    setUndo({ label: 'Tipo de negócio definido.', project: p });
+    const own = p.services.map((x) => x.trim()).filter(Boolean);
+    const services = extraService && !own.some((x) => x.toLowerCase() === extraService.toLowerCase()) ? [...own.slice(0, own.length ? 2 : 0), ...(own.length ? [] : ['Consultas', 'Vacinação']), extraService] : p.services;
+    replace({ ...p, subsegment: id, family: '', layout: '', imagery: '', services });
+    setAiQuestion('');
+  }
+  const sub = subsegmentOf(p);
+  const readyQuestion: ReadyQuestion | null =
+    p.segment === 'pet' && sub.generic && sub.question
+      ? {
+          text: sub.question,
+          options: [
+            { label: 'Consultas veterinárias', apply: () => answerType('clinica-veterinaria') },
+            { label: 'Banho e tosa', apply: () => answerType('banho-e-tosa') },
+            { label: 'Os dois', apply: () => answerType('clinica-veterinaria', 'Banho e tosa') },
+            { label: 'Pet shop', apply: () => answerType('pet-shop') },
+          ],
+        }
+      : aiQuestion
+        ? { text: aiQuestion, options: [], onDescribe: () => go(STEP.negocio, { validate: false }) }
+        : null;
+
   const preview = (mode: 'mobile' | 'desktop', inFull = false) =>
     mode === 'desktop' ? (
       <DesktopFrame width={inFull ? 1100 : 900}>
@@ -566,7 +596,16 @@ export default function Builder() {
       <>
         {describing && (
           <>
-            <Describe generating={generating} error={genError} onGenerate={generate} onPhase={setDescribePhase} clearError={() => setGenError('')} />
+            <Describe
+              generating={generating}
+              error={genError}
+              onGenerate={generate}
+              onPhase={setDescribePhase}
+              clearError={() => setGenError('')}
+              nameSlot={<NameField p={p} replace={replace} id="nome-descricao" />}
+              hasName={Boolean(p.name.trim()) || p.nameLater}
+              onUseName={(name) => replace({ ...p, name, nameLater: false, aiFilled: { ...p.aiFilled, name: '' } })}
+            />
             {!capturing && (
               <p className={b.orSteps}>
                 <button type="button" className={b.textButton} onClick={() => setManual(true)}>
@@ -602,8 +641,11 @@ export default function Builder() {
     body = (
       <StepReady
         p={p}
-        edit={edit}
+        replace={replace}
         notes={aiNotes}
+        question={readyQuestion}
+        fixingName={fixingName}
+        onFixName={setFixingName}
         narrow={narrow}
         onPersonalize={() => go(STEP.pacote)}
         keptEdits={keptEdits ? keptEdits.base.edited : []}
@@ -642,6 +684,7 @@ export default function Builder() {
       <StepContent
         p={p}
         edit={edit}
+        replace={replace}
         logo={logo}
         setLogo={setLogo}
         broadEdit={broadEdit}
@@ -783,7 +826,7 @@ export default function Builder() {
         </div>
       </header>
 
-      <main id="conteudo" className={b.main}>
+      <main id="conteudo" className={b.main} data-view={view}>
         <div className={s.wrap}>
           <div className={b.top}>
             <div className={b.progress}>
@@ -935,6 +978,7 @@ export default function Builder() {
                       setResetting(false);
                       setManual(false);
                       setAiNotes([]);
+                      setAiQuestion('');
                       setView('edit');
                       window.scrollTo({ top: 0, behavior: 'instant' });
                       requestAnimationFrame(() => heading.current?.focus({ preventScroll: true }));
@@ -997,7 +1041,22 @@ export default function Builder() {
                   <h2 ref={readyHeading} tabIndex={-1} id="pronta-titulo">
                     <Check aria-hidden="true" /> Sua prévia está pronta
                   </h2>
-                  <p>Role para ver o site inteiro. Depois, personalize — ou siga direto para o pedido.</p>
+                  <p className={b.readyText}>Role para ver o site inteiro. Depois, personalize — ou siga direto para o pedido.</p>
+                  {narrow && (
+                    <div className={b.readyExtras}>
+                      <ReadyExtras
+                        p={p}
+                        replace={replace}
+                        question={readyQuestion}
+                        compact
+                        onEditName={() => {
+                          setFixingName(true);
+                          backToEdit();
+                          requestAnimationFrame(() => document.getElementById('nome-pronta')?.focus());
+                        }}
+                      />
+                    </div>
+                  )}
                   <button type="button" className={b.textButton} onClick={() => go(STEP.revisao)}>
                     Gostei assim — revisar e solicitar
                   </button>
@@ -1019,7 +1078,10 @@ export default function Builder() {
                   </button>
                 </span>
               </div>
-              <div className={b.previewArea}>{preview(device)}</div>
+              {/* No computador a prévia rola dentro da coluna: foco pelo teclado para rolar com as setas. */}
+              <div className={b.previewArea} tabIndex={0} role="region" aria-label="Prévia do site (role para ver a página inteira)">
+                {preview(device)}
+              </div>
             </aside>
           </div>
         </div>

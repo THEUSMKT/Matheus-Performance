@@ -27,6 +27,11 @@ const {projectFaq} = require('../src/config/projectFaq.ts');
 const {createReceiver, memoryAdapters} = require('../integrations/lead-receiver/receiver.ts');
 const crm = require('../integrations/lead-receiver/crm.ts');
 const ai = require('../src/lib/aiPreview.ts');
+const plans = require('../src/lib/plan.ts');
+const { subsegments } = require('../src/config/subsegments.ts');
+const { families } = require('../src/config/families.ts');
+const { assets } = require('../src/config/assets.ts');
+const heroOf = (p, opts) => plans.previewPlan(p, opts).heroAsset?.id ?? '';
 const worker = require('../integrations/ai-preview/worker.ts');
 const audio = require('../src/lib/aiAudio.ts');
 
@@ -168,68 +173,77 @@ test('Nome, segmento, serviço e objetivo mudam a prévia (ar-condicionado)', ()
   const c = model.siteContent(p);
   assert.equal(c.name, 'Clima Sul');
   assert.equal(c.title, 'Instalação de ar-condicionado com orçamento pelo WhatsApp.');
-  assert.equal(c.cta, 'Solicitar orçamento'); assert.equal(c.image, 'clima');
+  assert.equal(c.cta, 'Solicitar orçamento'); assert.equal(heroOf(p), 'clima');
   assert.deepEqual(c.services, ['Instalação de ar-condicionado', 'Manutenção preventiva', 'Limpeza e higienização']);
   assert(c.servicesSuggested && c.titleSuggested);
   const mine = model.normalizeProject({ ...p, services: ['Split', '', 'PMOC'], headline: 'Meu título' });
   assert.deepEqual(model.siteContent(mine).services, ['Split', 'PMOC']); assert.equal(model.siteContent(mine).title, 'Meu título');
   const later = model.normalizeProject({ ...p, serviceLater: true });
-  assert.equal(later.service, ''); assert.equal(model.siteContent(later).title, model.segments[0].title);
+  assert.equal(later.service, ''); assert.equal(model.siteContent(later).title, subsegments.find((x) => x.id === 'servicos-locais').title);
   const other = model.normalizeProject({ ...base(), segment: 'outro', segmentOther: 'escola de idiomas' });
-  assert.equal(model.siteContent(other).segmentName, 'Escola de idiomas'); assert.equal(model.siteContent(other).image, 'consultoria');
+  assert.equal(model.siteContent(other).segmentName, 'Escola de idiomas');
+  assert.equal(model.subsegmentOf(other).id, 'aulas'); assert.equal(heroOf(other), '', 'aulas: sem imagem adequada, topo tipográfico');
   const empty = model.initialProject();
-  assert.equal(model.siteContent(empty).name, 'Seu negócio'); assert.equal(model.segmentLabel(empty), 'A informar');
+  assert.equal(model.siteContent(empty).name, 'Seu negócio'); assert.equal(model.siteContent(empty).nameProvisional, true); assert.equal(model.segmentLabel(empty), 'A informar');
 });
 
 test('Segmento de imóveis tem classificação, serviços e prévia específicos', () => {
   const property = model.normalizeProject({ ...model.initialProject(), name: 'Clara Imóveis', segment: 'imoveis', service: 'Corretora de imóveis', objective: 'trabalhos' });
   const content = model.siteContent(property);
-  assert.equal(content.image, 'imoveis');
-  assert.equal(content.segmentName, 'Imóveis e corretores');
+  assert.equal(heroOf(property), 'imoveis');
+  assert.equal(content.segmentName, 'Corretor de imóveis');
   assert(content.services.some((s) => /imóve/i.test(s)));
   assert.equal(model.exampleProject('imoveis').pkg, 'profissional');
 });
 
-test('Nome e imagem de exemplo só aparecem quando combinam com o serviço', () => {
-  const { keywordRules } = require('../src/config/segments.ts');
-  // Nos exemplos (demo), o nome fictício só aparece quando combina; na prévia do visitante, nunca.
-  const at = (segment, service, extra = {}) => model.siteContent(model.normalizeProject({ ...model.initialProject(), segment, service, ...extra }), { demo: true });
-  assert.equal(model.siteContent(model.normalizeProject({ ...model.initialProject(), segment: 'local', service: 'Pintura' })).name, 'Seu negócio', 'prévia do visitante sem nome: "Seu negócio"');
+test('Tipo de negócio e imagem seguem o serviço; nome fictício só nos exemplos, provisório na prévia do visitante', () => {
+  const make = (segment, service, extra = {}) => model.normalizeProject({ ...model.initialProject(), segment, service, ...extra });
+  const at = (segment, service, extra = {}) => ({ ...model.siteContent(make(segment, service, extra), { demo: true }), image: heroOf(make(segment, service, extra), { demo: true }), sub: model.subsegmentOf(make(segment, service, extra)).id });
+  assert.equal(model.siteContent(make('local', 'Pintura')).name, 'Sua empresa', 'prévia do visitante sem nome: nome provisório do tipo de negócio');
+  assert.equal(model.siteContent(make('pet', 'Clínica veterinária')).name, 'Sua clínica');
+  assert.equal(model.siteContent(make('criativo', 'Projetos de arquitetura')).name, 'Seu estúdio');
   const pet = at('local', 'Banho e tosa');
-  assert.equal(pet.name, 'Seu negócio', 'pet shop não vira "Oficina do Lar"'); assert.equal(pet.image, 'pet');
-  assert.deepEqual(pet.services, ['Banho e tosa', 'Cuidados com o pet', 'Produtos para pets']);
+  assert.equal(pet.sub, 'banho-e-tosa'); assert.equal(pet.image, 'pet', 'banho e tosa: imagem de banho'); assert.notEqual(pet.name, 'Oficina do Lar');
+  assert.equal(at('pet', 'Clínica veterinária').image, 'pet-clinica', 'clínica: consultório, nunca o banho');
   const car = at('local', 'Revisão e troca de óleo');
-  assert.equal(car.name, 'Seu negócio'); assert.equal(car.image, 'auto');
+  assert.equal(car.sub, 'oficina'); assert.equal(car.image, 'auto');
   const unknown = at('local', 'Aluguel de brinquedos');
-  assert.equal(unknown.name, 'Seu negócio'); assert.equal(unknown.image, 'loja', 'serviço desconhecido: imagem neutra');
-  assert.equal(at('local', 'Pintura').name, 'Oficina do Lar', 'serviço do próprio segmento mantém o exemplo');
+  assert.equal(unknown.image, '', 'serviço desconhecido: topo tipográfico, nenhuma imagem de outro negócio'); assert.equal(unknown.name, 'Sua empresa');
+  assert.equal(at('local', 'Pintura').image, 'servico-pintura');
+  assert.equal(at('local', 'Limpeza residencial').image, 'limpeza', 'limpeza tem imagem própria');
   assert.equal(at('local', 'Reforma de banheiro').image, 'reparos');
   assert.equal(at('local', '').name, 'Oficina do Lar'); assert.equal(at('local', '').image, 'reparos');
   assert.equal(at('local', 'Banho e tosa', { name: 'Pet Feliz' }).name, 'Pet Feliz', 'nome informado sempre vale');
-  assert.equal(at('beleza', 'Pilates').image, 'loja'); assert(at('beleza', 'Pilates').services.includes('Treinos personalizados'));
-  assert.equal(at('alimentacao', 'Camisetas personalizadas').image, 'loja', '"personalizadas" não vira academia');
-  assert.equal(at('consultoria', 'Oficina de costura').image, 'consultoria', 'oficina de costura não é mecânica: imagem genérica da consultoria');
-  assert.equal(at('criativo', 'Portfólio profissional').image, 'criativo', 'portfólio sem regra: ilustração criativa, não loja');
-  assert.equal(at('criativo', 'Portfólio profissional').name, 'Seu negócio');
-  assert.equal(at('local', 'Aluguel de brinquedos').image, 'loja', 'sem imagem genérica própria: loja');
-  assert.equal(at('consultoria', 'Psicóloga').name, 'Seu negócio');
+  assert.equal(at('beleza', 'Pilates').image, 'treino'); assert(at('beleza', 'Pilates').services.includes('Treinos personalizados'));
+  assert.equal(at('alimentacao', 'Camisetas personalizadas').image, '', '"personalizadas" não vira academia nem comida');
+  assert.equal(at('consultoria', 'Oficina de costura').sub, 'consultoria', 'oficina de costura não é mecânica');
+  assert.equal(at('consultoria', 'Oficina de costura').image, '');
+  assert.equal(at('consultoria', 'Psicóloga').sub, 'saude'); assert.equal(at('consultoria', 'Psicóloga').image, '', 'saúde: sem imagem de banco');
   assert.equal(at('local', 'Manutenção automotiva').image, 'auto');
   assert.equal(at('local', 'Serviços para veículos').image, 'auto');
   assert.equal(at('local', 'Atendimento', { services: ['Revisão', 'Troca de óleo', 'Freios'] }).image, 'auto', 'a lista de serviços também indica o ramo');
   assert.equal(at('local', 'Pintura', { services: ['Banho e tosa'] }).image, 'servico-pintura', 'o serviço principal tem prioridade');
   assert(/NÃO é agenda/.test(ai.systemPrompt()) && /NÃO é loja/.test(ai.systemPrompt()), 'agendar pelo WhatsApp não vira agenda própria');
   for (const seg of model.segments) {
-    for (const q of seg.quick) assert.equal(at(seg.id, q).name, seg.demo, `${seg.id}: "${q}" combina com o exemplo`);
+    for (const q of seg.quick) {
+      const r = at(seg.id, q);
+      assert.equal(r.name, subsegments.find((x) => x.id === r.sub).demo, `${seg.id}: "${q}" usa o exemplo do próprio tipo de negócio`);
+    }
   }
-  for (const r of keywordRules) {
-    if (r.image) assert(fs.existsSync(path.join(__dirname, `../public/demo/${r.image}.svg`)), r.image);
-    if (r.segment) assert(model.segments.some((s) => s.id === r.segment), r.segment);
+  // Catálogo coerente: arquivos existem, categorias e famílias válidas.
+  const cats = new Set(assets.map((x) => x.category));
+  for (const x of assets) assert(fs.existsSync(path.join(__dirname, `../public/demo/${x.id}.svg`)), x.id);
+  for (const sub of subsegments) {
+    assert(model.segments.some((s) => s.id === sub.segment), sub.id);
+    assert(families.some((f) => f.id === sub.family), sub.id);
+    for (const c of sub.assets) assert(cats.has(c), `${sub.id}: ${c}`);
+    assert(sub.provisional && sub.demo && sub.services.length && sub.title, sub.id);
   }
 });
 
 test('Textos sugeridos não inventam fatos sobre a empresa', () => {
-  const texts = JSON.stringify(model.segments) + JSON.stringify(require('../src/config/segments.ts').keywordRules.map((r) => r.services));
-  for (const bad of [/\d+ anos/i, /clientes satisfeitos/i, /certificad/i, /melhor d[ae]/i, /líder/i, /garant/i, /\d+%/, /premiad/i]) assert(!bad.test(texts), bad);
+  const texts = JSON.stringify(model.segments) + JSON.stringify(subsegments.map((x) => [x.title, x.intro, x.services, x.copy]));
+  for (const bad of [/\d+ anos/i, /clientes satisfeitos/i, /certificad/i, /melhor d[ae]/i, /líder/i, /garant/i, /\d+%/, /premiad/i, /24 ?h/i, /emergência/i, /creci/i, /R\$/]) assert(!bad.test(texts), bad);
   const src = fs.readFileSync(path.join(__dirname, '../src/components/preview/SitePreview.tsx'), 'utf8');
   for (const bad of [/★/, /estrelas/i, /\d+ clientes/i, /anos de experiência/i]) assert(!bad.test(src), bad);
 });
@@ -257,7 +271,7 @@ test('Ordem das seções: Subir e Descer, com apresentação e contato fixos', (
 test('Mensagem do WhatsApp traz tudo o que o atendimento precisa (§17)', () => {
   const p = withLead(model.normalizeProject({ ...base(), service: 'Instalação de ar-condicionado', pkg: 'profissional', form: true, sections: ['apresentacao', 'servicos', 'galeria', 'faq', 'contato'], notes: 'Já tenho domínio', direction: 'elegante', custom: '#112233' }), { name: 'Ana', deadline: 'mes', decision: 'junto' });
   const msg = model.projectMessage(p, 'google/cpc', { logo: true });
-  for (const s of ['Olá, Matheus! Quero solicitar o desenvolvimento do meu site pela Beck Performance.', 'MEU NEGÓCIO\nEmpresa: Clima Sul', 'Segmento: Serviços locais', 'Objetivo do site: Pedir um orçamento', 'Serviço principal: Instalação de ar-condicionado', 'PACOTE ESCOLHIDO\nProfissional — R$ 750\nPagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'COMO IMAGINEI O SITE\nEstilo: Elegante', 'Cores: Cor da marca (#112233)', 'Fonte dos títulos: Sugerida pelo estilo', 'Logo: tenho e envio por aqui', 'Seções, na ordem escolhida: Apresentação, Serviços, Galeria de fotos, Perguntas frequentes, Contato', 'Formulário que encaminha o pedido ao WhatsApp', 'Galeria com até 8 imagens suas', 'Prazo: 5–8 dias úteis', 'Ajustes: 2 rodadas', 'OBSERVAÇÕES\nJá tenho domínio', 'SOBRE MIM\nMeu nome: Ana', 'Quando quero começar: No próximo mês', 'Gostaria de alinhar os próximos passos para desenvolver este projeto.', 'Referência (a mesma do arquivo do projeto): bp-abcdef1234 · Origem: google/cpc']) assert(msg.includes(s), s);
+  for (const s of ['Olá, Matheus! Quero solicitar o desenvolvimento do meu site pela Beck Performance.', 'MEU NEGÓCIO\nEmpresa: Clima Sul', 'Segmento: Serviços locais', 'Objetivo do site: Pedir um orçamento', 'Serviço principal: Instalação de ar-condicionado', 'PACOTE ESCOLHIDO\nProfissional — R$ 750\nPagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'Tipo de negócio: Ar-condicionado', 'COMO IMAGINEI O SITE\nComposição: Serviços locais · Oferta direta\nEstilo: Elegante', 'Cores: Cor da marca (#112233)', 'Fonte dos títulos: Sugerida pelo estilo', 'Logo: tenho e envio por aqui', 'Seções, na ordem escolhida: Apresentação, Serviços, Galeria de fotos, Perguntas frequentes, Contato', 'Formulário que encaminha o pedido ao WhatsApp', 'Galeria com até 8 imagens suas', 'Prazo: 5–8 dias úteis', 'Ajustes: 2 rodadas', 'OBSERVAÇÕES\nJá tenho domínio', 'SOBRE MIM\nMeu nome: Ana', 'Quando quero começar: No próximo mês', 'Gostaria de alinhar os próximos passos para desenvolver este projeto.', 'Referência (a mesma do arquivo do projeto): bp-abcdef1234 · Origem: google/cpc']) assert(msg.includes(s), s);
   assert(!msg.includes('undefined')); assert(!/\+ ?R\$/.test(msg), 'nunca "+ R$"');
   // Sem estado serializado nem ids internos no texto (o problema do link com JSON codificado).
   for (const bad of ['%22', '%7B', '{', '"', 'identitySet', 'direction', 'palette', 'complex', '#projeto=', 'null']) assert(!msg.includes(bad), bad);
@@ -342,9 +356,9 @@ test('Exemplo como ponto de partida leva estilo e segmento e mantém o que foi d
   for (const s of model.segments) {
     const e = model.exampleProject(s.id);
     assert(model.priceOf(e) <= 1000); assert.equal(e.pkg, model.requiredPackage(e) === 'completo' ? 'completo' : e.pkg);
-    layouts.add(`${e.direction}|${e.sections.join()}`);
+    layouts.add(model.familyOf(e).id);
   }
-  assert.equal(layouts.size, model.segments.length, 'exemplos com composições diferentes');
+  assert.equal(layouts.size, 8, 'um exemplo para cada uma das oito famílias visuais');
 });
 
 test('Contraste do texto dos botões com cor própria (WCAG AA)', () => {
@@ -364,9 +378,12 @@ test('Projetos do fluxo anterior de 4 etapas continuam de onde pararam; fontes d
   // Fluxo guiado-v1 (sem a escolha de pacote): cada etapa cai na mesma escolha de antes.
   const v1 = (step) => model.normalizeProject({ version: 4, flow: 'guiado-v1', name: 'Clima Sul', step }).step;
   assert.deepEqual([...Array(9).keys()].map(v1), [0, 1, 2, model.STEP.estilo, model.STEP.cores, model.STEP.titulos, model.STEP.conteudo, model.STEP.secoes, model.STEP.revisao]);
-  assert.deepEqual(model.fonts.map((f) => f.id), ['auto', 'serif', 'sans', 'forte']);
+  assert.deepEqual(model.fonts.map((f) => f.id), ['auto', 'serif', 'sans', 'geometrica', 'forte']);
   assert.equal(model.normalizeProject({ ...again, font: 'forte' }).font, 'forte'); assert.equal(model.normalizeProject({ ...again, font: 'comic' }).font, 'auto');
-  assert(/Georgia/.test(model.headFont('auto', 'elegante'))); assert(/Arial Black/.test(model.headFont('auto', 'marcante'))); assert(/Segoe/.test(model.headFont('auto', 'essencial')));
+  assert(/Georgia/.test(model.headFont('auto', 'elegante'))); assert(/Segoe/.test(model.headFont('auto', 'marcante'))); assert(/Segoe/.test(model.headFont('auto', 'essencial')));
+  // Automática: a fonte da família (a mesma que a prévia usa), serifa nos estilos com serifa.
+  assert(/font-title/.test(model.headFont('auto', 'essencial', 'geometrica'))); assert(/Georgia/.test(model.headFont('auto', 'sofisticado', 'geometrica')));
+  assert(/font-title/.test(model.headFont('geometrica', 'elegante')));
   assert(/Georgia/.test(model.headFont('serif', 'marcante'))); assert(/Segoe/.test(model.headFont('sans', 'elegante'))); assert(/Arial Black/.test(model.headFont('forte', 'essencial')));
   for (const f of model.fonts) assert(!/font|family/i.test(f.name), f.name);
 });
@@ -692,7 +709,8 @@ test('IA: servidor intermediário — origem, tamanho, limite, chave só no serv
   assert.equal((await worker.handle(req(null, {}, 'GET'), env)).status, 405);
   assert.equal((await worker.handle(req({ schema: ai.AI_SCHEMA_VERSION, description: 'curto' }), env)).status, 422);
   assert.equal((await worker.handle(req({ schema: ai.AI_SCHEMA_VERSION, description: 'x'.repeat(7000) }), env)).status, 413);
-  assert.equal((await worker.handle(req({ schema: 2, description: desc }), env)).status, 422);
+  assert.equal((await worker.handle(req({ schema: 3, description: desc }), env)).status, 422, 'versão desconhecida é recusada');
+  assert.equal((await (await worker.handle(req({ schema: 3, description: desc }), env)).json()).error, 'versao');
   const limited = { ...env, RATE_LIMITER: { limit: async () => ({ success: false }) } };
   assert.equal((await worker.handle(req({ schema: ai.AI_SCHEMA_VERSION, description: desc }), limited, gemini(200, {}))).status, 429);
   assert.equal((await worker.handle(req({ schema: ai.AI_SCHEMA_VERSION, description: desc }), { ...env, GEMINI_API_KEY: '' }, gemini(200, {}), log)).status, 503);
@@ -941,7 +959,9 @@ test('A17/A18: mensagem humana; 10%, &, +, emoji e URL preservados com uma codif
   for (const bad of ['%22', '%3A', '{', 'identitySet', 'undefined', 'null', 'NaN']) assert(!msg.includes(bad), bad);
   assert(!/\n{3,}/.test(msg), 'blocos separados por uma linha em branco');
   const empty = model.projectMessage(model.initialProject());
-  for (const t of ['Empresa:', 'Serviço principal:', 'OBSERVAÇÕES', 'SOBRE MIM', 'TEXTOS']) assert(!empty.includes(t), `vazio não aparece: ${t}`);
+  for (const t of ['Serviço principal:', 'OBSERVAÇÕES', 'SOBRE MIM', 'TEXTOS']) assert(!empty.includes(t), `vazio não aparece: ${t}`);
+  // Sem nome: a mensagem diz que ainda não foi definido (e qual nome provisório a prévia mostrou).
+  assert(empty.includes('Empresa: nome ainda não definido (na prévia: “Seu negócio”)'));
 });
 
 test('A19/A20: mensagem usa só o ativo; longa demais vira resumo enxuto que aponta o arquivo', () => {
@@ -987,8 +1007,10 @@ test('A05/A08: exemplo é uma configuração completa e determinística; nome fi
     const a = model.exampleProject(seg.id), b = model.exampleProject(seg.id);
     assert.deepEqual(a, b, 'mesmo exemplo, mesma configuração');
     assert.equal(a.name, '', 'o exemplo não grava nome fictício no projeto');
-    if (seg.id !== 'outro') assert.equal(model.siteContent(a, { demo: true }).name, seg.demo);
-    assert.equal(model.siteContent(a).name, model.NEUTRAL_NAME);
+    const sub = subsegments.find((x) => x.id === seg.example);
+    assert.equal(model.siteContent(a, { demo: true }).name, sub.demo);
+    assert.equal(model.siteContent(a).name, sub.provisional, 'fora do exemplo, sem nome: provisório do tipo de negócio');
+    assert.equal(model.siteContent(a).nameProvisional, true);
   }
   const forma = model.exampleProject('criativo');
   assert.equal(forma.palette, 'roxo'); assert.equal(forma.direction, 'escuro'); assert.equal(forma.pkg, 'profissional');
@@ -1019,7 +1041,7 @@ test('Exemplos: galeria no limite do próprio pacote (Casa Oliva/Completo = 15) 
     const ex = model.exampleProject(seg.id);
     if (ex.sections.includes('galeria')) assert.equal(ex.gallery, pk.packageById(ex.pkg).galleryImages, `${seg.id}: galeria do ${ex.pkg}`);
     assert.equal(ex.pkgChosen, true, 'exemplo tem pacote definido');
-    for (const [img] of [...seg.art.gallery, ...seg.art.items]) assert(fs.existsSync(path.join(__dirname, `../public/demo/${img}.svg`)), `${seg.id}: ${img}`);
+    for (const img of [plans.previewPlan(ex).heroAsset, ...plans.previewPlan(ex).gallery].filter(Boolean)) assert(fs.existsSync(path.join(__dirname, `../public/demo/${img.id}.svg`)), `${seg.id}: ${img.id}`);
     assert(seg.purpose && seg.purpose.length < 60, `${seg.id}: finalidade curta`);
   }
   assert.equal(model.exampleProject('alimentacao').gallery, 15);
@@ -1035,7 +1057,7 @@ test('Modelo de estética + descrição de corretora: o segmento do modelo cede;
   const realEstate = ai.sanitizeSuggestion({ ...goodAnswer, name: 'Clara Imóveis', segment: 'imoveis', service: 'Compra e venda de imóveis' });
   const fromTemplate = ai.applySuggestion(model.normalizeProject(template), realEstate);
   assert.equal(fromTemplate.segment, 'imoveis', 'segmento do modelo é sugestão');
-  assert.equal(model.siteContent(fromTemplate).segmentName, 'Imóveis e corretores', 'selo coerente');
+  assert.equal(model.siteContent(fromTemplate).segmentName, 'Corretor de imóveis', 'selo coerente e específico');
   assert(model.projectMessage(fromTemplate).includes('Segmento: Imóveis e corretores'), 'WhatsApp coerente');
   const manual = ai.applySuggestion(model.normalizeProject({ ...template, aiFilled: { name: '', segment: '', segmentOther: '' } }), realEstate);
   assert.equal(manual.segment, 'beleza', 'escolha à mão não troca sozinha (a tela pergunta)');

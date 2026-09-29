@@ -12,8 +12,9 @@ três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). Páginas:
   - dúvidas essenciais e chamada final.
 - **Exemplos (`/exemplos/`)**:
   - projetos reais, com "Visitar site";
-  - modelos demonstrativos por segmento, com filtros, visualização no
-    computador e no celular e "Criar minha prévia com este modelo".
+  - oito modelos demonstrativos, um por família visual, com filtros,
+    visualização no computador e no celular e "Criar minha prévia com este
+    modelo".
 - **Pacotes (`/pacotes/`)**:
   - comparação compacta;
   - cartões completos de cada pacote;
@@ -21,11 +22,13 @@ três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). Páginas:
   - condições (domínio e hospedagem, depois da entrega, o que não está
     incluído, projeto personalizado).
 - **Criação (`/criar/`)**:
-  - monta a prévia contando sobre o negócio (por áudio, texto ou passo a
-    passo);
+  - começa pelo nome ("Como se chama seu negócio?", com a opção "Ainda não
+    defini o nome.") e pela ideia, por áudio, texto ou passo a passo;
+  - monta a prévia numa das oito famílias visuais, de acordo com o tipo de
+    negócio (clínica veterinária, banho e tosa, confeitaria, corretor...);
   - depois vem "Sua prévia está pronta";
-  - em seguida, uma escolha por tela: pacote, estilo, cores, títulos,
-    conteúdo e seções;
+  - em seguida, uma escolha por tela: pacote, composição e estilo, cores,
+    títulos, conteúdo e seções;
   - por fim, a revisão.
   - O pedido de desenvolvimento sai pelo WhatsApp, com "Copiar resumo" e
     "Baixar meu projeto".
@@ -48,7 +51,7 @@ publicado no GitHub Pages em `/Matheus-Performance/configurador/`.
 cd apps/configurador
 npm ci
 npm run dev        # http://localhost:3000
-npm test           # pacotes, limites, migração, mensagem, pedidos e eventos
+npm test           # pacotes, limites, migração, mensagem, pedidos, eventos e prévias (8 casos de negócio renderizados)
 npm run typecheck
 NEXT_PUBLIC_BASE_PATH=/Matheus-Performance/configurador npm run build   # gera out/
 npm run preview    # serve out/ no caminho do GitHub Pages
@@ -65,7 +68,10 @@ texto comercial fica escrito dentro de componente.
 |---|---|
 | `packages.ts` | **Os três pacotes** (valor, limite de seções, galeria, vitrine, formulário, prazo, o que inclui), rodadas de ajuste, notas de preço, o que é projeto personalizado e custos externos |
 | `contact.ts` | Marca, responsável, **WhatsApp** (único lugar do número), mensagens de abertura, e-mail e Instagram (vazios = não aparecem), liberação para o Google |
-| `segments.ts` | Segmentos, textos sugeridos, estilos e cores sugeridos, respostas rápidas e regras por palavra-chave (ex.: ar-condicionado → imagem de climatização) |
+| `segments.ts` | Segmentos, estilos e cores sugeridos, respostas rápidas e o tipo de negócio de cada modelo |
+| `subsegments.ts` | **Tipos de negócio** (clínica veterinária, banho e tosa, pet shop, limpeza, confeitaria, buffet, corretor...): família visual, imagens permitidas, nome provisório ("Sua clínica"), botão, textos de exemplo e termos com peso para reconhecer o tipo pela descrição |
+| `families.ts` | **As oito famílias visuais**: composição, duas variantes, fonte, paletas recomendadas, apresentação dos serviços e seções sugeridas por pacote |
+| `assets.ts` | **Catálogo de imagens** (arquivos de `public/demo/`) com categoria, cortes, ponto focal, texto alternativo, origem e licença |
 | `projectFaq.ts` | Perguntas frequentes (valores, prazos e limites vêm de `packages.ts`) |
 | `proof.ts` | Projetos reais (nome, categoria, frase, endereço, capturas em `public/projetos/`) e depoimentos — **só com autorização**, sem pacote, preço ou resultado associado |
 | `experiments.ts` | Testes de mensagem e CTA (todos inativos) |
@@ -86,10 +92,11 @@ Página, PDF, mensagem do WhatsApp e receptor usam as mesmas funções.
 | `public/projetos/` | Capturas dos projetos reais (WebP, origem e data no README da pasta) |
 | `src/app/fonts/` | Plus Jakarta Sans (títulos), arquivo local com licença OFL |
 | `src/app/criar/` · `src/components/builder/` | Página de criação: fluxo e barra do celular (`Builder`), descrição por áudio/texto (`Describe`), negócio e objetivo (`Steps`), prévia pronta e escolhas uma por tela (`Choices`, `Pickers`), revisão, pedido, copiar resumo e arquivo do projeto (`Site`), escolha, comparação e troca reversível de pacotes (`Packages`) |
-| `src/components/preview/SitePreview.tsx` | Prévia do site: nome, logo, segmento, serviço, objetivo, estilo, cores e seções na ordem escolhida |
-| `public/demo/` | Ilustrações próprias por segmento (SVG, sem links externos) |
+| `src/lib/plan.ts` | **Plano da prévia**: a única seleção visual (família, variante, topo com imagem ou tipográfico, imagens, fonte, títulos e ações). Miniatura, exemplo aberto, prévia do celular e do computador, editor e resumo usam o mesmo cálculo |
+| `src/components/preview/SitePreview.tsx` · `Preview.module.css` | Prévia do site montada pelo plano: primeira dobra e serviços próprios de cada família; estilos mudam só tons, formas e títulos |
+| `public/demo/` | Ilustrações próprias por tipo de negócio (SVG, sem links externos; catálogo em `src/config/assets.ts`) |
 | `src/lib/logo.ts` | Logo enviada para a prévia — fica só no navegador |
-| `src/lib/project.ts` | Modelo do projeto (v4), pacotes, validação, migração da v1/v2/v3, links, mensagem |
+| `src/lib/project.ts` | Modelo do projeto (v4, revisão 2), pacotes, validação, migração da v1/v2/v3, tipo de negócio e nome exibido, links, mensagem |
 | `src/lib/leads.ts` | Contrato do pedido, validação, envio com idempotência |
 | `src/lib/analytics.ts` · `origin.ts` | Eventos e origem da visita |
 | `integrations/lead-receiver/` | Receptor de referência e modelo do CRM |

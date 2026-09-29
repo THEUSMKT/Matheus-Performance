@@ -5,6 +5,7 @@
 // Rode: BASE=... BASE_R=... BASE_AI=... node tests/e2e.browser.mjs   (CHROMIUM=/caminho opcional)
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 const URL = process.env.BASE ?? 'http://localhost:4190/Matheus-Performance/configurador/';
 const URL_R = process.env.BASE_R ?? 'http://localhost:4191/Matheus-Performance/configurador/';
 const URL_AI = process.env.BASE_AI ?? 'http://localhost:4192/Matheus-Performance/configurador/';
@@ -273,7 +274,7 @@ await scenario('Sem JavaScript: menu, páginas novas e links de pacote e modelo 
   assert((await page.getByRole('link', { name: 'Criar prévia com este pacote: Profissional' }).getAttribute('href')).endsWith('/criar/?pacote=profissional'));
   assert(await page.locator('#comparar').isVisible(), 'comparação no HTML');
   await page.goto(EX);
-  assert.equal(await page.getByRole('link', { name: 'Criar minha prévia com este modelo' }).count(), 6);
+  assert.equal(await page.getByRole('link', { name: 'Criar minha prévia com este modelo' }).count(), 8, 'um modelo por família visual');
   assert((await page.getByRole('link', { name: 'Criar minha prévia com este modelo' }).first().getAttribute('href')).endsWith('/criar/?modelo=local'));
   assert.equal(await page.getByRole('link', { name: /Visitar site/ }).count(), 2);
   // Atalho antigo sem script: a âncora cai no acesso aos exemplos.
@@ -328,14 +329,14 @@ await scenario('Exemplos: dois grupos, projetos reais com "Visitar site" e model
   assert.equal(await real.locator('img').count(), 4, 'computador e celular de cada projeto');
   assert(!(await real.innerText()).includes('Criar minha prévia'), 'projeto real não vira modelo');
   const names = await modelCards(page).locator('h3').allInnerTexts();
-  assert.deepEqual(names, ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo', 'Imóveis e corretores']);
+  assert.deepEqual(names, ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo', 'Imóveis e corretores', 'Veterinária e cuidados pet', 'Outro segmento']);
   assert(await page.getByRole('heading', { name: 'Outro segmento' }).isVisible());
   for (let i = 0; i < names.length; i++) {
     const t = await modelCards(page).nth(i).innerText();
     assert(t.includes('Modelo demonstrativo') && /Nome fictício: .+\. Montado no pacote (Essencial|Profissional|Completo) \(R\$ [\d.]+\)\./.test(t), `cartão identificado: ${names[i]}`);
   }
-  const classes = await page.locator('#modelos [aria-roledescription=prévia]').evaluateAll((els) => els.map((e) => e.className));
-  assert.equal(new Set(classes).size, 6, 'cada modelo com uma composição');
+  const fams = await page.locator('#modelos [aria-roledescription=prévia]').evaluateAll((els) => els.map((e) => e.dataset.family));
+  assert.equal(new Set(fams).size, 8, 'cada modelo com a sua família visual');
   const dialog = page.locator('dialog[open]');
   for (const [i, seg] of names.entries()) {
     const card = modelCards(page).nth(i);
@@ -553,13 +554,14 @@ await scenario('Cores, títulos e estilo atualizam a prévia; voltar e avançar 
   await toReady(page);
   await toChoice(page, Q.estilo);
   const site = () => preview(page).locator('[aria-roledescription=prévia]');
-  const suggestedStyle = await page.locator('[role=radio][aria-checked=true]').getAttribute('aria-label');
+  const styles = page.getByRole('radiogroup', { name: 'Estilo' });
+  const suggestedStyle = await styles.locator('[role=radio][aria-checked=true]').getAttribute('aria-label');
   await page.getByRole('radio', { name: /^Escuro/ }).click();
   assert.match(await site().getAttribute('class'), /escuro/, 'estilo na hora');
   assert.equal(await title(page), Q.estilo, 'não avança sozinho no clique');
   await page.getByRole('radio', { name: /^Elegante/ }).click();
   await page.getByRole('radio', { name: /^Escuro/ }).click();
-  assert.notEqual(suggestedStyle, await page.locator('[role=radio][aria-checked=true]').getAttribute('aria-label'));
+  assert.notEqual(suggestedStyle, await styles.locator('[role=radio][aria-checked=true]').getAttribute('aria-label'));
   await next(page);
   assert.equal(await title(page), Q.cores);
   const accentBefore = await site().evaluate((e) => getComputedStyle(e).getPropertyValue('--acc'));
@@ -601,7 +603,7 @@ await scenario('Beleza: agendamento, galeria pede o Profissional antes de mudar 
   assert((await agenda.innerText()).includes('Comum no seu segmento'));
   await agenda.click();
   assert((await page.locator('[aria-live=polite][class*=outcome]').innerText()).includes('Não é uma agenda com horários em tempo real'));
-  assert((await preview(page).innerText()).includes('Pedir um horário'));
+  assert((await preview(page).innerText()).includes('Agendar horário'), 'botão de beleza: pedido de horário');
   await next(page);
   await toChoice(page, Q.secoes);
   await page.getByRole('checkbox', { name: /Galeria de fotos/ }).click();
@@ -636,7 +638,8 @@ await scenario('Produtos: recomendação do Completo só com escolha; trocar par
   await next(page);
   await toChoice(page, Q.secoes);
   await page.getByRole('checkbox', { name: /Vitrine de produtos/ }).check();
-  assert((await preview(page).innerText()).includes('Pedir pelo WhatsApp'));
+  assert.equal(await preview(page).locator('[data-section=vitrine]').count(), 1, 'vitrine na prévia');
+  assert((await preview(page).locator('[data-section=vitrine]').innerText()).includes('sem pagamento online'), 'pedido pelo WhatsApp, sem pagamento online');
   await page.getByRole('button', { name: 'Alterar pacote' }).first().click();
   const dlg = page.locator('dialog[open]');
   assert.equal(await dlg.getByText('Selecionado', { exact: true }).count(), 1);
@@ -649,7 +652,7 @@ await scenario('Produtos: recomendação do Completo só com escolha; trocar par
   assert.equal(await page.locator('dialog[open]').count(), 0, 'a janela fecha depois da escolha');
   assert.equal(await price(page), 'R$ 500');
   assert.equal(await page.getByRole('checkbox', { name: /Vitrine de produtos/ }).isChecked(), false);
-  assert(!(await preview(page).innerText()).includes('Pedir pelo WhatsApp'));
+  assert.equal(await preview(page).locator('[data-section=vitrine]').count(), 0, 'a vitrine saiu da prévia');
   // Guardado, não apagado: aparece e volta num pacote que comporte (A03).
   assert((await page.locator('main').innerText()).includes('Guardados no rascunho, fora do pacote atual: Vitrine de produtos'));
   await page.getByRole('button', { name: 'Desfazer' }).click();
@@ -801,11 +804,11 @@ await scenario('Exemplos: filtro por segmento e composições próprias (imóvei
   assert.equal(await page.locator('#exemplo-titulo').innerText(), 'Imóveis e corretores');
   await page.keyboard.press('Escape');
   await filter.getByRole('button', { name: 'Todos' }).click();
-  assert.equal(await cards.count(), 6);
+  assert.equal(await cards.count(), 8);
   // Alimentação (Completo, com vitrine): cardápio por categorias, pedido pelo WhatsApp.
   await modelCard(page, 'Alimentação').getByRole('button', { name: 'Ver no computador e no celular' }).click();
   const food = await page.locator('dialog[open] [aria-roledescription=prévia]').innerText();
-  assert(food.includes('Cardápio') && food.includes('Pedir pelo WhatsApp') && food.includes('sem pagamento online'));
+  assert(food.includes('Cardápio') && food.includes('pelo WhatsApp') && food.includes('sem pagamento online'));
   await page.keyboard.press('Escape');
   // Topo da página inicial: a vitrine usa o mesmo desenho das prévias (sem mockup à parte).
   await page.goto(URL);
@@ -816,8 +819,8 @@ await scenario('Exemplos: filtro por segmento e composições próprias (imóvei
   await page.reload();
   await ready(page);
   const pv = (await preview(page).innerText()).toLowerCase();
-  assert(pv.includes('imóveis em destaque') && pv.includes('casa com quintal') && pv.includes('agendar visita pelo whatsapp'), 'o estilo pode deixar títulos em maiúsculas');
-  assert(pv.includes('imóveis ilustrativos') && pv.includes('sem preços nem disponibilidade'), 'vitrine marcada como ilustrativa');
+  assert(pv.includes('imóveis em destaque') && pv.includes('casa com quintal') && pv.includes('agendar uma visita'), 'o estilo pode deixar títulos em maiúsculas');
+  assert(pv.includes('imóveis ilustrativos') && pv.includes('sem preço, endereço ou disponibilidade'), 'vitrine marcada como ilustrativa');
   assert(!/R\$\s?\d/.test(pv), 'sem preço de imóvel');
   for (const t of ['foto do imóvel', 'sua foto 1', 'item 1', 'foto do item']) assert(!pv.includes(t), `sem espaço vazio no exemplo: ${t}`);
   assert(pv.includes('imagens ilustrativas') && pv.includes('até 8 fotos'), 'galeria ilustrativa com o tamanho escolhido no projeto');
@@ -1108,7 +1111,7 @@ await scenario('IA digitando: gera direto do texto; falha preserva a descrição
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   assert((await page.locator('#erro-descricao').innerText()).includes('pelo menos 20'));
   assert.equal(calls, 0, 'nada vazio ou com telefone é enviado');
-  const desc = 'Faço instalação e manutenção de ar-condicionado. Quero receber pedidos de orçamento, com visual moderno.';
+  const desc = 'A Clima Sul faz instalação e manutenção de ar-condicionado. Quero receber pedidos de orçamento, com visual moderno.';
   await box.fill(desc);
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.locator('#erro-descricao').waitFor();
@@ -1241,7 +1244,7 @@ await scenario('Celular 390px com IA: gerar abre a prévia direto, com "Sua pré
   await page.goto(URL_AI + 'criar/');
   await ready(page);
   await page.getByRole('button', { name: 'Prefiro digitar' }).click();
-  await page.locator('#descricao-ia').fill('Faço instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
+  await page.locator('#descricao-ia').fill('A Clima Sul faz instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.getByRole('heading', { name: 'Sua prévia está pronta' }).filter({ visible: true }).waitFor();
   assert(await preview(page).isVisible(), 'a prévia aparece sem procurar');
@@ -1265,7 +1268,7 @@ await scenario('IA: se a pessoa sai da etapa enquanto gera, nada muda sozinho; a
   await page.goto(URL_AI + 'criar/');
   await ready(page);
   await page.getByRole('button', { name: 'Prefiro digitar' }).click();
-  await page.locator('#descricao-ia').fill('Faço instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
+  await page.locator('#descricao-ia').fill('A Clima Sul faz instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.getByRole('button', { name: 'Montando sua prévia…' }).waitFor();
   // Enquanto gera, a pessoa prefere o passo a passo e segue.
@@ -1295,7 +1298,7 @@ await scenario('IA: gerar outra sugestão só para uma seção; as outras ficam 
   await page.goto(URL_AI + 'criar/');
   await ready(page);
   await page.getByRole('button', { name: 'Prefiro digitar' }).click();
-  await page.locator('#descricao-ia').fill('Faço instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
+  await page.locator('#descricao-ia').fill('A Clima Sul faz instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
   await toChoice(page, Q.conteudo);
@@ -1564,6 +1567,245 @@ await scenario('Navegador do Instagram: aviso sobre o microfone e opção de dig
   assert(await page.getByText('No navegador do Instagram ou do Facebook, o microfone pode não funcionar.').isVisible());
   assert(await page.getByRole('button', { name: 'Prefiro digitar' }).isVisible());
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 330.0.0.0' });
+
+/* ── Prévias por família (casos de negócio com respostas simuladas) ─────── */
+
+const { casos } = JSON.parse(readFileSync(new globalThis.URL('./fixtures/casos-de-negocio.json', import.meta.url), 'utf8'));
+const caso = (id) => casos.find((c) => c.id === id);
+const livePreview = (page) => page.locator('aside [aria-roledescription=prévia]').first();
+/** Servidor simulado: responde no formato pedido (v2) com o caso; conta as chamadas. */
+async function mockAi(page, answer, { oldServer = false } = {}) {
+  const calls = [];
+  await page.route('https://ia.test/preview', (route) => {
+    const body = JSON.parse(route.request().postData() || '{}');
+    calls.push(body.schema);
+    if (oldServer && body.schema !== 1) return route.fulfill({ status: 422, contentType: 'application/json', headers: cors, body: '{"ok":false,"error":"versao"}' });
+    const suggestion = typeof answer === 'function' ? answer(body) : answer;
+    return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion }) });
+  });
+  return calls;
+}
+async function describeAndGenerate(page, text) {
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  const typeBtn = page.getByRole('button', { name: 'Prefiro digitar' });
+  if (await typeBtn.isVisible().catch(() => false)) await typeBtn.click();
+  await page.locator('#descricao-ia').fill(text);
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
+}
+
+await scenario('Nome antes da prévia: campo, sugestão tirada da descrição e "Ainda não defini o nome"', async (page) => {
+  const c = caso('clinica-veterinaria');
+  await mockAi(page, { ...c.resposta, name: '', nameOrigin: 'nenhum' });
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  const field = page.getByLabel('Como se chama seu negócio?');
+  assert(await field.isVisible(), 'o nome vem junto com a ideia, antes de gravar ou digitar');
+  assert(await page.getByText('Esse nome aparece na prévia.').isVisible());
+  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
+  await page.locator('#descricao-ia').fill(c.descricao);
+  const found = page.getByText(/Encontramos “Clínica Vila Pet” na sua descrição/);
+  await found.waitFor();
+  await page.getByRole('button', { name: 'Usar este nome' }).click();
+  assert.equal(await field.inputValue(), 'Clínica Vila Pet');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
+  const pv = livePreview(page);
+  assert.equal(await pv.getAttribute('aria-label'), 'Prévia do site de Clínica Vila Pet');
+  assert.equal(await pv.getAttribute('data-image'), 'pet-clinica');
+  // Recomeçar e seguir sem nome: provisório identificado, sem bloquear.
+  await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  await page.getByText('Ainda não defini o nome.').click();
+  assert(await page.getByText('A prévia usa “Seu negócio” como nome provisório.', { exact: false }).isVisible());
+  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
+  await page.locator('#descricao-ia').fill(c.descricao);
+  assert.equal(await page.getByRole('button', { name: 'Usar este nome' }).count(), 0, 'sem sugestão quando a pessoa ainda não definiu');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
+  assert.equal(await livePreview(page).getAttribute('aria-label'), 'Prévia do site de Sua clínica (nome provisório)');
+  assert((await livePreview(page).innerText()).includes('Sua clínica'));
+  assert.equal((await stored(page)).nameLater, true);
+});
+
+await scenario('Clínica veterinária x banho e tosa: imagens, botões e textos de cada um; nada de banho na clínica', async (page) => {
+  for (const id of ['clinica-veterinaria', 'banho-e-tosa']) {
+    const c = caso(id);
+    await page.unroute('https://ia.test/preview').catch(() => {});
+    await mockAi(page, c.resposta);
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); }).catch(() => {});
+    await describeAndGenerate(page, c.descricao);
+    const pv = livePreview(page);
+    assert.equal(await pv.getAttribute('data-subsegment'), c.espera.subsegmento);
+    assert.equal(await pv.getAttribute('data-image'), c.espera.imagem);
+    const text = await pv.innerText();
+    assert(text.includes(c.espera.botao), `${id}: botão "${c.espera.botao}"`);
+    for (const bad of c.espera.semTexto) assert(!text.toLowerCase().includes(bad.toLowerCase()), `${id}: sem "${bad}"`);
+    const imgs = await pv.locator('img').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
+    for (const img of c.espera.semImagem) assert(!imgs.some((src) => src.endsWith(`/demo/${img}.svg`)), `${id}: sem ${img}`);
+  }
+});
+
+await scenario('Servidor ainda antigo: a página repete no formato 1 e monta a família certa', async (page) => {
+  const c = caso('clinica-veterinaria');
+  const old = { ...c.resposta, segment: 'outro', segmentOther: 'Clínica veterinária' };
+  for (const k of ['subsegment', 'familyId', 'layoutVariantId', 'heroVariantId', 'assetCategory', 'typography', 'nameOrigin']) delete old[k];
+  const calls = await mockAi(page, old, { oldServer: true });
+  await describeAndGenerate(page, c.descricao);
+  assert.deepEqual(calls, [2, 1], 'uma recusa de versão e uma chamada válida');
+  const pv = livePreview(page);
+  assert.equal(await pv.getAttribute('data-family'), 'pet');
+  assert.equal(await pv.getAttribute('data-image'), 'pet-clinica');
+  assert.equal((await stored(page)).segment, 'pet');
+});
+
+await scenario('Descrição ambígua: uma pergunta, respondida com um toque e sem nova chamada à IA', async (page) => {
+  const vague = { ...caso('clinica-veterinaria').resposta, name: '', nameOrigin: 'nenhum', subsegment: 'pet', services: ['Atendimento'], headline: 'Cuidado para o seu pet', assetCategory: 'automatica' };
+  const calls = await mockAi(page, vague);
+  await describeAndGenerate(page, 'Cuido de pets com carinho e quero receber pedidos de horário pelo WhatsApp.');
+  const pv = livePreview(page);
+  assert.equal(await pv.getAttribute('data-image'), '', 'sem saber o tipo, sem imagem de banho ou de consulta');
+  const q = page.getByRole('group', { name: /Uma pergunta para acertar a prévia/ });
+  assert((await q.innerText()).includes('Você oferece consultas veterinárias, banho e tosa ou os dois?'));
+  await q.getByRole('button', { name: 'Banho e tosa' }).click();
+  await page.waitForFunction(() => document.querySelector('aside [aria-roledescription=prévia]')?.dataset.image === 'pet');
+  assert.equal(calls.length, 1, 'responder não chama a IA de novo');
+  assert.equal(await page.getByRole('group', { name: /Uma pergunta/ }).count(), 0);
+  assert(await page.getByRole('button', { name: 'Desfazer' }).isVisible(), 'dá para desfazer');
+});
+
+await scenario('Celular: a pergunta única e o nome provisório aparecem logo acima da prévia, sem procurar', async (page) => {
+  const vague = { ...caso('clinica-veterinaria').resposta, name: '', nameOrigin: 'nenhum', subsegment: 'pet', services: ['Atendimento'], headline: 'Cuidado para o seu pet', assetCategory: 'automatica' };
+  await mockAi(page, vague);
+  await describeAndGenerate(page, 'Cuido de pets com carinho e quero receber pedidos de horário pelo WhatsApp.');
+  const pv = livePreview(page);
+  assert(await pv.isVisible(), 'a prévia abre sozinha');
+  const q = page.getByRole('group', { name: /Uma pergunta para acertar a prévia/ });
+  assert(await q.isVisible(), 'pergunta visível na tela da prévia');
+  const qBox = await q.boundingBox(); const pvBox = await pv.boundingBox();
+  assert(qBox.y < pvBox.y, 'a pergunta fica acima do site');
+  assert(await page.getByText(/Nome provisório: “Seu negócio pet”/).isVisible());
+  await q.getByRole('button', { name: 'Consultas veterinárias' }).click();
+  await page.waitForFunction(() => document.querySelector('aside [aria-roledescription=prévia]')?.dataset.image === 'pet-clinica');
+  await page.getByRole('button', { name: 'Informar o nome' }).click();
+  await page.locator('#nome-pronta').fill('Clínica Bem Cuidar');
+  await page.locator('#nome-pronta').blur();
+  await visible(page.locator('[data-bar=configurador] button', { hasText: 'Ver minha prévia' })).click();
+  assert.equal(await livePreview(page).getAttribute('aria-label'), 'Prévia do site de Clínica Bem Cuidar');
+}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+await scenario('Composição e estilo mudam na hora, sem perder textos e sem chamar a IA; recarregar mantém tudo', async (page) => {
+  const c = caso('confeitaria');
+  const calls = await mockAi(page, c.resposta);
+  await describeAndGenerate(page, c.descricao);
+  const pv = livePreview(page);
+  const words = (await pv.innerText()).includes('Bolos decorados e doces finos por encomenda');
+  assert(words);
+  await visible(page.getByRole('button', { name: 'Personalizar meu site' })).click();
+  await toChoice(page, Q.estilo);
+  const comp = page.getByRole('radiogroup', { name: 'Composição' });
+  assert.equal(await comp.getByRole('radio').count(), 4, 'duas variantes, topo sem imagem e institucional');
+  await comp.getByRole('radio', { name: /^Cardápio/ }).click();
+  assert.equal(await pv.getAttribute('data-layout'), 'cardapio');
+  await comp.getByRole('radio', { name: /^Topo sem imagem/ }).click();
+  assert.equal(await pv.getAttribute('data-hero'), 'tipografico');
+  await page.getByRole('radiogroup', { name: 'Estilo' }).getByRole('radio', { name: /^Escuro/ }).click();
+  assert((await pv.innerText()).includes('Bolos decorados e doces finos por encomenda'), 'textos preservados');
+  assert.equal(calls.length, 1, 'mudar composição e estilo não chama a IA');
+  await page.reload();
+  await ready(page);
+  const again = livePreview(page);
+  assert.equal(await again.getAttribute('data-layout'), 'cardapio');
+  assert.equal(await again.getAttribute('data-hero'), 'tipografico');
+  assert.equal(await title(page), Q.estilo, 'volta para onde parou');
+});
+
+await scenario('Trocar o nome atualiza cabeçalho, rodapé, apresentação, resumo e WhatsApp', async (page) => {
+  const c = caso('arquitetura');
+  await mockAi(page, c.resposta);
+  await describeAndGenerate(page, c.descricao);
+  await visible(page.getByRole('button', { name: 'Personalizar meu site' })).click();
+  await toChoice(page, Q.conteudo);
+  const field = page.locator('#nome-conteudo');
+  await field.fill('Ateliê Traço Fino');
+  await field.blur();
+  const pv = livePreview(page);
+  await page.waitForFunction(() => document.querySelector('aside [aria-roledescription=prévia]')?.getAttribute('aria-label') === 'Prévia do site de Ateliê Traço Fino');
+  const text = await pv.innerText();
+  assert(!text.includes('Estúdio Linha'), 'o nome antigo sai de todo o site (inclusive dos textos da IA)');
+  assert(text.includes('Sobre Ateliê Traço Fino') && text.includes('© Ateliê Traço Fino'));
+  await toChoice(page, Q.secoes);
+  await next(page);
+  assert.equal(await title(page), Q.revisao);
+  assert((await page.locator('main').innerText()).includes('Site de Ateliê Traço Fino'));
+  const msg = await waMessage(page);
+  assert(msg.includes('Empresa: Ateliê Traço Fino') && !msg.includes('Estúdio Linha'));
+  assert(msg.includes('Tipo de negócio: Arquitetura') && msg.includes('Composição: Arquitetura e portfólio'));
+});
+
+await scenario('Modelo da página de exemplos = prévia aberta = prévia criada (mesma família, variante e imagem)', async (page) => {
+  await page.goto(EX);
+  for (const name of ['Veterinária e cuidados pet', 'Imóveis e corretores']) {
+    const card = modelCard(page, name);
+    const thumb = card.locator('[aria-roledescription=prévia]');
+    const sig = async (loc) => [await loc.getAttribute('data-family'), await loc.getAttribute('data-layout'), await loc.getAttribute('data-image')].join('|');
+    const t = await sig(thumb);
+    await card.getByRole('button', { name: 'Ver no computador e no celular' }).click();
+    assert.equal(await sig(page.locator('dialog[open] [aria-roledescription=prévia]').first()), t, `${name}: miniatura = exemplo aberto`);
+    await page.keyboard.press('Escape');
+  }
+  const card = modelCard(page, 'Veterinária e cuidados pet');
+  const t = await card.locator('[aria-roledescription=prévia]').getAttribute('data-image');
+  await card.getByRole('link', { name: 'Criar minha prévia com este modelo' }).click();
+  await page.waitForURL(/criar/);
+  await ready(page);
+  const pv = livePreview(page);
+  assert.equal(await pv.getAttribute('data-image'), t);
+  assert.equal(await pv.getAttribute('data-family'), 'pet');
+  assert(!(await pv.innerText()).includes('Clínica Vila Pet'), 'a marca fictícia do exemplo não vem para o projeto');
+  assert.equal((await stored(page)).name, '');
+  await page.goto(EX);
+});
+
+for (const [w, h] of [[360, 740], [390, 844], [430, 932]]) {
+  await scenario(`Celular ${w}px: gerar abre a prévia na largura útil, legível, e volta para editar`, async (page) => {
+    const c = caso('limpeza');
+    await mockAi(page, c.resposta);
+    await describeAndGenerate(page, c.descricao);
+    const pv = livePreview(page);
+    await pv.waitFor();
+    const box = await pv.boundingBox();
+    assert(box.width >= w - 2, `prévia ocupa a largura útil (${box.width} de ${w})`);
+    assert(await page.getByRole('heading', { name: 'Sua prévia está pronta' }).isVisible(), 'confirmação junto da prévia');
+    assert.equal(await scrollWidth(page), w, 'sem rolagem lateral');
+    const title = await pv.locator('[class*=title]').first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+    assert(title >= 26, 'título legível, sem miniatura');
+    const tap = await visible(page.locator('[data-bar=configurador] button')).boundingBox();
+    assert(tap.height >= 44, 'botões da barra com área de toque');
+    await visible(page.getByRole('button', { name: 'Editar minha descrição' })).click();
+    assert.equal(await page.locator('#descricao-ia').inputValue(), c.descricao, 'descrição preservada');
+  }, { viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
+}
+
+await scenario('Oito famílias em 360, 390, 430, 768 e 1440 px: sem rolagem lateral nem texto cortado', async (page) => {
+  for (const id of ['local', 'beleza', 'consultoria', 'alimentacao', 'criativo', 'imoveis', 'pet', 'outro']) {
+    for (const w of [360, 390, 430, 768, 1440]) {
+      await page.setViewportSize({ width: w, height: 900 });
+      await page.goto(B + `?modelo=${id}`);
+      await ready(page);
+      const pv = livePreview(page);
+      if (!(await pv.isVisible())) await visible(page.locator('[data-bar=configurador] button', { hasText: /Ver minha prévia|Ver meu site/ })).click().catch(() => {});
+      assert.equal(await scrollWidth(page), w, `${id} ${w}: sem rolagem lateral`);
+      const over = await page.locator('aside [aria-roledescription=prévia]').first().evaluate((root) =>
+        [...root.querySelectorAll('span, b, li, p')].filter((e) => e.scrollWidth > e.clientWidth + 2 && getComputedStyle(e).overflow !== 'hidden' && getComputedStyle(e).textOverflow !== 'ellipsis').length,
+      );
+      assert.equal(over, 0, `${id} ${w}: nenhum texto vaza da caixa`);
+      await page.evaluate(() => localStorage.clear());
+    }
+  }
+});
 
 /* ── Com receptor de pedidos ────────────────────────────────────────────── */
 

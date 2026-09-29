@@ -6,6 +6,11 @@
    necessidades de projeto personalizado. Tudo é validado ao ler do
    navegador, de links ou de versões anteriores (v3, v2 e v1 continuam
    sendo lidas). Nenhum valor monetário é definido aqui.
+
+   Revisão 2 da v4 (prévias por família): subsegmento, família visual,
+   variante, topo com ou sem imagem, categoria de imagem, "ainda não
+   defini o nome" e a origem dos textos. Projetos sem esses campos abrem
+   com tudo automático — nada do que a pessoa fez muda.
    ========================================================================== */
 import { contact } from '../config/contact';
 import {
@@ -21,9 +26,12 @@ import {
   type Package,
   type PackageId,
 } from '../config/packages';
-import { segments, keywordRules, type Segment } from '../config/segments';
+import { segments, type Segment } from '../config/segments';
+import { detectSubsegment, genericSubsegment, subsegmentById, subsegments, type Subsegment } from '../config/subsegments';
+import { familyById, families, heroIds, layoutIds, type Family, type LayoutVariant } from '../config/families';
+import { assetCategories } from '../config/assets';
 
-export { segments };
+export { segments, subsegments, families };
 
 /* ── Catálogos ───────────────────────────────────────────────────────────── */
 
@@ -88,21 +96,29 @@ export const objectives: Objective[] = [
   },
 ];
 
-/** Estilos visuais. Os ids são os mesmos das versões anteriores (links e projetos salvos). */
+/**
+ * Estilos visuais. Os ids são os mesmos das versões anteriores (links e
+ * projetos salvos). O estilo muda tons, formas e títulos; a organização da
+ * página vem da família visual (config/families.ts).
+ */
 export const directions = [
-  { id: 'marcante', name: 'Moderno', description: 'Títulos fortes, contraste e blocos de cor.' },
-  { id: 'elegante', name: 'Elegante', description: 'Serifa, tons suaves e composição centralizada.' },
-  { id: 'essencial', name: 'Minimalista', description: 'Linhas limpas, muito respiro e leitura direta.' },
+  { id: 'marcante', name: 'Moderno', description: 'Contraste forte, títulos pesados e faixas de cor.' },
+  { id: 'elegante', name: 'Elegante', description: 'Serifa, tons suaves e formas arredondadas.' },
+  { id: 'essencial', name: 'Minimalista', description: 'Fundo claro, linhas finas e muito respiro.' },
   { id: 'tecnologico', name: 'Tecnológico', description: 'Topo escuro com grade e detalhes digitais.' },
-  { id: 'sofisticado', name: 'Sofisticado', description: 'Foto em destaque, serifa e tons de papel.' },
+  { id: 'sofisticado', name: 'Sofisticado', description: 'Tons de papel, serifa e acabamento discreto.' },
   { id: 'escuro', name: 'Escuro', description: 'Fundo escuro em todo o site.' },
 ] as const;
 
+/** Paletas: todas com contraste AA para texto branco no botão e para o texto de destaque sobre o fundo claro. */
 export const palettes = [
   { id: 'azul', name: 'Oceano', accent: '#285c79', bg: '#eff5f8' },
   { id: 'verde', name: 'Oliva', accent: '#485d44', bg: '#f2f3ea' },
   { id: 'terracota', name: 'Argila', accent: '#a44932', bg: '#fbf2eb' },
   { id: 'roxo', name: 'Violeta', accent: '#6650b5', bg: '#f6f3fc' },
+  { id: 'petroleo', name: 'Petróleo', accent: '#1d5e63', bg: '#eef5f4' },
+  { id: 'grafite', name: 'Grafite', accent: '#33373f', bg: '#f3f3f1' },
+  { id: 'vinho', name: 'Vinho', accent: '#7b2d3b', bg: '#f8f0f0' },
 ] as const;
 
 export type Section = {
@@ -175,24 +191,36 @@ const FLOW4_STEP = [STEP.negocio, STEP.objetivo, STEP.estilo, STEP.revisao];
 /** Etapas do fluxo guiado-v1 (sem a escolha de pacote) para as atuais. */
 const GUIDED1_STEP = [STEP.negocio, STEP.objetivo, STEP.pronta, STEP.estilo, STEP.cores, STEP.titulos, STEP.conteudo, STEP.secoes, STEP.revisao];
 
-/** Fontes dos títulos. "auto" segue o estilo escolhido. */
+/**
+ * Fontes dos títulos (typographyId no contrato da IA). "auto" segue a
+ * família e o estilo. Só fontes do sistema e a Plus Jakarta Sans que o site
+ * já carrega: nenhuma fonte a mais para baixar.
+ */
 export const fonts = [
   { id: 'auto', name: 'Sugerida pelo estilo' },
   { id: 'serif', name: 'Clássica' },
   { id: 'sans', name: 'Moderna' },
+  { id: 'geometrica', name: 'Geométrica' },
   { id: 'forte', name: 'Impactante' },
 ] as const;
 
+const FONT_STACKS: Record<string, string> = {
+  serif: 'Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif',
+  sans: '"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif',
+  geometrica: 'var(--font-title), "Segoe UI", system-ui, Arial, sans-serif',
+  forte: '"Arial Black", "Segoe UI Black", "Segoe UI", system-ui, Arial, sans-serif',
+};
+
+/** Qual fonte vale: a escolhida; no automático, serifa nos estilos com serifa e, nos outros, a da família. */
+export function typographyOf(font: string, direction: string, familyDefault = 'sans'): string {
+  if (FONT_STACKS[font]) return font;
+  if (direction === 'elegante' || direction === 'sofisticado') return 'serif';
+  return familyDefault;
+}
+
 /** Família da fonte dos títulos na prévia. */
-export function headFont(font: string, direction: string): string {
-  const serif = 'Georgia, "Times New Roman", serif';
-  const sans = '"Segoe UI", system-ui, Arial, sans-serif';
-  const strong = '"Arial Black", "Segoe UI", Arial, sans-serif';
-  if (font === 'serif') return serif;
-  if (font === 'sans') return sans;
-  if (font === 'forte') return strong;
-  if (direction === 'elegante' || direction === 'sofisticado') return serif;
-  return direction === 'marcante' ? strong : sans;
+export function headFont(font: string, direction: string, familyDefault = 'sans'): string {
+  return FONT_STACKS[typographyOf(font, direction, familyDefault)];
 }
 
 /** Chaves de armazenamento, da atual para as anteriores. */
@@ -235,13 +263,22 @@ export type Lead = {
 
 export type Project = {
   version: 4;
+  /** Revisão do formato dentro da v4 (2 = famílias visuais). */
+  rev: number;
   /** Versão do fluxo em que o projeto foi editado por último. */
   flow: string;
   /** Identificador local, gerado no primeiro salvamento. */
   id: string;
   name: string;
+  /** "Ainda não defini o nome": a prévia usa um nome provisório ("Sua clínica"). */
+  nameLater: boolean;
   /** '' enquanto o visitante não escolhe. */
   segment: string;
+  /**
+   * Tipo de negócio dentro do segmento (config/subsegments.ts), vindo da IA
+   * ou da escolha da pessoa. '' = detectado pelo serviço e pelos serviços.
+   */
+  subsegment: string;
   segmentOther: string;
   service: string;
   /** O visitante escolheu "Definir depois" para o serviço principal. */
@@ -269,6 +306,8 @@ export type Project = {
    * nunca o que o visitante digitou ou escolheu.
    */
   aiFilled: { name: string; segment: string; segmentOther: string };
+  /** De onde vieram os textos em uso: 'ia' (descrição), 'modelo' (exemplo) ou '' (escritos ou sugestões do catálogo). */
+  textSource: '' | 'ia' | 'modelo';
   /**
    * Textos que o visitante editou à mão. Uma nova geração pela IA não os
    * substitui sem ele pedir.
@@ -301,6 +340,14 @@ export type Project = {
   /** Estilo ou cores escolhidos pelo visitante (o segmento não troca mais sozinho). */
   identitySet: boolean;
   direction: string;
+  /** Família visual (config/families.ts). '' = a do subsegmento. */
+  family: string;
+  /** Variante da composição dentro da família. '' = a primeira. */
+  layout: string;
+  /** Topo com imagem ou tipográfico. '' = imagem quando houver uma adequada. */
+  hero: string;
+  /** Categoria de imagem preferida (config/assets.ts), validada pelo subsegmento. '' = automática. */
+  imagery: string;
   palette: string;
   custom: string | null;
   font: string;
@@ -319,13 +366,19 @@ export const emptyDetails: Project['details'] = { audience: '', region: '', high
 
 export const emptyLead: Lead = { name: '', channel: 'whatsapp', contact: '', deadline: '', decision: '', marketing: false };
 
+/** Revisão atual do formato v4. */
+export const PROJECT_REV = 2;
+
 export function initialProject(): Project {
   return {
     version: 4,
+    rev: PROJECT_REV,
     flow: FLOW_VERSION,
     id: '',
     name: '',
+    nameLater: false,
     segment: '',
+    subsegment: '',
     segmentOther: '',
     service: '',
     serviceLater: false,
@@ -336,6 +389,7 @@ export function initialProject(): Project {
     services: [],
     previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] },
     aiFilled: { name: '', segment: '', segmentOther: '' },
+    textSource: '',
     edited: [],
     details: { ...emptyDetails },
     sections: [...objectives[0].structure],
@@ -348,6 +402,10 @@ export function initialProject(): Project {
     complex: [],
     identitySet: false,
     direction: 'marcante',
+    family: '',
+    layout: '',
+    hero: '',
+    imagery: '',
     palette: 'azul',
     custom: null,
     font: 'auto',
@@ -399,13 +457,17 @@ export function normalizeProject(input: unknown): Project {
   const d = initialProject();
   if (x.version !== 4) return d;
   const complex = [...new Set(strings(x.complex).filter((c) => customNeeds.some((n) => n.id === c)))];
+  const family = familyById(typeof x.family === 'string' ? x.family : '');
   const p: Project = {
     ...d,
-    // Depois de lido (e convertido, se preciso), o projeto está no fluxo atual.
+    // Depois de lido (e convertido, se preciso), o projeto está no fluxo e na revisão atuais.
     flow: FLOW_VERSION,
+    rev: PROJECT_REV,
     id: typeof x.id === 'string' && /^bp-[a-z0-9]{8,16}$/.test(x.id) ? x.id : '',
     name: cleanText(x.name, 80),
+    nameLater: x.nameLater === true && !cleanText(x.name, 80).trim(),
     segment: pickOrEmpty(x.segment, segments.map((s) => s.id)),
+    subsegment: pickOrEmpty(x.subsegment, subsegments.map((s) => s.id)),
     segmentOther: cleanText(x.segmentOther, 60),
     service: cleanText(x.service, 80),
     serviceLater: x.serviceLater === true,
@@ -426,6 +488,7 @@ export function normalizeProject(input: unknown): Project {
       segment: pickOrEmpty(record(x.aiFilled).segment, segments.map((s) => s.id)),
       segmentOther: cleanText(record(x.aiFilled).segmentOther, 60),
     },
+    textSource: pickOrEmpty(x.textSource, ['ia', 'modelo']) as Project['textSource'],
     edited: [...new Set(strings(x.edited).filter((e): e is EditableText => (editableTexts as readonly string[]).includes(e)))],
     details: {
       audience: cleanText(record(x.details).audience, 120),
@@ -447,6 +510,11 @@ export function normalizeProject(input: unknown): Project {
     complex,
     identitySet: x.identitySet === true,
     direction: pick(x.direction, directions.map((s) => s.id), d.direction),
+    family: family?.id ?? '',
+    // Variante de qualquer família: vale se for da família em uso (variantOf); senão, a primeira.
+    layout: family ? pickOrEmpty(x.layout, family.variants.map((v) => v.id)) : pickOrEmpty(x.layout, layoutIds),
+    hero: pickOrEmpty(x.hero, heroIds),
+    imagery: pickOrEmpty(x.imagery, assetCategories),
     palette: pick(x.palette, palettes.map((s) => s.id), d.palette),
     custom: typeof x.custom === 'string' && /^#[0-9a-f]{6}$/i.test(x.custom) ? x.custom.toLowerCase() : null,
     font: pick(x.font, fonts.map((f) => f.id), 'auto'),
@@ -809,10 +877,17 @@ export function withObjective(p: Project, id: string, { chosen = true } = {}): P
  * serviço da lista, sai só a descrição daquele serviço.
  */
 export function dropStaleCopy(prev: Project, next: Project): Project {
+  const mainService = (x: Project) => (x.serviceLater ? '' : x.service.trim().toLowerCase());
+  // Outro segmento: a composição volta a acompanhar o novo tipo de negócio.
+  if (next.segment !== prev.segment && next.subsegment === prev.subsegment) {
+    next = { ...next, subsegment: '', family: next.family === prev.family ? '' : next.family, layout: next.family === prev.family ? '' : next.layout, imagery: '' };
+  } else if (mainService(next) !== mainService(prev) && next.subsegment === prev.subsegment) {
+    // Outro serviço principal: o tipo de negócio volta a ser detectado por ele.
+    next = { ...next, subsegment: '', imagery: '' };
+  }
   const copy = next.previewCopy;
   const empty = !copy.about && ![copy.serviceDetails, copy.differentials, copy.processSteps, copy.faqQuestions].some((l) => l.length);
   if (empty) return next;
-  const mainService = (x: Project) => (x.serviceLater ? '' : x.service.trim().toLowerCase());
   if (next.segment !== prev.segment || mainService(next) !== mainService(prev)) {
     return { ...next, previewCopy: { about: '', serviceDetails: [], differentials: [], processSteps: [], faqQuestions: [] } };
   }
@@ -853,15 +928,41 @@ export function moveSection(p: Project, id: string, dir: -1 | 1): Project {
 /* ── Conteúdo sugerido ───────────────────────────────────────────────────── */
 
 const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-/** Regra de palavra-chave: primeiro pelo serviço principal, depois pela lista de serviços. */
-function ruleFor(p: Project) {
-  const texts = [`${p.serviceLater ? '' : p.service} ${p.segment === 'outro' ? p.segmentOther : ''}`, p.services.join(' ')];
-  for (const text of texts) {
-    const rule = text.trim() ? keywordRules.find((r) => r.match.test(text)) : undefined;
-    if (rule) return rule;
-  }
-  return undefined;
+/** Textos que indicam o tipo de negócio: serviço principal, segmento digitado e serviços. */
+function identityText(p: Pick<Project, 'service' | 'serviceLater' | 'segment' | 'segmentOther' | 'services'>): string {
+  return [p.serviceLater ? '' : p.service, p.segment === 'outro' ? p.segmentOther : '', ...p.services].filter((t) => t.trim()).join(' . ');
+}
+
+/**
+ * Tipo de negócio: o escolhido (pela pessoa ou pela IA, se combinar com o
+ * segmento); senão, o detectado pelo serviço principal e pelos serviços —
+ * o principal primeiro; senão, o genérico do segmento.
+ */
+export function subsegmentOf(p: Pick<Project, 'subsegment' | 'segment' | 'service' | 'serviceLater' | 'segmentOther' | 'services'>): Subsegment {
+  const chosen = subsegmentById(p.subsegment);
+  if (chosen && (!p.segment || chosen.segment === p.segment || p.segment === 'outro')) return chosen;
+  const main = identityText({ ...p, services: [] });
+  const found = (main && detectSubsegment(main, p.segment)) || detectSubsegment(identityText(p), p.segment);
+  if (found) return found;
+  return genericSubsegment(p.segment || 'outro');
+}
+
+/** Família visual: a escolhida, se existir; senão, a do tipo de negócio. */
+export function familyOf(p: Parameters<typeof subsegmentOf>[0] & Pick<Project, 'family'>): Family {
+  return familyById(p.family) ?? familyById(subsegmentOf(p).family)!;
+}
+
+/** Variante da composição (a primeira da família, se nenhuma foi escolhida). */
+export function variantOf(p: Parameters<typeof familyOf>[0] & Pick<Project, 'layout'>): LayoutVariant {
+  const fam = familyOf(p);
+  return fam.variants.find((v) => v.id === p.layout) ?? fam.variants[0];
+}
+
+/** "Veterinária e cuidados pet · Acolhimento" (e "sem imagem no topo", se for o caso). */
+export function compositionLabel(p: Project): string {
+  return `${familyOf(p).name} · ${variantOf(p).name}${p.hero === 'tipografico' ? ' · topo sem imagem' : ''}`;
 }
 
 const titleTemplates: Record<string, (s: string) => string> = {
@@ -881,33 +982,64 @@ const introTemplates: Record<string, string> = {
   trabalhos: 'Veja alguns trabalhos e conte o que você imagina.',
 };
 
-/** Serviços sugeridos: o principal primeiro, depois os do segmento ou da palavra-chave. */
-export function suggestedServices(p: Project): string[] {
-  const main = p.serviceLater ? '' : p.service.trim();
-  const base = ruleFor(p)?.services ?? segmentOf(p).services;
-  const list = [...(main ? [cap(main)] : []), ...base];
-  return [...new Map(list.map((s) => [s.toLowerCase(), s])).values()].slice(0, 3);
-}
-
-/** Nome mostrado na prévia do visitante enquanto ele não informa o da empresa. */
-export const NEUTRAL_NAME = 'Seu negócio';
-const NEUTRAL_IMAGE = 'loja';
-const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
-
-/**
- * O nome e a imagem de exemplo do segmento só aparecem quando combinam com o
- * serviço informado — um pet shop em "Serviços locais" não vira "Oficina do
- * Lar" com caixa de ferramentas.
- */
-function fitsSegment(p: Project, seg: Segment, rule: ReturnType<typeof ruleFor>): boolean {
-  if (rule) return rule.segment === seg.id;
+/** O serviço principal é só o nome do tipo de negócio ("Clínica veterinária", "Banho e tosa")? */
+function isTypeName(p: Project, sub: Subsegment): boolean {
   const main = p.serviceLater ? '' : p.service.trim();
   if (!main) return true;
-  return [...seg.quick, ...seg.services].some((s) => same(s, main));
+  return same(main, sub.name) || subsegments.some((x) => same(x.name, main));
+}
+
+/**
+ * Serviço que nenhum tipo de negócio reconhece ("Aluguel de brinquedos" em
+ * serviços locais): sem imagem nem nome de exemplo — um topo tipográfico é
+ * melhor que uma imagem de outro negócio.
+ */
+export function unrecognizedService(p: Project): boolean {
+  const main = p.serviceLater ? '' : p.service.trim();
+  if (!main || !subsegmentOf(p).generic || subsegmentById(p.subsegment)) return false;
+  return !segmentOf(p).quick.some((q) => same(q, main));
+}
+
+/** Serviços sugeridos: o principal primeiro (se não for só o nome do tipo de negócio), depois os do tipo de negócio. */
+export function suggestedServices(p: Project): string[] {
+  const sub = subsegmentOf(p);
+  const main = p.serviceLater || isTypeName(p, sub) ? '' : p.service.trim();
+  const list = [...(main ? [cap(main)] : []), ...sub.services];
+  return [...new Map(list.map((x) => [x.toLowerCase(), x])).values()].slice(0, 3);
+}
+
+/** Nome genérico antigo, mantido para links e arquivos de versões anteriores. */
+export const NEUTRAL_NAME = 'Seu negócio';
+
+export type DisplayName = {
+  text: string;
+  /** Nome provisório ("Sua clínica"): ainda não é o nome da empresa. */
+  provisional: boolean;
+  /** usuario = digitado; ia = tirado da descrição pela IA (a pessoa pode confirmar); demo = exemplo. */
+  source: 'usuario' | 'ia' | 'demo' | 'provisorio';
+};
+
+/**
+ * Nome que aparece no site: o da empresa; nos exemplos, o fictício do tipo
+ * de negócio; sem nome, um provisório do tipo de negócio ("Sua clínica",
+ * "Seu estúdio") — nunca uma marca inventada.
+ */
+export function displayName(p: Project, { demo = false } = {}): DisplayName {
+  const name = p.name.trim();
+  if (name) return { text: name, provisional: false, source: p.aiFilled.name && p.aiFilled.name === p.name ? 'ia' : 'usuario' };
+  const sub = subsegmentOf(p);
+  if (demo && !unrecognizedService(p)) return { text: sub.demo, provisional: false, source: 'demo' };
+  return { text: sub.provisional, provisional: true, source: 'provisorio' };
+}
+
+/** Texto do botão principal: o do tipo de negócio para o objetivo, ou o do objetivo. */
+export function ctaOf(p: Project): string {
+  return subsegmentOf(p).cta?.[p.objective] ?? objectiveOf(p).cta;
 }
 
 export type SiteContent = {
   name: string;
+  nameProvisional: boolean;
   segmentName: string;
   title: string;
   titleSuggested: boolean;
@@ -916,72 +1048,137 @@ export type SiteContent = {
   cta: string;
   services: string[];
   servicesSuggested: boolean;
-  /** Nome da ilustração em public/demo (sem extensão). */
-  image: string;
   previewCopy: Project['previewCopy'];
 };
 
 /**
- * Tudo o que a prévia mostra, derivado das respostas. Sugestões são marcadas
- * como tal. Sem nome informado, a prévia do visitante diz "Seu negócio"; os
- * nomes fictícios ("Oficina do Lar") ficam só nos exemplos (`demo`).
+ * Tudo o que a prévia escreve, derivado das respostas. Sugestões são
+ * marcadas como tal; os textos de apoio de cada tipo de negócio ficam em
+ * config/subsegments.ts.
  */
 export function siteContent(p: Project, { demo = false } = {}): SiteContent {
-  const seg = segmentOf(p);
+  const sub = subsegmentOf(p);
   const obj = objectiveOf(p);
   const main = p.serviceLater ? '' : p.service.trim();
-  const own = p.services.map((s) => s.trim()).filter(Boolean);
-  const rule = ruleFor(p);
-  const fits = fitsSegment(p, seg, rule);
+  const own = p.services.map((x) => x.trim()).filter(Boolean);
+  const typeOnly = isTypeName(p, sub);
+  const name = displayName(p, { demo });
   return {
-    name: p.name.trim() || (demo && fits ? seg.demo : NEUTRAL_NAME),
-    segmentName: p.segment === 'outro' && p.segmentOther.trim() ? cap(p.segmentOther.trim()) : seg.name,
-    title: p.headline.trim() || (main ? titleTemplates[obj.id](cap(main)) : seg.title),
+    name: name.text,
+    nameProvisional: name.provisional,
+    segmentName: p.segment === 'outro' && p.segmentOther.trim() ? cap(p.segmentOther.trim()) : sub.generic ? segmentOf(p).name : sub.name,
+    title: p.headline.trim() || (main && !typeOnly ? titleTemplates[obj.id](cap(main)) : sub.title),
     titleSuggested: !p.headline.trim(),
-    intro: p.description.trim() || (main && introTemplates[obj.id]) || seg.intro,
+    intro: p.description.trim() || (main && !typeOnly && introTemplates[obj.id]) || sub.intro,
     introSuggested: !p.description.trim(),
-    cta: obj.cta,
+    cta: ctaOf(p),
     services: own.length ? own : suggestedServices(p),
     servicesSuggested: !own.length,
-    image: rule?.image ?? (fits ? seg.image : seg.neutral ?? NEUTRAL_IMAGE),
     previewCopy: p.previewCopy,
+  };
+}
+
+/** Lista própria com lacunas preenchidas pelo exemplo; vazia = exemplo inteiro. */
+const fillList = (own: string[], example: string[]) => (own.some((t) => t.trim()) ? own.map((t, i) => t.trim() || example[i] || '').filter(Boolean) : example);
+
+/**
+ * Textos das seções exatamente como a prévia mostra: os do visitante (ou da
+ * IA) e, no que faltar, os do tipo de negócio. Usado também como sugestão
+ * nos campos de edição.
+ */
+export function previewTexts(p: Project): Project['previewCopy'] {
+  const c = siteContent(p);
+  const detail = subsegmentOf(p).copy;
+  return {
+    about: c.previewCopy.about || detail.about,
+    serviceDetails: c.services.map((_, i) => c.previewCopy.serviceDetails[i] || (c.servicesSuggested || i < detail.serviceDetails.length ? detail.serviceDetails[i] : '') || ''),
+    differentials: fillList(c.previewCopy.differentials, detail.differentials),
+    processSteps: fillList(c.previewCopy.processSteps, detail.processSteps),
+    faqQuestions: fillList(c.previewCopy.faqQuestions, detail.faqQuestions),
+  };
+}
+
+export type Provenance = 'usuario' | 'ia' | 'demonstrativo' | 'nao-informado';
+
+/**
+ * De onde veio cada texto: escrito pela pessoa, sugerido pela IA ou
+ * demonstrativo (do catálogo). Nada é atribuído à pessoa sem ela ter escrito.
+ */
+export function provenanceOf(p: Project, field: EditableText | 'name' | 'region' | 'audience'): Provenance {
+  if (field === 'name') return p.name.trim() ? (p.aiFilled.name && p.aiFilled.name === p.name ? 'ia' : 'usuario') : 'nao-informado';
+  if (field === 'region' || field === 'audience') return p.details[field].trim() ? 'usuario' : 'nao-informado';
+  if (p.edited.includes(field)) return 'usuario';
+  const value =
+    field === 'headline' ? p.headline : field === 'description' ? p.description : field === 'services' ? p.services.join('') : field === 'about' ? p.previewCopy.about : p.previewCopy[field].join('');
+  if (!value.trim()) return 'demonstrativo';
+  if (p.textSource === 'ia') return 'ia';
+  if (p.textSource === 'modelo') return 'demonstrativo';
+  return 'usuario';
+}
+
+const escapeRe = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Troca do nome da empresa: o nome antigo, escrito igual, é trocado pelo
+ * novo só nos textos sugeridos pela IA que a pessoa não editou. Nada de
+ * substituição cega: palavras soltas e textos escritos à mão ficam como
+ * estão. Chamado quando a pessoa termina de editar o nome.
+ */
+export function renameInTexts(p: Project, from: string, to: string): Project {
+  const a = from.trim();
+  const b = to.trim();
+  if (a.length < 3 || !b || a === b || p.textSource !== 'ia') return p;
+  const re = new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRe(a)}(?=$|[^\\p{L}\\p{N}])`, 'gu');
+  const fix = (t: string) => t.replace(re, (_m, pre: string) => pre + b);
+  const own = (f: EditableText) => p.edited.includes(f);
+  const c = p.previewCopy;
+  return {
+    ...p,
+    headline: own('headline') ? p.headline : fix(p.headline),
+    description: own('description') ? p.description : fix(p.description),
+    previewCopy: {
+      about: own('about') ? c.about : fix(c.about),
+      serviceDetails: own('serviceDetails') ? c.serviceDetails : c.serviceDetails.map(fix),
+      differentials: own('differentials') ? c.differentials : c.differentials.map(fix),
+      processSteps: own('processSteps') ? c.processSteps : c.processSteps.map(fix),
+      faqQuestions: own('faqQuestions') ? c.faqQuestions : c.faqQuestions.map(fix),
+    },
   };
 }
 
 /** Exemplo demonstrativo por segmento, usado na apresentação e como ponto de partida. */
 export function exampleProject(id: string): Project {
-  const seg = segments.find((s) => s.id === id) ?? segments[0];
-  const extras: Record<string, Partial<Project>> = {
-    local: {},
-    imoveis: { pkg: 'profissional', sections: ['apresentacao', 'servicos', 'galeria', 'processo', 'sobre', 'faq', 'contato'] },
-    beleza: { pkg: 'profissional', sections: ['apresentacao', 'servicos', 'atendimento', 'galeria', 'sobre', 'faq', 'contato'] },
-    consultoria: { pkg: 'profissional', form: true, sections: ['apresentacao', 'servicos', 'diferenciais', 'processo', 'sobre', 'faq', 'contato'] },
-    alimentacao: { pkg: 'completo', sections: ['apresentacao', 'vitrine', 'sobre', 'galeria', 'atendimento', 'faq', 'contato'] },
-    criativo: { pkg: 'profissional', sections: ['apresentacao', 'galeria', 'servicos', 'processo', 'sobre', 'contato'] },
-    outro: {},
-  };
-  const base = withObjective({ ...initialProject(), segment: seg.id }, seg.objectives[0], { chosen: false });
-  const pkg = packageById(extras[seg.id]?.pkg ?? 'essencial');
+  const seg = segments.find((x) => x.id === id) ?? segments[0];
+  const sub = subsegmentById(seg.example) ?? genericSubsegment(seg.id);
+  const fam = familyById(sub.family)!;
+  const pkgOf: Record<string, PackageId> = { local: 'essencial', imoveis: 'profissional', beleza: 'profissional', consultoria: 'profissional', alimentacao: 'completo', criativo: 'profissional', pet: 'profissional', outro: 'essencial' };
+  const pkgId = pkgOf[seg.id] ?? 'essencial';
+  const base = withObjective({ ...initialProject(), segment: seg.id, subsegment: sub.id }, seg.objectives[0], { chosen: false });
+  const pkg = packageById(pkgId);
   return normalizeProject({
     ...base,
     direction: seg.styles[0],
     palette: seg.palette,
-    ...extras[seg.id],
+    pkg: pkgId,
+    sections: ['apresentacao', ...fam.structure[pkgId], 'contato'],
+    form: id === 'consultoria',
     // A galeria do exemplo usa o limite do próprio pacote (Completo: 15, não 8).
     gallery: pkg.galleryImages || 8,
-    structureEdited: Boolean(extras[seg.id]?.sections),
+    structureEdited: true,
     identitySet: true,
     pkgChosen: true,
+    textSource: 'modelo',
   });
 }
 
 /** Campos que mudam a estrutura, a identidade ou o preço. */
-const CHOICE_FIELDS = ['segment', 'objective', 'sections', 'direction', 'palette', 'custom', 'pkg', 'form'] as const;
+const CHOICE_FIELDS = ['segment', 'objective', 'sections', 'direction', 'family', 'layout', 'hero', 'palette', 'custom', 'pkg', 'form'] as const;
 
 /** Lista legível do que mudaria se `next` substituísse `current`. */
 export function choiceChanges(current: Project, next: Project): string[] {
   const labels: Record<(typeof CHOICE_FIELDS)[number], string> = {
     segment: 'segmento', objective: 'objetivo', sections: 'seções', direction: 'estilo',
+    family: 'composição', layout: 'composição', hero: 'composição',
     palette: 'cores', custom: 'cores', pkg: 'pacote', form: 'recursos',
   };
   const changed = CHOICE_FIELDS.filter((f) => JSON.stringify(current[f]) !== JSON.stringify(next[f])).map((f) => labels[f]);
@@ -999,6 +1196,9 @@ export function mergeStartingPoint(current: Project, base: Project): Project {
     ...base,
     id: current.id,
     name: current.name,
+    nameLater: current.nameLater,
+    // Com um serviço próprio, o tipo de negócio volta a ser detectado por ele (não pelo do exemplo).
+    subsegment: current.service.trim() && !current.serviceLater ? '' : base.subsegment,
     service: current.service,
     serviceLater: current.serviceLater,
     headline: current.headline,
@@ -1034,6 +1234,11 @@ export function shareLink(p: Project): string {
     complex: n.complex,
     identitySet: n.identitySet,
     direction: n.direction,
+    subsegment: n.subsegment,
+    family: n.family,
+    layout: n.layout,
+    hero: n.hero,
+    imagery: n.imagery,
     palette: n.palette,
     custom: n.custom,
     font: n.font,
@@ -1043,7 +1248,7 @@ export function shareLink(p: Project): string {
 }
 
 const privateless = {
-  name: '', description: '', headline: '', service: '', services: [], segmentOther: '', notes: '', lead: emptyLead, id: '',
+  name: '', nameLater: false, description: '', headline: '', service: '', services: [], segmentOther: '', notes: '', lead: emptyLead, id: '',
 };
 
 /** Lê links da versão atual e das anteriores. Lança erro se o link não for válido. */
@@ -1149,9 +1354,11 @@ export function projectMessage(p: Project, origin?: string, opts: { logo?: boole
   };
 
   const service = p.serviceLater ? '' : p.service.trim();
+  const sub = subsegmentOf(p);
   block('MEU NEGÓCIO', [
-    p.name.trim() && `Empresa: ${p.name.trim()}`,
+    p.name.trim() ? `Empresa: ${p.name.trim()}` : `Empresa: nome ainda não definido (na prévia: “${sub.provisional}”)`,
     p.segment && `Segmento: ${segmentLabel(p)}`,
+    p.segment && !sub.generic && `Tipo de negócio: ${sub.name}`,
     service && `Serviço principal: ${service}`,
     `Objetivo do site: ${objectiveOf(p).name}`,
     p.details.audience.trim() && `Quem atendo: ${p.details.audience.trim()}`,
@@ -1167,6 +1374,7 @@ export function projectMessage(p: Project, origin?: string, opts: { logo?: boole
   );
 
   block('COMO IMAGINEI O SITE', [
+    `Composição: ${compositionLabel(p)}`,
     `Estilo: ${directions.find((d) => d.id === p.direction)!.name}`,
     `Cores: ${colorLabel(p)}`,
     `Fonte dos títulos: ${fontLabel(p)}`,
@@ -1222,10 +1430,13 @@ export function exportProject(p: Project, { logo = false, now = new Date() } = {
     codigo: n.id || null,
     resumo: {
       empresa: n.name.trim() || null,
+      nomeProvisorio: n.name.trim() ? null : subsegmentOf(n).provisional,
       segmento: n.segment ? segmentLabel(n) : null,
+      tipoDeNegocio: subsegmentOf(n).name,
       servicoPrincipal: serviceLabel(n),
       objetivo: objectiveOf(n).name,
       pacote: isCustom(n) ? { tipo: 'personalizado', referencia: pkg.name, precisa: customNeedNames(n) } : { nome: pkg.name, valor: pkg.price, valorTexto: brl(pkg.price) },
+      composicao: compositionLabel(n),
       estilo: directions.find((d) => d.id === n.direction)!.name,
       cores: colorLabel(n),
       fonteDosTitulos: fontLabel(n),
@@ -1239,6 +1450,8 @@ export function exportProject(p: Project, { logo = false, now = new Date() } = {
         servicos: siteContent(n).services,
         sugeridos: !n.edited.length && !n.headline && !n.description && !n.services.length,
         ...n.previewCopy,
+        // Origem de cada texto: usuario, ia (sugerido pela IA) ou demonstrativo (do catálogo).
+        origem: Object.fromEntries(editableTexts.map((f) => [f, provenanceOf(n, f)])),
       },
       detalhes: n.details,
       observacoes: n.notes.trim() || null,
