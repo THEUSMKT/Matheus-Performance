@@ -164,7 +164,7 @@ function TierCard({ pkg }: { pkg: Package }) {
 
 export default function PackagesPage() {
   const state = useProject({ readHash: false });
-  const ctaLabel = state.resumable ? 'Continuar minha prévia' : 'Criar minha prévia grátis';
+  const ctaLabel = state.resumable ? 'Continuar minha prévia' : 'Gerar minha prévia gratuita';
   const anchor = [...packages].reverse();
   const compareRef = useRef<HTMLDetailsElement>(null);
   useEffect(() => {

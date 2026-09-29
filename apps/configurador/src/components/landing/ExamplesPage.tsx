@@ -11,13 +11,14 @@ import { useEffect, useState } from 'react';
 import { track } from '@/lib/analytics';
 import { Footer, Header, builderHref, homeHref, packagesHref } from './Chrome';
 import { ExampleGallery } from './ExampleGallery';
+import { FloatingCta } from './FloatingCta';
 import { RealProjectShowcase } from './RealProjects';
 import { useProject } from './useProject';
 import s from './Landing.module.css';
 
 export default function ExamplesPage() {
   const state = useProject({ readHash: false });
-  const ctaLabel = state.resumable ? 'Continuar minha prévia' : 'Criar minha prévia grátis';
+  const ctaLabel = state.resumable ? 'Continuar minha prévia' : 'Gerar minha prévia gratuita';
   const [initialFilter, setInitialFilter] = useState('todos');
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export default function ExamplesPage() {
     <div className={`${s.page} ${s.inner} ${s.bright}`} id="topo">
       <Header where="exemplos" ctaLabel={ctaLabel} onStart={() => track('start_click', { context: 'cabecalho' })} />
       <main id="conteudo">
-        <section className={s.pageHead} aria-labelledby="exemplos-titulo">
+        <section className={s.pageHead} aria-labelledby="exemplos-titulo" data-cta-zone="">
           <div className={s.wrap}>
             <nav className={s.crumbs} aria-label="Você está em">
               <a href={homeHref}>Início</a>
@@ -70,7 +71,7 @@ export default function ExamplesPage() {
           </div>
         </section>
 
-        <section className={s.final} aria-labelledby="final-titulo">
+        <section className={s.final} aria-labelledby="final-titulo" data-cta-zone="">
           <div className={s.wrap}>
             <h2 id="final-titulo">Já sabe o que quer mostrar?</h2>
             <p>Compare os pacotes ou comece a sua prévia grátis, sem cadastro.</p>
@@ -89,6 +90,7 @@ export default function ExamplesPage() {
         </section>
       </main>
       <Footer where="exemplos" />
+      <FloatingCta label={ctaLabel} />
     </div>
   );
 }

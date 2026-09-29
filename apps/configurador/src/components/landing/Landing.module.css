@@ -2189,3 +2189,157 @@
 .compareMore[open] > summary svg {
   transform: rotate(180deg);
 }
+
+/* ── Carrossel dos projetos reais (página inicial) ─────────────────────────
+   Celular: rolagem horizontal nativa com scroll-snap; o próximo cartão
+   aparece pela borda. O gesto vertical continua rolando a página (sem
+   bloquear toques). A partir de 760 px, os dois cartões lado a lado. */
+.carousel .projectList {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-inline: calc(-1 * var(--gutter));
+  padding: 4px var(--gutter) 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--gutter);
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.carousel .projectList::-webkit-scrollbar {
+  display: none;
+}
+.carousel .projectList:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: -3px;
+}
+.carousel .projectCard {
+  flex: 0 0 86%;
+  scroll-snap-align: start;
+}
+.carouselNav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin-top: 6px;
+}
+.carouselNav[hidden] {
+  display: none;
+}
+.carouselHint {
+  color: var(--c-text, var(--muted));
+  font-size: 14px;
+}
+.carouselControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.carouselBtn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #bcd0f3;
+  background: #fff;
+  color: var(--c-link, var(--blue-ink));
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.carouselBtn:hover:not(:disabled) {
+  border-color: var(--c-btn, var(--blue));
+  background: #f4f8ff;
+}
+.carouselBtn:disabled {
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  cursor: default;
+}
+.carouselBtn svg {
+  width: 20px;
+  height: 20px;
+}
+.carouselPos {
+  min-width: 3.5em;
+  text-align: center;
+  color: var(--c-strong, var(--navy));
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* Cartão enxuto: detalhes recolhíveis e conversa como link. */
+.projectMore {
+  width: 100%;
+}
+.projectMore > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--c-link, var(--blue-ink));
+  font-weight: 650;
+  font-size: 15px;
+  cursor: pointer;
+  list-style: none;
+}
+.projectMore > summary::-webkit-details-marker {
+  display: none;
+}
+.projectMore > summary svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.15s;
+}
+.projectMore[open] > summary svg {
+  transform: rotate(180deg);
+}
+.projectMore .projectNeed {
+  margin-top: 6px;
+}
+.projectActions[data-compact] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+}
+.projectActions[data-compact] .visit {
+  width: auto;
+  min-height: 46px;
+}
+.projectTalk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--c-link, var(--blue-ink));
+  font-size: 15px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: rgb(29 78 216 / 0.35);
+  text-underline-offset: 4px;
+}
+.projectTalk svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.carousel .projectBody {
+  gap: 6px;
+  padding: 16px 16px 14px;
+}
+@media (min-width: 760px) {
+  .carousel .projectList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-inline: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  .carousel .projectBody {
+    padding: 22px;
+  }
+}

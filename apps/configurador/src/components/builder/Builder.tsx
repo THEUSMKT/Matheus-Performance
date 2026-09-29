@@ -57,6 +57,7 @@ import { PrintSummary, RequestButton, StepSite } from './Site';
 import { NameField, StepBusiness, StepObjective, type StepErrors } from './Steps';
 import { ReadyExtras, StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle, type ReadyQuestion } from './Choices';
 import { DRAFT_KEY, Describe, type DescribePhase } from './Describe';
+import { ResetDialog } from './ResetDialog';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
 
@@ -83,6 +84,14 @@ export default function Builder() {
   const device = deviceChoice ?? (narrow ? 'mobile' : 'desktop');
   const [errors, setErrors] = useState<StepErrors>({});
   const [resetting, setResetting] = useState(false);
+  /**
+   * Cada "Começar novamente" confirmado abre uma nova rodada: respostas da IA
+   * pedidas antes dela chegam atrasadas e são descartadas, e a descrição
+   * (com gravação ou transcrição em andamento) é montada de novo, vazia.
+   */
+  const [epoch, setEpoch] = useState(0);
+  const epochNow = useRef(0);
+  const restartButton = useRef<HTMLButtonElement>(null);
   const [pending, setPending] = useState<Pending | null>(null);
   const [logo, setLogoState] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -352,7 +361,9 @@ export default function Builder() {
     if (draft.trim().length < DESCRIPTION_MIN) return setRegen({ field: null, error: 'Para gerar outra sugestão, descreva o negócio de novo em “Editar minha descrição”.' });
     setRegen({ field, error: '' });
     const before = pNow.current;
+    const round = epochNow.current;
     const result = await requestSuggestion(withDetails(draft, before.details), before.pkg, integrations.aiEndpoint);
+    if (round !== epochNow.current) return;
     track('ai_generate', { result: result.ok ? 'ok' : 'erro', reason: result.ok ? 'secao' : result.reason });
     if (!result.ok) return setRegen({ field: null, error: aiReasonText[result.reason] });
     const text = result.suggestion.previewCopy[field];
@@ -364,6 +375,53 @@ export default function Builder() {
     setUndo({ label: `Nova sugestão para “${label}”.`, project: now });
     replace({ ...now, previewCopy: { ...now.previewCopy, [field]: text }, edited: now.edited.filter((f) => f !== field) });
     setRegen({ field: null, error: '' });
+  }
+
+  /** Fechou sem apagar: tudo fica como estava; o foco volta ao botão que abriu. */
+  function cancelReset() {
+    setResetting(false);
+    requestAnimationFrame(() => (restartButton.current ?? heading.current)?.focus({ preventScroll: true }));
+  }
+
+  /**
+   * Apaga só a prévia (projeto, rascunho da descrição, logo e cópia de
+   * segurança), nunca o resto do armazenamento do site. Volta à primeira
+   * etapa com o foco no título e um aviso curto.
+   */
+  function confirmReset() {
+    epochNow.current += 1;
+    setEpoch(epochNow.current);
+    try {
+      sessionStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* sem rascunho guardado */
+    }
+    reset();
+    setLogoState(null);
+    setResetting(false);
+    setManual(false);
+    setDescribePhase('texto');
+    setGenerating(false);
+    setGenError('');
+    setLate(null);
+    setAiNotes([]);
+    setAiQuestion('');
+    setFixingName(false);
+    setUndo(null);
+    setKeptEdits(null);
+    setSegConflict(null);
+    setRegen({ field: null, error: '' });
+    setPending(null);
+    setErrors({});
+    setFormOpen(false);
+    setIncluded(false);
+    setFull(false);
+    setView('edit');
+    setNotice('Prévia apagada. Você já pode começar uma nova.');
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      heading.current?.focus({ preventScroll: true });
+    });
   }
 
   function undoLast() {
@@ -453,7 +511,10 @@ export default function Builder() {
     setGenError('');
     setLate(null);
     track('ai_generate', { result: 'iniciada' });
+    const round = epochNow.current;
     const result = await requestSuggestion(withDetails(text, pNow.current.details), pNow.current.pkg, integrations.aiEndpoint);
+    // A pessoa apagou a prévia enquanto a IA respondia: a resposta não traz o projeto de volta.
+    if (round !== epochNow.current) return;
     setGenerating(false);
     if (!result.ok) {
       track('ai_generate', { result: 'erro', reason: result.reason });
@@ -600,6 +661,7 @@ export default function Builder() {
         {describing && (
           <>
             <Describe
+              key={epoch}
               generating={generating}
               error={genError}
               onGenerate={generate}
@@ -972,33 +1034,6 @@ export default function Builder() {
                 <LoaderCircle aria-hidden="true" className={b.spin} /> Montando sua prévia…
               </p>
             )}
-            {resetting && (
-              <div className={s.confirmBox} role="alertdialog" aria-labelledby="recomecar-titulo">
-                <p id="recomecar-titulo">Apagar a prévia salva neste dispositivo e começar de novo?</p>
-                <div className={s.actionRow}>
-                  <button
-                    type="button"
-                    className={`${s.primary} ${s.small}`}
-                    onClick={() => {
-                      reset();
-                      setLogoState(null);
-                      setResetting(false);
-                      setManual(false);
-                      setAiNotes([]);
-                      setAiQuestion('');
-                      setView('edit');
-                      window.scrollTo({ top: 0, behavior: 'instant' });
-                      requestAnimationFrame(() => heading.current?.focus({ preventScroll: true }));
-                    }}
-                  >
-                    Sim, apagar
-                  </button>
-                  <button type="button" className={`${s.secondary} ${s.small}`} autoFocus onClick={() => setResetting(false)}>
-                    Manter minha prévia
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className={b.grid} data-view={view} data-step={step}>
@@ -1032,8 +1067,8 @@ export default function Builder() {
                 >
                   <MessageCircle aria-hidden="true" /> Dúvidas? Fale no WhatsApp
                 </a>
-                {hasProgress && !resetting && !busy && (
-                  <button type="button" className={b.restart} onClick={() => setResetting(true)}>
+                {hasProgress && !busy && (
+                  <button type="button" ref={restartButton} className={b.restart} onClick={() => setResetting(true)} aria-haspopup="dialog">
                     Começar novamente
                   </button>
                 )}
@@ -1141,6 +1176,8 @@ export default function Builder() {
         </div>
         <div className={b.fullBody}>{full && preview(device, true)}</div>
       </dialog>
+
+      <ResetDialog open={resetting} onCancel={cancelReset} onConfirm={confirmReset} />
 
       {ready && <PrintSummary p={p} logo={Boolean(logo)} />}
     </div>

@@ -36,7 +36,10 @@ async function scenario(name, fn, opts = {}) {
   await ctx.close();
 }
 const allEvents = (page) => page.evaluate(() => JSON.parse(sessionStorage.getItem('__ev') || '[]'));
-const heroCta = (page) => page.locator('[class*=heroCopy] a[class*=shine]');
+const heroCta = (page) => page.locator('a[data-main-cta][class*=shine]');
+/** Botão flutuante "Gerar minha prévia gratuita" (aparece quando o botão do topo sai da tela). */
+const floating = (page) => page.locator('[data-floating-cta]');
+const floatShown = (page) => floating(page).evaluate((e) => e.hasAttribute('data-show') && getComputedStyle(e).visibility === 'visible');
 const title = (page) => page.locator('#etapa-titulo').innerText();
 const Q = {
   negocio: 'Conte sobre seu negócio', objetivo: 'O que as pessoas devem fazer no seu site?', pronta: 'Sua prévia está pronta',
@@ -109,34 +112,39 @@ const PK = URL + 'pacotes/';
 const modelCards = (page) => page.locator('#modelos li[class*=exampleCard]:not([class*=otherCard])');
 const modelCard = (page, name) => modelCards(page).filter({ has: page.getByRole('heading', { name, exact: true }) });
 
-await scenario('Início: dois caminhos, projetos reais, benefícios, como funciona, pacotes e sob medida, Matheus, dúvidas e chamada final', async (page) => {
+await scenario('Início: título curto, projeto real, uma ação principal, preço em uma linha, projetos, benefícios, como funciona, pacotes e sob medida, Matheus, dúvidas e chamada final', async (page) => {
   await page.goto(URL);
-  assert.equal((await page.getByRole('heading', { level: 1 }).innerText()).replace(/\s+/g, ' ').trim(), 'Sua empresa bem apresentada. O próximo contato começa aqui.');
-  const copy = page.locator('[class*=heroCopy]');
-  const text = (await copy.innerText()).replace(/\s+/g, ' ');
+  assert.equal((await page.getByRole('heading', { level: 1 }).innerText()).replace(/\s+/g, ' ').trim(), 'Um site à altura da sua empresa.');
+  const hero = page.locator('main > section').first();
+  const text = (await hero.innerText()).replace(/\s+/g, ' ');
   for (const s of [
-    'Um site com a identidade do seu negócio, serviços organizados e um caminho fácil para pedir orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.',
-    'Sem cadastro para criar a prévia. Sem compromisso.',
-    'Sites de página única de R$ 500 a R$ 1.000.',
-    'Projetos com outras necessidades: orçamento sob medida.',
-    'Domínio e hospedagem à parte.',
+    'Veja uma prévia grátis e imagine seu negócio com uma presença profissional.',
+    'Sem cadastro. Sem compromisso.',
+    'Sites de página única: R$ 500 a R$ 1.000.',
+    'Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.',
+    'Outras necessidades: orçamento sob medida',
   ])
     assert(text.includes(s), s);
-  assert.equal((await heroCta(page).innerText()).trim(), 'Criar minha prévia grátis');
+  assert.equal((await heroCta(page).innerText()).trim(), 'Gerar minha prévia gratuita');
   assert((await heroCta(page).getAttribute('href')).endsWith('/configurador/criar/'), 'botão principal abre a criação');
-  // Conversa direta, sem passar pelo configurador.
-  const talk = copy.getByRole('link', { name: /Conversar sobre meu projeto/ });
+  assert((await hero.getByRole('link', { name: 'Ver pacotes e condições' }).getAttribute('href')).endsWith('/configurador/pacotes/'));
+  assert.equal(await hero.getByRole('link', { name: 'Outras necessidades: orçamento sob medida' }).getAttribute('href'), '#contratar');
+  // Conversa direta, sem passar pelo configurador: link leve, não um segundo botão.
+  const talk = hero.getByRole('link', { name: /Conversar sobre meu projeto/ });
   const href = await talk.getAttribute('href');
   assert(href.startsWith('https://wa.me/') && decodeURIComponent(href).includes('quero conversar sobre o site da minha empresa'));
   assert.equal(await talk.getAttribute('target'), '_blank');
-  assert.equal(await copy.locator('a[class*=primary], a[class*=secondary]').count(), 2, 'dois caminhos no topo');
-  // Destaque visual: captura real publicada, com legenda que não fica coberta.
+  assert.equal(await hero.locator('a[class*=primary], a[class*=secondary]').count(), 1, 'uma só ação principal no topo');
+  // Destaque visual: captura real publicada, carregada de imediato, com legenda que não fica coberta.
   const fig = page.locator('main figure').first();
-  assert((await fig.locator('img').first().getAttribute('alt')).includes('Schay Corretora'));
-  assert((await fig.innerText()).includes('Projeto publicado'));
+  const shot = fig.locator('img').first();
+  assert((await shot.getAttribute('alt')).includes('Schay Corretora'));
+  assert.equal(await shot.getAttribute('fetchpriority'), 'high');
+  assert.notEqual(await shot.getAttribute('loading'), 'lazy');
+  assert.equal((await fig.locator('figcaption').innerText()).replace(/\s+/g, ' ').trim(), 'Projeto publicado · Schay Corretora');
   const cap = await fig.locator('figcaption').boundingBox();
   const phone = await fig.locator('[class*=phone]').boundingBox();
-  assert(cap.y >= phone.y + phone.height - 1, 'legenda abaixo do celular');
+  assert(cap.y >= phone.y + phone.height - 1 || cap.x + cap.width <= phone.x + 1, 'legenda fora do celular');
   const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
   assert.deepEqual(ids, ['projetos', 'beneficios', 'como-funciona', 'contratar', 'quem-atende', 'perguntas']);
   // Projetos reais: captura estática, selo, segmento, nome, necessidade, o que foi feito e duas ações.
@@ -145,7 +153,12 @@ await scenario('Início: dois caminhos, projetos reais, benefícios, como funcio
   assert.deepEqual(await projects.locator('h3').allInnerTexts(), ['Schay Corretora', 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital']);
   const cards = projects.locator('li');
   const c0 = await cards.nth(0).innerText();
-  for (const s of ['Projeto publicado', 'Mercado imobiliário', 'Necessidade:', 'O que foi desenvolvido:', 'Site imobiliário com apresentação profissional']) assert(c0.includes(s), s);
+  for (const s of ['Projeto publicado', 'Mercado imobiliário', 'Site imobiliário com apresentação profissional', 'Ver detalhes']) assert(c0.includes(s), s);
+  // A necessidade atendida fica em "Ver detalhes", inteira.
+  await cards.nth(0).locator('summary').click();
+  assert((await cards.nth(0).innerText()).includes('Necessidade: Apresentar a corretora e os imóveis com credibilidade'));
+  // Lado a lado no computador: sem controles de carrossel.
+  assert.equal(await projects.locator('[class*=carouselNav]').isVisible(), false, 'sem setas no computador');
   assert(!c0.includes('Projeto da própria marca'), 'cliente não aparece como marca própria');
   assert((await cards.nth(1).innerText()).includes('Marketing e serviços profissionais') && (await cards.nth(1).innerText()).includes('Projeto da própria marca'));
   for (const [name, url] of [['Schay Corretora', 'https://schaycorretora.com.br/'], ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'https://theusmkt.github.io/Matheus-Performance/']]) {
@@ -178,7 +191,7 @@ await scenario('Início: dois caminhos, projetos reais, benefícios, como funcio
   // Matheus, com foto e atendimento direto.
   assert((await page.locator('#quem-atende img').getAttribute('alt')).includes('Matheus Beck'));
   assert(await page.locator('#quem-atende').getByRole('link', { name: /Conversar com o Matheus/ }).isVisible());
-  // Nada flutua sobre o conteúdo; decoração não recebe toques.
+  // No computador nada flutua sobre o conteúdo (o botão flutuante é só do celular); decoração não recebe toques.
   const fixed = await page.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => getComputedStyle(e).position === 'fixed' && e.getBoundingClientRect().height > 0).length);
   assert.equal(fixed, 0, 'sem elementos fixos sobre o conteúdo');
   assert.equal(await page.locator('[class*=halo]').evaluateAll((els) => els.filter((e) => getComputedStyle(e).pointerEvents !== 'none').length), 0, 'halo não intercepta toques');
@@ -199,7 +212,8 @@ await scenario('Início: dois caminhos, projetos reais, benefícios, como funcio
 await scenario('Menos movimento: botão e vitrine parados', async (page) => {
   await page.goto(URL);
   const names = await page.evaluate(() => [
-    getComputedStyle(document.querySelector('[class*=heroCopy] a[class*=shine]'), '::after').animationName,
+    getComputedStyle(document.querySelector('a[data-main-cta][class*=shine]'), '::after').animationName,
+    ...[...document.querySelectorAll('main figure *')].map((e) => getComputedStyle(e).animationName).filter((n) => n !== 'none'),
     ...[...document.querySelectorAll('[data-showcase] *')].map((e) => getComputedStyle(e).animationName).filter((n) => n !== 'none'),
   ]);
   assert.deepEqual(names, ['none'], 'nada anima');
@@ -288,7 +302,7 @@ await scenario('Menu do celular: abre, fecha com Esc e ao escolher, sem rolagem 
   await summary.click();
   const menu = page.locator('#menu-celular');
   assert(await menu.isVisible());
-  for (const name of ['Exemplos', 'Como funciona', 'Pacotes', 'Perguntas', 'Criar minha prévia grátis']) assert(await menu.getByRole('link', { name }).isVisible(), name);
+  for (const name of ['Exemplos', 'Como funciona', 'Pacotes', 'Perguntas', 'Gerar minha prévia gratuita']) assert(await menu.getByRole('link', { name }).isVisible(), name);
   const heights = await menu.locator('a').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
   assert(heights.every((h) => h >= 44), `toque confortável: ${heights}`);
   await page.keyboard.press('Escape');
@@ -298,6 +312,97 @@ await scenario('Menu do celular: abre, fecha com Esc e ao escolher, sem rolagem 
   await page.waitForFunction(() => !document.querySelector('header details')?.open);
   assert.equal(await scrollWidth(page), 390);
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+const phone390 = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+const carouselPos = (page) => page.locator('#projetos [class*=carouselPos]').innerText();
+
+await scenario('Celular: projetos reais em carrossel (Schay primeiro), próximo cartão aparecendo, "1 de 2", setas e teclado', async (page) => {
+  await page.goto(URL);
+  const projects = page.locator('#projetos');
+  await projects.scrollIntoViewIfNeeded();
+  assert.deepEqual(await projects.locator('h3').allInnerTexts(), ['Schay Corretora', 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital']);
+  const region = projects.getByRole('region', { name: 'Projetos reais' });
+  assert.equal(await region.getAttribute('aria-roledescription'), 'carrossel');
+  const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width]; }));
+  assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] < 390, 'primeiro cartão inteiro');
+  assert(boxes[1][0] < 390 && boxes[1][0] + boxes[1][1] > 390, 'o próximo cartão aparece na borda');
+  assert.equal(await scrollWidth(page), 390, 'sem rolagem lateral da página');
+  assert(await projects.getByText('Arraste para ver outro projeto').isVisible());
+  assert.equal(await carouselPos(page), '1 de 2');
+  const prev = projects.getByRole('button', { name: 'Projeto anterior' });
+  const nextBtn = projects.getByRole('button', { name: 'Próximo projeto' });
+  assert(await prev.isDisabled() && !(await nextBtn.isDisabled()), 'anterior desativado no início');
+  for (const b of [prev, nextBtn]) {
+    const box = await b.boundingBox();
+    assert(box.width >= 44 && box.height >= 44, 'setas com 44 px');
+  }
+  // Sem avanço automático.
+  await page.waitForTimeout(2500);
+  assert.equal(await carouselPos(page), '1 de 2');
+  await nextBtn.click();
+  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
+  assert(await nextBtn.isDisabled(), 'próximo desativado no fim (sem loop)');
+  // Teclado: volta com Enter no botão anterior.
+  await prev.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
+  // Arrastar (rolagem nativa) também atualiza o indicador.
+  await page.locator('[data-carousel]').evaluate((el) => el.scrollTo({ left: el.scrollWidth, behavior: 'instant' }));
+  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
+  const snap = await page.locator('[data-carousel]').evaluate((el) => getComputedStyle(el).scrollSnapType);
+  assert(snap.includes('x') && snap.includes('mandatory'), `scroll-snap: ${snap}`);
+  // O gesto vertical sobre o carrossel continua rolando a página.
+  const y0 = await page.evaluate(() => scrollY);
+  const box = await page.locator('[data-carousel]').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + 60);
+  await page.mouse.wheel(0, 400);
+  await page.waitForFunction((y) => scrollY > y, y0);
+}, phone390);
+
+await scenario('Celular: botão flutuante "Gerar minha prévia gratuita" aparece quando o do topo sai da tela e some perto da chamada final', async (page) => {
+  await page.goto(URL);
+  const f = floating(page);
+  assert.equal(await floatShown(page), false, 'escondido no topo');
+  assert.equal(await f.getAttribute('aria-hidden'), 'true');
+  assert.equal(await f.locator('a').getAttribute('tabindex'), '-1', 'fora da ordem do teclado quando escondido');
+  await page.locator('#beneficios').evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await page.waitForFunction(() => document.querySelector('[data-floating-cta]')?.hasAttribute('data-show'));
+  assert(await floatShown(page));
+  await page.waitForTimeout(400); // entrada curta (sobe 0,28 s)
+  const link = f.getByRole('link', { name: 'Gerar minha prévia gratuita' });
+  assert((await link.getAttribute('href')).endsWith('/configurador/criar/'));
+  const lb = await link.boundingBox();
+  assert(lb.height >= 44 && lb.y + lb.height <= 844 && lb.x >= 0 && lb.x + lb.width <= 390, 'inteiro na tela, com toque confortável');
+  // Menu aberto: o botão sai de cena.
+  await page.locator('header summary').click();
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'hidden');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'visible');
+  // Chamada final na tela: um botão só.
+  await page.locator('#final-titulo').evaluate((e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  await page.waitForFunction(() => !document.querySelector('[data-floating-cta]')?.hasAttribute('data-show'));
+  // Fim da página: o último link do rodapé não fica coberto.
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
+  await page.waitForTimeout(300);
+  const last = await page.locator('footer a').last().boundingBox();
+  const fb = await f.boundingBox();
+  assert(!(await floatShown(page)) || last.y + last.height <= fb.y, 'rodapé livre');
+  // Sem pulsar sem fim.
+  const infinite = await f.locator('a').evaluate((a) => [getComputedStyle(a), getComputedStyle(a, '::after')].some((c) => c.animationIterationCount === 'infinite'));
+  assert.equal(infinite, false);
+  // Clique registrado com a origem.
+  await page.locator('#beneficios').evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await page.waitForFunction(() => document.querySelector('[data-floating-cta]')?.hasAttribute('data-show'));
+  await link.click();
+  await page.waitForURL(/\/criar\/$/);
+  await ready(page);
+  assert.equal((await allEvents(page)).find((e) => e.event === 'start_click').context, 'flutuante');
+  assert.equal(await floating(page).count(), 0, 'nunca sobre a navegação do configurador');
+  await page.goto(PK);
+  assert.equal(await floating(page).count(), 0, 'pacotes: cada cartão já tem o seu botão');
+  await page.goto(EX);
+  assert.equal(await floating(page).count(), 1, 'exemplos: presente');
+}, phone390);
 
 await scenario('Sem JavaScript: menu, páginas novas e links de pacote e modelo continuam funcionando', async (page) => {
   await page.goto(URL);
@@ -324,7 +429,7 @@ await scenario('Prévia salva: "Continuar minha prévia" em todas as páginas e 
     await page.waitForFunction(() => document.querySelector('header nav a[class*=navCta]')?.textContent === 'Continuar minha prévia');
   }
   await page.goto(URL);
-  await page.waitForFunction(() => document.querySelector('[class*=heroCopy] a[class*=shine]')?.textContent === 'Continuar minha prévia');
+  await page.waitForFunction(() => document.querySelector('a[data-main-cta][class*=shine]')?.textContent === 'Continuar minha prévia');
   assert(await page.getByRole('link', { name: 'Começar uma nova prévia' }).isVisible());
   assert.deepEqual(await stored(page), before, 'navegar não mexe no rascunho');
   await heroCta(page).click();
@@ -967,23 +1072,87 @@ await scenario('Compartilhar opções de layout: rótulo honesto, sem dados pess
   assert((await shared.locator('[class*=notice]').innerText()).includes('Nome, textos e logo não viajam'));
 });
 
-await scenario('Começar novamente pede confirmação; "Começar uma nova prévia" na apresentação também', async (page) => {
+const resetDialog = (page) => page.getByRole('dialog', { name: 'Começar uma nova prévia?' });
+
+await scenario('Começar novamente: diálogo que não apaga ao abrir; cancelar, fechar e Esc preservam tudo; confirmar apaga só a prévia', async (page) => {
   await toSite(page);
-  await page.getByRole('button', { name: 'Começar novamente' }).click();
-  await page.getByRole('button', { name: 'Manter minha prévia' }).click();
-  assert.equal(await title(page), Q.revisao);
+  await page.evaluate(() => {
+    localStorage.setItem('outro.site.dado', 'fica');
+    sessionStorage.setItem('bp.descricao.v1', 'Rascunho da descrição da Clima Sul');
+  });
+  const before = await stored(page);
+  const trigger = page.getByRole('button', { name: 'Começar novamente' });
+  await trigger.scrollIntoViewIfNeeded();
+  const y = await page.evaluate(() => scrollY);
+  for (const close of ['Continuar editando', 'Fechar e continuar editando', 'Escape']) {
+    await trigger.click();
+    const dialog = resetDialog(page);
+    await dialog.waitFor();
+    assert.deepEqual(await stored(page), before, 'abrir não apaga nada');
+    assert.equal(await dialog.getAttribute('aria-describedby'), 'recomecar-texto');
+    assert((await dialog.innerText()).includes('Não dá para desfazer'));
+    assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), 'Continuar editando', 'foco inicial no botão seguro');
+    assert.equal(await page.evaluate(() => document.querySelector('main')?.matches(':modal') ?? false), false);
+    if (close === 'Escape') await page.keyboard.press('Escape');
+    else await dialog.getByRole('button', { name: close, exact: true }).click();
+    await dialog.waitFor({ state: 'hidden' });
+    assert.equal(await title(page), Q.revisao, `${close}: mesma etapa`);
+    assert.deepEqual(await stored(page), before, `${close}: dados preservados`);
+    assert.equal(await page.evaluate(() => scrollY), y, `${close}: mesma rolagem`);
+    await page.waitForFunction(() => document.activeElement?.textContent?.trim() === 'Começar novamente');
+  }
+  // Confirmar (com duplo toque): apaga só a prévia, volta à primeira etapa com foco no título e um aviso.
+  await trigger.click();
+  await resetDialog(page).getByRole('button', { name: 'Apagar escolhas e recomeçar' }).dblclick();
+  await resetDialog(page).waitFor({ state: 'hidden' });
+  assert.equal(await title(page), Q.negocio);
+  assert.equal(await page.locator('#nome-empresa').inputValue(), '');
+  await page.waitForFunction(() => document.activeElement?.id === 'etapa-titulo');
+  assert((await page.locator('[class*=notice]').innerText()).includes('Prévia apagada'));
+  assert.equal(await page.evaluate(() => localStorage.getItem('outro.site.dado')), 'fica', 'o resto do armazenamento fica');
+  assert.equal(await page.evaluate(() => sessionStorage.getItem('bp.descricao.v1')), null, 'rascunho da descrição apagado');
+  assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-modal-open')), false, 'rolagem liberada');
+});
+
+await scenario('"Começar uma nova prévia" na apresentação abre o mesmo diálogo', async (page) => {
+  await toSite(page);
   await page.goto(URL);
   // O rótulo muda depois que a página lê o projeto salvo (após carregar).
   await page.getByRole('link', { name: 'Começar uma nova prévia' }).waitFor();
   assert.equal((await heroCta(page).innerText()).trim(), 'Continuar minha prévia');
   await page.getByRole('link', { name: 'Começar uma nova prévia' }).click();
   await ready(page);
-  await page.getByRole('button', { name: 'Sim, apagar' }).click();
+  await resetDialog(page).waitFor();
+  await resetDialog(page).getByRole('button', { name: 'Apagar escolhas e recomeçar' }).click();
   assert.equal(await title(page), Q.negocio);
   assert.equal(await page.locator('#nome-empresa').inputValue(), '');
   await page.goto(URL);
-  assert.equal((await heroCta(page).innerText()).trim(), 'Criar minha prévia grátis');
+  assert.equal((await heroCta(page).innerText()).trim(), 'Gerar minha prévia gratuita');
 });
+
+await scenario('Celular 390px: "Começar novamente" abre um painel na parte de baixo, sem pular a página', async (page) => {
+  await page.goto(B);
+  await ready(page);
+  await page.locator('#nome-empresa').fill('Clima Sul');
+  await page.evaluate(() => document.activeElement.blur());
+  const trigger = page.getByRole('button', { name: 'Começar novamente' });
+  await trigger.scrollIntoViewIfNeeded();
+  const y = await page.evaluate(() => scrollY);
+  await trigger.click();
+  await resetDialog(page).waitFor();
+  await page.waitForTimeout(350); // o painel sobe em 0,22 s
+  const box = await resetDialog(page).boundingBox();
+  assert(Math.abs(box.y + box.height - 844) <= 1 && box.width >= 389, `painel preso ao pé da tela (${JSON.stringify(box)})`);
+  for (const name of ['Continuar editando', 'Apagar escolhas e recomeçar', 'Fechar e continuar editando']) {
+    const b = await resetDialog(page).getByRole('button', { name, exact: true }).boundingBox();
+    assert(b.height >= 44 && b.width >= 44, `${name}: toque confortável`);
+  }
+  assert.equal(await page.evaluate(() => scrollY), y, 'abrir não rola a página');
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(() => scrollY), y);
+  assert.equal(await page.locator('#nome-empresa').inputValue(), 'Clima Sul');
+  assert.equal(await scrollWidth(page), 390);
+}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 await scenario('Projetos antigos: v3 e o fluxo de 4 etapas são recuperados na etapa certa, com pacote coerente', async (page) => {
   await page.goto(URL);
@@ -1362,6 +1531,34 @@ await scenario('IA: se a pessoa sai da etapa enquanto gera, nada muda sozinho; a
   assert((await preview(page).innerText()).includes('Ar-condicionado instalado do jeito certo'));
 });
 
+await scenario('IA: resposta que chega depois de "Começar novamente" não traz a prévia apagada de volta', async (page) => {
+  let answer;
+  const gate = new Promise((r) => (answer = r));
+  await page.route('https://ia.test/preview', async (route) => {
+    await gate;
+    route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion: aiAnswer }) });
+  });
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  await page.locator('#descricao-ia').fill('A Clima Sul faz instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.getByRole('button', { name: 'Montando sua prévia…' }).waitFor();
+  // Sai da geração para o passo a passo e, com a resposta ainda pendente, apaga tudo.
+  await page.getByRole('button', { name: 'Prefiro escolher tudo passo a passo' }).click();
+  await business(page, { name: 'Outra Empresa', segment: 'Consultoria', service: '' });
+  await page.getByRole('button', { name: 'Começar novamente' }).click();
+  await resetDialog(page).getByRole('button', { name: 'Apagar escolhas e recomeçar' }).click();
+  assert.equal(await title(page), Q.negocio);
+  answer();
+  await page.waitForTimeout(600);
+  assert.equal(await title(page), Q.negocio, 'continua na primeira etapa');
+  assert.equal(await page.locator('[class*=lateBox]').count(), 0, 'sem aviso de prévia pronta');
+  assert.equal(await page.locator('#descricao-ia').inputValue(), '', 'descrição vazia');
+  const saved = await stored(page);
+  assert(!saved || !saved.name, 'nada da prévia antiga foi salvo de novo');
+  assert(!(await preview(page).innerText()).includes('Ar-condicionado instalado do jeito certo'));
+});
+
 await scenario('IA: gerar outra sugestão só para uma seção; as outras ficam e dá para desfazer (§13, A14)', async (page) => {
   let calls = 0;
   await page.route('https://ia.test/preview', async (route) => {
@@ -1496,32 +1693,34 @@ await scenario('Celular 390px: exemplo abre na versão de celular de verdade, se
   assert.equal(await scrollWidth(page), 390);
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-for (const [width, height] of [[320, 568], [360, 740], [375, 667], [390, 844], [430, 932]]) {
-  await scenario(`Apresentação ${width}px: título, os dois caminhos e a oferta na primeira tela, antes da imagem`, async (page) => {
+for (const [width, height] of [[320, 568], [360, 740], [375, 667], [390, 700], [390, 844], [430, 932]]) {
+  await scenario(`Apresentação ${width}×${height}: título, captura real e botão principal na primeira tela`, async (page) => {
     await page.goto(URL);
+    const h1 = await page.getByRole('heading', { level: 1 }).boundingBox();
+    assert(h1.y >= 0 && h1.y + h1.height <= height, 'título inteiro');
     const cta = await heroCta(page).boundingBox();
-    assert(cta.y + cta.height <= height, `botão principal visível sem rolar (${Math.round(cta.y + cta.height)} de ${height})`);
+    const img = await page.locator('main figure img').first().boundingBox();
+    assert(img.y > h1.y + h1.height && img.y + img.height <= cta.y, 'imagem entre o título e o botão');
+    // Nas telas de referência (360×740 em diante), título, imagem inteira e botão sem rolar.
+    if (height >= 700) assert(cta.y + cta.height <= height, `botão principal visível sem rolar (${Math.round(cta.y + cta.height)} de ${height})`);
+    else assert(img.y < height, 'a imagem começa na primeira tela');
     assert(cta.height >= 44, 'toque confortável');
-    const talk = await page.locator('[class*=heroCopy]').getByRole('link', { name: /Conversar sobre meu projeto/ }).boundingBox();
+    const talk = await page.locator('main > section').first().getByRole('link', { name: /Conversar sobre meu projeto/ }).boundingBox();
     assert(talk.height >= 44, 'toque confortável na conversa direta');
-    // Na tela de 320×568 (a menor que ainda existe), só o botão principal precisa caber.
-    if (height >= 667) assert(talk.y + talk.height <= height, `conversa direta também sem rolar (${Math.round(talk.y + talk.height)} de ${height})`);
     assert(talk.y >= cta.y + cta.height, 'botões sem sobreposição');
-    const offer = page.getByText('Sites de página única de');
-    assert(await offer.isVisible());
-    // Mensagem e ações antes do elemento visual grande.
-    const fig = await page.locator('main figure').first().boundingBox();
-    assert(fig.y > talk.y + talk.height, 'imagem depois das ações');
+    assert(await page.getByText('Sites de página única:').isVisible());
+    // A imagem aparece de imediato (sem esperar animação).
+    assert.equal(await page.locator('main figure img').first().evaluate((e) => getComputedStyle(e).opacity), '1');
     // Título com quebras naturais: nenhuma palavra partida.
-    const h1 = await page.getByRole('heading', { level: 1 }).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth }));
-    assert(h1.w <= h1.cw + 1, 'título sem estourar a largura');
+    const hw = await page.getByRole('heading', { level: 1 }).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth }));
+    assert(hw.w <= hw.cw + 1, 'título sem estourar a largura');
     assert.equal(await scrollWidth(page), width);
     const ev = await allEvents(page);
     assert(ev.every((e) => e.device === 'celular'), 'eventos com a categoria do aparelho');
-    // Os dois projetos reais vêm logo depois, empilhados e inteiros na tela.
-    const boxes = await page.locator('#projetos li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.y]; }));
+    // Projetos reais logo depois, em carrossel: o primeiro inteiro, o segundo aparecendo.
+    const boxes = await page.locator('#projetos li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width]; }));
     assert.equal(boxes.length, 2);
-    assert(boxes[0][2] < boxes[1][2] && boxes.every(([x, w]) => x >= 0 && x + w <= width), 'cartões empilhados, sem corte');
+    assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] <= width && boxes[1][0] < width, 'primeiro inteiro, próximo à vista');
   }, { viewport: { width, height }, isMobile: true, hasTouch: true });
 }
 

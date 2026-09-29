@@ -27,12 +27,12 @@ export type ExperimentId = keyof typeof experiments;
  * "em X minutos".
  */
 export const heroVariants = {
-  a: { lines: ['Sua empresa bem apresentada.', 'O próximo contato começa aqui.'], mark: 'próximo contato' },
+  a: { lines: ['Um site à altura da sua empresa.'], mark: 'à altura' },
   b: { lines: ['Veja o site da sua empresa', 'antes de contratar.'], mark: 'antes de contratar' },
 } as const;
 
 /** Rótulo do botão principal para quem ainda não tem prévia salva. */
 export const ctaVariants = {
-  a: { primary: 'Criar minha prévia grátis' },
+  a: { primary: 'Gerar minha prévia gratuita' },
   b: { primary: 'Ver meu site em poucos passos' },
 } as const;
