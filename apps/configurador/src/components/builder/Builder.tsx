@@ -55,7 +55,7 @@ import { SitePreview } from '../preview/SitePreview';
 import { PackageDialog, PriceBar, StepPackage } from './Packages';
 import { PrintSummary, RequestButton, StepSite } from './Site';
 import { NameField, StepBusiness, StepObjective, type StepErrors } from './Steps';
-import { StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle, type ReadyQuestion } from './Choices';
+import { ReadyExtras, StepColors, StepContent, StepFonts, StepReady, StepSections, StepStyle, type ReadyQuestion } from './Choices';
 import { DRAFT_KEY, Describe, type DescribePhase } from './Describe';
 import s from '../landing/Landing.module.css';
 import b from './Builder.module.css';
@@ -98,6 +98,8 @@ export default function Builder() {
   const [aiNotes, setAiNotes] = useState<string[]>([]);
   /** A única pergunta da IA que muda a prévia (quando houver). */
   const [aiQuestion, setAiQuestion] = useState('');
+  /** "Corrigir o nome" aberto (pela tela da prévia pronta ou pela faixa do celular). */
+  const [fixingName, setFixingName] = useState(false);
   const [updated, setUpdated] = useState(false);
   /** Última mudança ampla (pacote, restauração, nova geração), para desfazer. */
   const [undo, setUndo] = useState<{ label: string; project: Project } | null>(null);
@@ -642,6 +644,8 @@ export default function Builder() {
         replace={replace}
         notes={aiNotes}
         question={readyQuestion}
+        fixingName={fixingName}
+        onFixName={setFixingName}
         narrow={narrow}
         onPersonalize={() => go(STEP.pacote)}
         keptEdits={keptEdits ? keptEdits.base.edited : []}
@@ -822,7 +826,7 @@ export default function Builder() {
         </div>
       </header>
 
-      <main id="conteudo" className={b.main}>
+      <main id="conteudo" className={b.main} data-view={view}>
         <div className={s.wrap}>
           <div className={b.top}>
             <div className={b.progress}>
@@ -1037,7 +1041,22 @@ export default function Builder() {
                   <h2 ref={readyHeading} tabIndex={-1} id="pronta-titulo">
                     <Check aria-hidden="true" /> Sua prévia está pronta
                   </h2>
-                  <p>Role para ver o site inteiro. Depois, personalize — ou siga direto para o pedido.</p>
+                  <p className={b.readyText}>Role para ver o site inteiro. Depois, personalize — ou siga direto para o pedido.</p>
+                  {narrow && (
+                    <div className={b.readyExtras}>
+                      <ReadyExtras
+                        p={p}
+                        replace={replace}
+                        question={readyQuestion}
+                        compact
+                        onEditName={() => {
+                          setFixingName(true);
+                          backToEdit();
+                          requestAnimationFrame(() => document.getElementById('nome-pronta')?.focus());
+                        }}
+                      />
+                    </div>
+                  )}
                   <button type="button" className={b.textButton} onClick={() => go(STEP.revisao)}>
                     Gostei assim — revisar e solicitar
                   </button>
@@ -1059,7 +1078,10 @@ export default function Builder() {
                   </button>
                 </span>
               </div>
-              <div className={b.previewArea}>{preview(device)}</div>
+              {/* No computador a prévia rola dentro da coluna: foco pelo teclado para rolar com as setas. */}
+              <div className={b.previewArea} tabIndex={0} role="region" aria-label="Prévia do site (role para ver a página inteira)">
+                {preview(device)}
+              </div>
             </aside>
           </div>
         </div>

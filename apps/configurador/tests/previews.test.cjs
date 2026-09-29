@@ -171,6 +171,15 @@ test('Contrato v2: IDs desconhecidos, textos longos, HTML e script, preço e pac
   assert.equal(p.pkg, 'essencial'); assert.equal(model.priceOf(p), 500, 'a descrição não muda o preço');
 });
 
+test('Contrato: título longo é cortado no fim de uma palavra, sem conector solto', () => {
+  const long = 'Consultas, vacinação e acompanhamento preventivo para cães e gatos de todas as idades, com horário combinado';
+  const s = ai.sanitizeSuggestion({ ...casos[0].resposta, headline: long }, 'essencial', { description: casos[0].descricao });
+  assert(s.headline.length <= 90 && long.startsWith(s.headline));
+  assert(!/\b(com|e|de|para)$/.test(s.headline) && !/[,;]$/.test(s.headline), s.headline);
+  const html = render(model.normalizeProject(ai.applySuggestion(model.initialProject(), s)));
+  assert(/class="title long"/.test(html), 'título longo usa o tamanho menor');
+});
+
 test('Contrato: resposta parcial vira uma prévia segura e completa', () => {
   const s = ai.sanitizeSuggestion({ segment: 'consultoria', objective: 'orcamento' }, 'essencial', { description: 'Escritório de contabilidade para pequenas empresas.' });
   assert.equal(s.subsegment, 'contabilidade');
@@ -387,7 +396,7 @@ test('Imagens: catálogo com metadados, só arquivos locais e sem repetir a do t
   assert(/Origem|origem/.test(fs.readFileSync(path.join(__dirname, '../public/demo/README.md'), 'utf8')));
   for (const s of model.segments) {
     const plan = previewPlan(model.exampleProject(s.id));
-    assert(!plan.gallery.slice(1).includes(plan.heroAsset) || plan.gallery.length < 3, `${s.id}: topo não se repete na galeria`);
+    assert(!plan.gallery.includes(plan.heroAsset) || plan.gallery.length === 2, `${s.id}: topo não se repete na galeria`);
     assert.equal(new Set(plan.gallery.map((x) => x.id)).size, plan.gallery.length, `${s.id}: galeria sem repetição`);
     assert([0, 3, 5, 6].includes(plan.gallery.length) || plan.gallery.length < 3, `${s.id}: grade sem buraco (${plan.gallery.length})`);
     const html = render(model.exampleProject(s.id));

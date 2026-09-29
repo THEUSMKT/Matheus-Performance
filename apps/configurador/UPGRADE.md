@@ -1,5 +1,38 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — prévias por família visual, contrato 2 da IA e nome antes da prévia (29/09)
+
+**Oito famílias visuais** (`src/config/families.ts`), cada uma com composição própria da primeira dobra, apresentação dos serviços, ritmo das seções e comportamento no celular — as diferenças são estruturais, não só de cor:
+
+| Família | Topo (duas variantes) | Serviços |
+|---|---|---|
+| Serviços locais — clareza e ação | oferta com lista de serviços ao lado da imagem · faixa de imagem com cartão | lista comparável com ícones |
+| Beleza — editorial e acolhedora | capa com o título sobre a imagem · retrato em arco | cardápio de cuidados (serifa, sem preços) |
+| Consultoria — autoridade e clareza | declaração tipográfica com áreas numeradas · painel | colunas numeradas; no computador, título à esquerda |
+| Alimentação — produto e desejo | mesa posta (faixa + cartão) · cardápio com prato redondo | produtos com imagem; buffet é serviço, não vitrine |
+| Arquitetura e portfólio — visual e autoral | imagem de abertura · índice | índice com numeração e muito respiro |
+| Imobiliário — apresentação e orientação | apresentação do profissional · orientação com etapas | cartões "como ajudo"; vitrine só no Completo |
+| Veterinária e pet — acolhimento e precisão | acolhimento · cuidados em destaque | blocos com ícones |
+| Institucional versátil | equilíbrio · monograma | cartões numerados |
+
+Os seis estilos (Moderno, Elegante...) continuam e agora mudam só tons, formas e a fonte dos títulos, então qualquer estilo funciona em qualquer família. Na etapa **Estilo** há a escolha de **Composição**: as duas variantes da família, "Topo sem imagem" e a institucional. Paletas novas: Petróleo, Grafite e Vinho. Fonte nova: Geométrica (a Plus Jakarta Sans que o site já carrega).
+
+**Tipos de negócio** (`src/config/subsegments.ts`): clínica veterinária, banho e tosa, pet shop, limpeza, ar-condicionado, elétrica, pintura, reformas, oficina, salão, barbearia, estética, unhas, contabilidade, advocacia, saúde, consultoria empresarial, confeitaria, buffet, marmitas, padaria, restaurante, arquitetura, interiores, fotografia, design, corretor, imobiliária, loja, treino e aulas. Cada um define família, imagens permitidas, nome provisório, botão e textos de exemplo, sem fatos inventados. O reconhecimento soma termos com peso e ignora trechos negados ("não temos atendimento veterinário"): clínica ≠ banho e tosa ≠ pet shop; confeitaria por encomenda ≠ restaurante com reserva; consultoria imobiliária de corretor ≠ vitrine de imóveis. Há um segmento novo, **Veterinária e cuidados pet**.
+
+**Imagens** (`src/config/assets.ts`): catálogo com categoria, cortes, ponto focal, texto alternativo, origem e licença; 15 ilustrações novas em `public/demo/`. A prévia só usa imagem permitida para o tipo de negócio; sem imagem adequada (advocacia, saúde, aulas, serviço desconhecido), o topo é tipográfico. Galeria e vitrine não repetem imagens entre si, e a do topo só volta na galeria quando o tipo de negócio tem uma única outra imagem (para não deixar uma foto sozinha); nada de "Sua foto" ou "Item 1".
+
+**Mesmo estado em toda parte** (`src/lib/plan.ts`): miniatura dos exemplos, exemplo aberto, prévia do celular e do computador, editor, resumo e WhatsApp usam o mesmo cálculo. A página de exemplos mostra oito modelos (um por família).
+
+**Nome antes da prévia**: "Como se chama seu negócio?" (com "Esse nome aparece na prévia.") junto da ideia, por áudio ou texto, e no passo a passo. "Ainda não defini o nome." usa um nome provisório do tipo de negócio ("Sua clínica", "Seu estúdio", "Seu nome" para corretor), marcado como provisório na prévia, no resumo e no WhatsApp ("Empresa: nome ainda não definido"). Um nome escrito na descrição é sugerido no campo ("Encontramos “Clínica Vila Pet”… Usar este nome"); a IA não põe nome que não está escrito, nem troca um nome digitado ou confirmado. Ao terminar de editar o nome, ele é trocado também nos textos sugeridos pela IA (só o nome exato, só nos textos não editados). A barra do navegador da prévia diz "prévia ilustrativa · endereço definido na publicação" — nenhum domínio que pareça comprado.
+
+**IA (contrato 2)**: a resposta traz tipo de negócio, família, variante, topo, fonte, categoria de imagem, origem do nome e no máximo uma pergunta. Tudo é validado de novo na página: ids fora do catálogo caem, títulos longos são cortados no fim de uma palavra, marcação e script são removidos, "24 horas", emergência e credenciais (CRECI, CRMV, OAB) saem, preço e pacote nunca mudam. Quando a descrição é ambígua no segmento pet, a tela pergunta "Você oferece consultas veterinárias, banho e tosa ou os dois?" e a resposta muda a prévia sem nova chamada à IA.
+
+**O que depende de você — Worker**: para a IA preencher os campos novos, publique o Worker de novo (`npx wrangler deploy` em `integrations/ai-preview/`). Não há segredo, variável ou limite novo. Enquanto o Worker antigo estiver publicado, a página continua funcionando: ela repete o pedido no formato 1 e completa o tipo de negócio a partir da descrição. Detalhes na seção "Versões do contrato" do README do Worker.
+
+**Celular**: depois de gerar, a prévia abre na largura útil inteira (sem moldura dentro da moldura), com "Sua prévia está pronta" logo acima e o pacote com o preço à vista.
+
+**Projetos salvos**: continuam na v4 (revisão 2). Campos novos entram vazios (tudo automático) e o tipo de negócio sai do que já estava escrito — um projeto antigo "Outro · Clínica veterinária" abre na família pet com a imagem do consultório. Arquivos exportados e links de layout continuam compatíveis.
+
 ## Edição — página inicial objetiva, projetos reais, Exemplos e Pacotes
 
 **Página inicial (`/`)**, na ordem:

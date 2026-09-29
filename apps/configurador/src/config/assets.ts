@@ -84,7 +84,8 @@ export const assets: Asset[] = [
   a('consultoria', 'reuniao', 'Ilustração de uma mesa de trabalho organizada', 'Atendimento', '50% 50%'),
 
   // Alimentação — buffet e vitrine têm imagens diferentes
-  a('confeitaria-bolo', 'confeitaria', 'Ilustração de um bolo decorado sobre um suporte', 'Bolo decorado', '50% 55%', ['4:3', '16:9', '1:1', '3:4']),
+  a('confeitaria-bolo', 'confeitaria', 'Ilustração de um bolo decorado sobre um suporte', 'Bolo decorado', '50% 45%', ['4:3', '16:9', '1:1', '3:4']),
+  a('confeitaria-vitrine', 'confeitaria', 'Ilustração de uma vitrine de confeitaria com bolos e doces', 'Vitrine', '50% 55%'),
   a('confeitaria-doces', 'confeitaria', 'Ilustração de uma bandeja com doces em forminhas', 'Doces para festas', '50% 50%'),
   a('bolo-fatia', 'confeitaria', 'Ilustração de uma fatia de bolo com frutas vermelhas', 'Fatia de bolo', '50% 50%'),
   a('sobremesa-torta', 'confeitaria', 'Ilustração de uma fatia de torta de limão', 'Torta', '50% 50%'),
@@ -95,7 +96,7 @@ export const assets: Asset[] = [
   a('restaurante-salao', 'restaurante', 'Ilustração do salão de um restaurante', 'Salão', '50% 60%'),
   a('alimentacao', 'restaurante', 'Ilustração de uma mesa posta com prato e pães', 'Mesa posta', '50% 50%', ['4:3', '16:9', '1:1', '3:4']),
   a('marmitas', 'marmitas', 'Ilustração de marmitas com arroz, feijão e legumes', 'Marmitas da semana', '50% 50%', ['4:3', '16:9', '1:1', '3:4']),
-  a('buffet-mesa', 'buffet', 'Ilustração de uma mesa de buffet com travessas', 'Mesa de buffet', '50% 55%', ['4:3', '16:9', '1:1', '3:4']),
+  a('buffet-mesa', 'buffet', 'Ilustração de uma mesa de buffet com travessas', 'Mesa de buffet', '50% 50%', ['4:3', '16:9', '1:1', '3:4']),
   a('padaria-balcao', 'padaria', 'Ilustração de um balcão de padaria com pães', 'Balcão', '50% 55%'),
   a('paes-cesta', 'padaria', 'Ilustração de uma cesta de pães', 'Pães da casa', '50% 50%'),
 

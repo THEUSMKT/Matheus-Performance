@@ -1676,6 +1676,26 @@ await scenario('Descrição ambígua: uma pergunta, respondida com um toque e se
   assert(await page.getByRole('button', { name: 'Desfazer' }).isVisible(), 'dá para desfazer');
 });
 
+await scenario('Celular: a pergunta única e o nome provisório aparecem logo acima da prévia, sem procurar', async (page) => {
+  const vague = { ...caso('clinica-veterinaria').resposta, name: '', nameOrigin: 'nenhum', subsegment: 'pet', services: ['Atendimento'], headline: 'Cuidado para o seu pet', assetCategory: 'automatica' };
+  await mockAi(page, vague);
+  await describeAndGenerate(page, 'Cuido de pets com carinho e quero receber pedidos de horário pelo WhatsApp.');
+  const pv = livePreview(page);
+  assert(await pv.isVisible(), 'a prévia abre sozinha');
+  const q = page.getByRole('group', { name: /Uma pergunta para acertar a prévia/ });
+  assert(await q.isVisible(), 'pergunta visível na tela da prévia');
+  const qBox = await q.boundingBox(); const pvBox = await pv.boundingBox();
+  assert(qBox.y < pvBox.y, 'a pergunta fica acima do site');
+  assert(await page.getByText(/Nome provisório: “Seu negócio pet”/).isVisible());
+  await q.getByRole('button', { name: 'Consultas veterinárias' }).click();
+  await page.waitForFunction(() => document.querySelector('aside [aria-roledescription=prévia]')?.dataset.image === 'pet-clinica');
+  await page.getByRole('button', { name: 'Informar o nome' }).click();
+  await page.locator('#nome-pronta').fill('Clínica Bem Cuidar');
+  await page.locator('#nome-pronta').blur();
+  await visible(page.locator('[data-bar=configurador] button', { hasText: 'Ver minha prévia' })).click();
+  assert.equal(await livePreview(page).getAttribute('aria-label'), 'Prévia do site de Clínica Bem Cuidar');
+}, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
 await scenario('Composição e estilo mudam na hora, sem perder textos e sem chamar a IA; recarregar mantém tudo', async (page) => {
   const c = caso('confeitaria');
   const calls = await mockAi(page, c.resposta);

@@ -285,6 +285,18 @@ const text = (x: unknown, max: number) =>
         .slice(0, max)
         .trim()
     : '';
+/**
+ * Corta no fim de uma palavra (nunca no meio) e tira conectores soltos no
+ * final ("…para cães e gatos, com" → "…para cães e gatos").
+ */
+const words = (t: string, max: number) => {
+  if (t.length <= max) return t;
+  const room = t.slice(0, max + 1);
+  const space = room.lastIndexOf(' ');
+  let cut = space > max / 2 ? room.slice(0, space) : t.slice(0, max);
+  for (let i = 0; i < 3; i++) cut = cut.replace(/[\s,;:–-]+(e|de|da|do|das|dos|com|para|por|em|no|na|a|o|ou)$/i, '');
+  return cut.replace(/[\s,;:–-]+$/, '');
+};
 const honest = (t: string) => ([...CLAIMS, ...OUT_OF_SCOPE].some((re) => re.test(t)) ? '' : t);
 const oneOf = (x: unknown, ids: readonly string[]) => (typeof x === 'string' && ids.includes(x) ? x : '');
 const strings = (x: unknown) => (Array.isArray(x) ? x.filter((v): v is string => typeof v === 'string') : []);
@@ -361,8 +373,8 @@ export function sanitizeSuggestion(raw: unknown, pkg: PackageId = 'essencial', {
     segmentOther,
     service,
     objective,
-    headline: honest(text(x.headline, 90)),
-    description: honest(text(x.description, 200)),
+    headline: honest(words(text(x.headline, 400), 90)),
+    description: honest(words(text(x.description, 600), 200)),
     services,
     previewCopy: {
       about: honest(text(copy.about, 420)),

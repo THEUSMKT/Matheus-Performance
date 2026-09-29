@@ -159,8 +159,10 @@ export function previewPlan(p: Project, { demo = false } = {}): PreviewPlan {
   // O que a vitrine ou os destaques já mostram não volta na galeria.
   const shownItems = new Set([...(middleIds.includes('vitrine') ? items.slice(0, 6) : []), ...(showcase && middleIds.includes('servicos') ? items.slice(0, 3) : [])]);
   const scenes = pool.filter((x) => x.role === 'cena');
+  // Primeiro o que ainda não apareceu; com pouca coisa, completa com as imagens já mostradas. A do topo só volta se sobraria uma imagem sozinha.
   let gallery = [...scenes, ...items.filter((x) => !shownItems.has(x))];
-  if (gallery.length < 3 && heroAsset) gallery = [heroAsset, ...gallery];
+  if (gallery.length < 3) gallery = [...gallery, ...items.filter((x) => shownItems.has(x))];
+  if (gallery.length === 1 && heroAsset) gallery = [...gallery, heroAsset];
   // Grade sem buracos: portfólio 1 grande + 4; demais, 6 ou 3.
   const wanted = familyOf(p).id === 'portfolio' ? 5 : gallery.length >= 6 ? 6 : 3;
   gallery = gallery.slice(0, Math.min(wanted, gallery.length));
@@ -175,9 +177,25 @@ export function previewPlan(p: Project, { demo = false } = {}): PreviewPlan {
   const hasContent = middle.includes('servicos') || middle.includes('vitrine') || middle.includes('galeria');
   const noun = contentNoun(p, family, sub);
   const secondary = ctaNavigates ? 'Falar pelo WhatsApp' : hasContent ? `Ver ${noun}` : null;
+  // Título do contato: do tipo de negócio e da família antes do genérico do objetivo.
+  const contactBySub: Record<string, string> = {
+    confeitaria: 'Faça sua encomenda',
+    buffet: 'Peça o orçamento do seu evento',
+    'clinica-veterinaria': p.objective === 'agendamento' ? 'Agende a consulta do seu pet' : 'Fale com a clínica',
+    'banho-e-tosa': 'Agende o banho e tosa',
+    aulas: p.objective === 'agendamento' ? 'Agende sua aula experimental' : 'Fale com a escola',
+    academia: p.objective === 'agendamento' ? 'Agende sua aula experimental' : 'Fale com o estúdio',
+  };
+  const contactByFamily: Record<string, string> = {
+    consultoria: 'Vamos conversar sobre o seu contexto?',
+    imobiliario: 'Vamos conversar sobre a sua busca?',
+    portfolio: 'Vamos conversar sobre o seu projeto?',
+  };
   const contactTitle =
+    contactBySub[sub.id] ??
+    contactByFamily[family.id] ??
     { orcamento: 'Peça seu orçamento', agendamento: 'Peça seu horário', produtos: 'Faça seu pedido' }[p.objective] ??
-    (family.id === 'portfolio' ? 'Vamos conversar sobre o seu projeto?' : 'Vamos conversar?');
+    'Vamos conversar?';
   return {
     family,
     variant,

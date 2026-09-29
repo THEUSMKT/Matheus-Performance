@@ -2261,6 +2261,8 @@
   }
   .progress {
     justify-content: flex-end;
+    /* Espaço do "Salvo" reservado: ele aparece depois de carregar sem empurrar a página. */
+    min-height: 19px;
   }
   .stepMenu {
     display: block;
@@ -2407,4 +2409,41 @@
     border-inline: 0;
     border-radius: 0;
   }
+}
+
+/* Celular, logo depois de gerar: a prévia sobe — fica só o pacote com o preço e a confirmação. */
+@media (max-width: 1079px) {
+  .main[data-view='preview'] .progress,
+  .main[data-view='preview'] .stepMenu,
+  .main[data-view='preview'] .where {
+    display: none;
+  }
+  .main[data-view='preview'] .readyText {
+    display: none;
+  }
+  .main[data-view='preview'] .readyBanner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 12px;
+  }
+}
+
+/* Nome e pergunta logo acima da prévia (celular). */
+.readyExtras {
+  flex-basis: 100%;
+  display: grid;
+  gap: 8px;
+}
+.readyExtras > * {
+  margin: 0;
+}
+.nameNote {
+  font-size: 14px;
+}
+.nameNote .textButton {
+  display: inline;
+  min-height: 0;
+  padding: 0;
 }

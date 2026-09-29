@@ -41,43 +41,38 @@ const editedNames: Record<Project['edited'][number], string> = {
 /** Uma pergunta que muda a prévia (ex.: consultas, banho e tosa ou os dois), com respostas de um toque. */
 export type ReadyQuestion = { text: string; options: { label: string; apply: () => void }[]; onDescribe?: () => void };
 
-export function StepReady({
+/**
+ * Nome (confirmar o que veio da descrição, ou informar) e a pergunta única.
+ * Aparece na tela "Sua prévia está pronta" e, no celular, também logo acima
+ * da prévia — onde a pessoa está olhando depois de gerar. `compact`: sem
+ * campo de texto; "Informar o nome" leva ao campo (`onEditName`).
+ */
+export function ReadyExtras({
   p,
   replace,
-  notes,
   question = null,
-  onPersonalize,
-  onEditDescription,
-  editLabel,
-  onReview,
-  narrow,
-  keptEdits = [],
-  onUseNewTexts,
-  segConflict = null,
+  compact = false,
+  onEditName,
+  fixing,
+  onFix,
 }: {
   p: Project;
   replace: Replace;
-  /** Observações da geração (seções de outro pacote, itens fora dos pacotes). */
-  notes: string[];
   question?: ReadyQuestion | null;
-  /** Textos editados à mão que a nova geração manteve. */
-  keptEdits?: Project['edited'];
-  onUseNewTexts?: () => void;
-  /** A descrição parece de outro segmento que o escolhido à mão. */
-  segConflict?: { suggested: string; onUse: () => void; onKeep: () => void } | null;
-  onPersonalize: () => void;
-  onEditDescription: () => void;
-  editLabel: string;
-  onReview: () => void;
-  narrow: boolean;
+  compact?: boolean;
+  onEditName?: () => void;
+  /** "Corrigir o nome" controlado por fora (a faixa do celular abre o campo desta tela). */
+  fixing?: boolean;
+  onFix?: (on: boolean) => void;
 }) {
-  const [fixName, setFixName] = useState(false);
+  const [localFix, setLocalFix] = useState(false);
+  const fixName = fixing ?? localFix;
+  const setFixName = onFix ?? setLocalFix;
   const fromAi = Boolean(p.name.trim()) && p.aiFilled.name === p.name;
+  const shown = siteContent(p);
+  const qid = compact ? 'pergunta-previa-topo' : 'pergunta-previa';
   return (
-    <div className={b.ready}>
-      <p className={b.readyLead}>
-        <Sparkles aria-hidden="true" /> {narrow ? 'Toque em “Ver minha prévia” para ver o site inteiro.' : 'Explore o site ao lado.'} Você pode mudar estilo, cores, títulos, textos e seções.
-      </p>
+    <>
       {fromAi && !fixName ? (
         <div className={b.keptEdits} role="status">
           <p>
@@ -87,11 +82,22 @@ export function StepReady({
             <button type="button" className={`${s.secondary} ${s.small}`} onClick={() => replace({ ...p, aiFilled: { ...p.aiFilled, name: '' } })}>
               Está certo
             </button>
-            <button type="button" className={b.textButton} onClick={() => setFixName(true)}>
+            <button type="button" className={b.textButton} onClick={() => (compact && onEditName ? onEditName() : setFixName(true))}>
               Corrigir o nome
             </button>
           </div>
         </div>
+      ) : compact ? (
+        shown.nameProvisional && (
+          <p className={b.nameNote}>
+            Nome provisório: <strong>“{shown.name}”</strong>.{' '}
+            {onEditName && (
+              <button type="button" className={b.textButton} onClick={onEditName}>
+                Informar o nome
+              </button>
+            )}
+          </p>
+        )
       ) : (
         (!p.name.trim() || fixName) && (
           <div className={b.group}>
@@ -100,8 +106,8 @@ export function StepReady({
         )
       )}
       {question && (
-        <div className={b.keptEdits} role="group" aria-labelledby="pergunta-previa">
-          <p id="pergunta-previa">
+        <div className={b.keptEdits} role="group" aria-labelledby={qid}>
+          <p id={qid}>
             <strong>Uma pergunta para acertar a prévia:</strong> {question.text}
           </p>
           <div className={s.actionRow}>
@@ -118,6 +124,50 @@ export function StepReady({
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+export function StepReady({
+  p,
+  replace,
+  notes,
+  question = null,
+  fixingName,
+  onFixName,
+  onPersonalize,
+  onEditDescription,
+  editLabel,
+  onReview,
+  narrow,
+  keptEdits = [],
+  onUseNewTexts,
+  segConflict = null,
+}: {
+  p: Project;
+  replace: Replace;
+  /** Observações da geração (seções de outro pacote, itens fora dos pacotes). */
+  notes: string[];
+  question?: ReadyQuestion | null;
+  fixingName?: boolean;
+  onFixName?: (on: boolean) => void;
+  /** Textos editados à mão que a nova geração manteve. */
+  keptEdits?: Project['edited'];
+  onUseNewTexts?: () => void;
+  /** A descrição parece de outro segmento que o escolhido à mão. */
+  segConflict?: { suggested: string; onUse: () => void; onKeep: () => void } | null;
+  onPersonalize: () => void;
+  onEditDescription: () => void;
+  editLabel: string;
+  onReview: () => void;
+  narrow: boolean;
+}) {
+  return (
+    <div className={b.ready}>
+      <p className={b.readyLead}>
+        <Sparkles aria-hidden="true" /> {narrow ? 'Toque em “Ver minha prévia” para ver o site inteiro.' : 'Explore o site ao lado.'} Você pode mudar estilo, cores, títulos, textos e seções.
+      </p>
+      <ReadyExtras p={p} replace={replace} question={question} fixing={fixingName} onFix={onFixName} />
       {notes.length > 0 && (
         <ul className={b.readyNotes}>
           {notes.map((n) => (

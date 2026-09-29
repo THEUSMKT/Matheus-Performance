@@ -166,7 +166,7 @@ function HeroCopy({ plan, className, children, titleClass }: { plan: PreviewPlan
   return (
     <div className={cx(s.heroCopy, className)}>
       <span className={s.eyebrow}>{plan.content.segmentName}</span>
-      <span className={cx(s.title, titleClass)}>
+      <span className={cx(s.title, plan.content.title.length > 64 && s.long, titleClass)}>
         {plan.content.title}
       </span>
       <span className={s.lead}>{plan.content.intro}</span>

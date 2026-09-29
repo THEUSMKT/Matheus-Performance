@@ -898,8 +898,17 @@
 }
 .heroBand .typePanel {
   min-height: 170px;
+  padding-bottom: 58px;
   border-radius: 0;
   aspect-ratio: auto;
+}
+/* Na faixa, o cartão cobre a base do bloco: só a marca, sem repetir os serviços (eles vêm logo abaixo). */
+.heroBand .typeList {
+  display: none;
+}
+/* Títulos longos: um pouco menores, para não virar parágrafo (vale em todas as famílias). */
+.root .title.long {
+  font-size: 24px;
 }
 .card {
   position: relative;
@@ -1491,8 +1500,10 @@
 }
 
 /* 7. Veterinária e pet — acolhimento e precisão */
+/* Cantos sempre suaves no pet (um valor fixo: a variável não pode citar a si mesma). */
 .f_pet {
-  --radius: max(14px, var(--radius));
+  --radius: 16px;
+  --radius-lg: 26px;
 }
 .f_pet .btn,
 .f_pet .navCta {
@@ -1589,7 +1600,10 @@
     padding: 0 0 48px;
   }
   .bandMedia {
-    aspect-ratio: 21 / 8 !important;
+    aspect-ratio: 16 / 7 !important;
+  }
+  .root .title.long {
+    font-size: 36px;
   }
   .card {
     width: min(640px, calc(100% - 2 * var(--pad)));
