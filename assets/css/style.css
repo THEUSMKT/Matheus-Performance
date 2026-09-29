@@ -445,35 +445,41 @@ p{margin:0}
 .testimonial__name{font-family:var(--serif);font-size:18px;line-height:1.3}
 .testimonial__role{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
 
-/* cliente em destaque: cartão escuro com a foto inteira */
+/* cliente em destaque: a foto do cliente é o fundo da avaliação */
 .testimonial--featured{
   --tx:clamp(32px,4.6vw,72px);--ty:clamp(40px,5vw,72px);
-  position:relative;isolation:isolate;overflow:hidden;
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  grid-template-rows:minmax(var(--ty),1fr) auto auto minmax(var(--ty),1fr);
-  gap:0;padding:0;background:#010101;border:0;border-radius:calc(var(--r) * 2);
+  position:relative;isolation:isolate;overflow:hidden;display:block;
+  padding:0;background:#010101;border:0;border-radius:calc(var(--r) * 2);
   box-shadow:var(--shadow-l);color:#fff
 }
-.testimonial__media{grid-column:2;grid-row:1/-1;align-self:end;position:relative;mix-blend-mode:lighten}
+.testimonial--featured .testimonial__author{position:relative;z-index:2;margin:0;gap:0;padding:clamp(28px,6vw,40px) var(--pad) 0}
+.testimonial--featured .testimonial__author::after{
+  content:"";display:block;width:min(240px,70%);height:1px;margin:26px 0 30px;
+  background:linear-gradient(90deg,var(--gold),rgba(200,169,106,.05))
+}
+/* palco: foto atrás, avaliação por cima (celular) */
+.testimonial__stage{position:relative;display:flow-root;aspect-ratio:1/1.086}
+.testimonial__media{position:absolute;z-index:0;top:0;left:-5%;width:110%;pointer-events:none}
 .testimonial__media::before{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(closest-side at 52% 32%,var(--gold-soft),rgba(200,169,106,0))
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(closest-side at 52% 30%,var(--gold-soft),rgba(200,169,106,0))
 }
 .testimonial__media img{
   position:relative;width:100%;height:auto;aspect-ratio:1200/1185;mix-blend-mode:lighten;
-  -webkit-mask-image:linear-gradient(to right,transparent,#000 7.5%,#000 92.5%,transparent),linear-gradient(to bottom,transparent,#000 4.5%);
+  -webkit-mask-image:linear-gradient(to right,transparent,#000 15%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 4%,#000 78%,transparent);
   -webkit-mask-composite:source-in;
-  mask-image:linear-gradient(to right,transparent,#000 7.5%,#000 92.5%,transparent),linear-gradient(to bottom,transparent,#000 4.5%);
+  mask-image:linear-gradient(to right,transparent,#000 15%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 4%,#000 78%,transparent);
   mask-composite:intersect
 }
-.testimonial--featured .testimonial__author,
-.testimonial--featured .testimonial__quote{grid-column:1;position:relative;z-index:1;padding-left:var(--tx);margin-right:-5%}
-.testimonial--featured .testimonial__author{grid-row:2;margin-top:0;gap:0}
-.testimonial--featured .testimonial__author::after{
-  content:"";display:block;width:min(240px,70%);height:1px;margin:28px 0 30px;
-  background:linear-gradient(90deg,var(--gold),rgba(200,169,106,.05))
+/* a margem em % é relativa à largura: o texto começa abaixo do queixo */
+.testimonial--featured .testimonial__quote{position:relative;z-index:2;margin:44% 0 0;padding:0 var(--pad) calc(var(--pad) + 16px)}
+/* véu de leitura: começa onde o texto começa (mesma margem de 44%) e vai até o fim do palco */
+.testimonial__stage::before{
+  content:"";position:absolute;z-index:1;top:0;bottom:0;left:0;right:0;margin-top:44%;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(1,1,1,0),rgba(1,1,1,.8) 76px,rgba(1,1,1,.8))
 }
-.testimonial--featured .testimonial__quote{grid-row:3;margin:0}
+.testimonial--featured .testimonial__mark,
+.testimonial--featured .testimonial__quote p{text-shadow:0 1px 14px rgba(1,1,1,.85),0 0 2px rgba(1,1,1,.6)}
 .testimonial__mark{display:block;height:.46em;font-family:var(--serif);font-size:clamp(66px,6vw,92px);line-height:1;color:var(--gold)}
 .testimonial--featured .testimonial__quote p{font-family:var(--serif);font-size:clamp(19px,1.9vw,24px);line-height:1.5;color:rgba(255,255,255,.9);max-width:34em}
 .testimonial__hl{color:var(--gold)}
@@ -497,21 +503,29 @@ p{margin:0}
 .testimonial__profile:hover .testimonial__handle,.testimonial__profile:focus-visible .testimonial__handle,
 .testimonial__profile:hover .testimonial__ig,.testimonial__profile:focus-visible .testimonial__ig{color:var(--gold)}
 
-@media (max-width:899.98px){
-  .testimonial--featured{grid-template-columns:minmax(0,1fr);grid-template-rows:none}
-  .testimonial__media{grid-column:1;align-self:start}
-  .testimonial__media img{
-    -webkit-mask-image:linear-gradient(to right,transparent,#000 7.5%,#000 92.5%,transparent);
-    mask-image:linear-gradient(to right,transparent,#000 7.5%,#000 92.5%,transparent)
+.testimonial__avatar{width:63px;height:63px;padding:3.5px}
+.testimonial__profile{gap:14px}
+.testimonial--featured .testimonial__quote p{font-size:clamp(17px,4.6vw,20px)}
+
+/* computador: foto ao fundo, à direita; texto na metade esquerda */
+@media (min-width:900px){
+  .testimonial--featured{
+    /* altura mínima ≈ a da foto (62% da largura do cartão); cresce se o texto pedir */
+    display:flex;flex-direction:column;justify-content:center;
+    min-height:calc((min(var(--max), 100vw) - 2 * var(--pad)) * .61);
+    padding:var(--ty) 45% var(--ty) var(--tx)
   }
-  .testimonial--featured .testimonial__quote,
-  .testimonial--featured .testimonial__author{grid-column:1;padding-inline:var(--pad);margin-right:0}
-  .testimonial__media{grid-row:1}
-  .testimonial--featured .testimonial__author{grid-row:2;padding-top:clamp(22px,5vw,32px)}
-  .testimonial--featured .testimonial__quote{grid-row:3;padding-bottom:calc(var(--pad) + 12px)}
-  .testimonial__avatar{width:63px;height:63px;padding:3.5px}
-  .testimonial__profile{gap:14px}
-  .testimonial--featured .testimonial__quote p{font-size:clamp(17px,4.6vw,20px)}
+  .testimonial--featured .testimonial__author{padding:0}
+  .testimonial__stage{position:static;display:block;aspect-ratio:auto}
+  .testimonial__stage::before{
+    right:auto;width:58%;margin-top:0;
+    background:linear-gradient(to right,#010101 52%,rgba(1,1,1,0))
+  }
+  .testimonial__media{top:auto;left:auto;right:0;bottom:0;width:62%}
+  .testimonial--featured .testimonial__quote{margin:0;padding:0}
+  .testimonial__avatar{width:72px;height:72px;padding:4px}
+  .testimonial__profile{gap:16px}
+  .testimonial--featured .testimonial__quote p{font-size:clamp(19px,1.9vw,24px)}
 }
 
 /* ── 14. FAQ ─────────────────────────────────────────────────────────────── */
