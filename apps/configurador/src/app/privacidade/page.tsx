@@ -41,7 +41,7 @@ export default function Privacidade() {
         <>
           <h2>Prévia por descrição (inteligência artificial)</h2>
           <p>
-            Se você descrever seu negócio para montar a prévia (“Prefiro digitar”), o texto digitado é enviado ao nosso servidor intermediário e, dele, à API do Google
+            Se você descrever seu negócio para montar a prévia, o texto digitado — com o nome da empresa, quando você o informa — é enviado ao nosso servidor intermediário e, dele, à API do Google
             Gemini, só para montar a prévia. Antes do envio, e-mails e números longos (como telefones) são removidos. O servidor não guarda nem
             registra o texto; o resultado volta para o seu navegador e fica salvo apenas nele.
           </p>

@@ -68,6 +68,8 @@ export const assets: Asset[] = [
   a('servico-eletrica', 'eletrica', 'Ilustração de um quadro de disjuntores', 'Parte elétrica', '50% 50%'),
   a('servico-pintura', 'pintura', 'Ilustração de uma parede sendo pintada com rolo', 'Pintura', '40% 50%'),
   a('reparos', 'reparos', 'Ilustração de ferramentas organizadas sobre uma bancada', 'Reparos', '50% 55%'),
+  a('jardim', 'jardinagem', 'Ilustração de um jardim com gramado, arbustos floridos, árvore e regador', 'Jardim', '50% 60%', ['4:3', '16:9', '1:1', '3:4']),
+  a('jardim-cuidados', 'jardinagem', 'Ilustração de vasos com plantas, tesoura de poda e luva sobre uma bancada', 'Cuidados com plantas', '45% 55%'),
   a('auto', 'automotivo', 'Ilustração de um carro numa oficina', 'Oficina', '50% 55%'),
 
   // Beleza

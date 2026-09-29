@@ -41,7 +41,7 @@ import {
   switchPackage,
   type Project,
 } from '@/lib/project';
-import { DESCRIPTION_MIN, aiReasonText, applySuggestion, requestSuggestion, withDetails, type Suggestion } from '@/lib/aiPreview';
+import { DESCRIPTION_MIN, aiReasonText, applySuggestion, reconcileQuestion, requestSuggestion, withDetails, type Suggestion } from '@/lib/aiPreview';
 import { track } from '@/lib/analytics';
 import { originTag } from '@/lib/origin';
 import { clearLogo, readLogo, saveLogo } from '@/lib/logo';
@@ -362,7 +362,7 @@ export default function Builder() {
     setRegen({ field, error: '' });
     const before = pNow.current;
     const round = epochNow.current;
-    const result = await requestSuggestion(withDetails(draft, before.details), before.pkg, integrations.aiEndpoint);
+    const result = await requestSuggestion(withDetails(draft, before.details, before), before.pkg, integrations.aiEndpoint);
     if (round !== epochNow.current) return;
     track('ai_generate', { result: result.ok ? 'ok' : 'erro', reason: result.ok ? 'secao' : result.reason });
     if (!result.ok) return setRegen({ field: null, error: aiReasonText[result.reason] });
@@ -512,7 +512,7 @@ export default function Builder() {
     setLate(null);
     track('ai_generate', { result: 'iniciada' });
     const round = epochNow.current;
-    const result = await requestSuggestion(withDetails(text, pNow.current.details), pNow.current.pkg, integrations.aiEndpoint);
+    const result = await requestSuggestion(withDetails(text, pNow.current.details, pNow.current), pNow.current.pkg, integrations.aiEndpoint);
     // A pessoa apagou a prévia enquanto a IA respondia: a resposta não traz o projeto de volta.
     if (round !== epochNow.current) return;
     setGenerating(false);
@@ -541,7 +541,8 @@ export default function Builder() {
       notes.push(`Sua descrição cita itens fora dos pacotes (${names}). Se precisar deles, marque em “Seções”.`);
     }
     setAiNotes(notes);
-    setAiQuestion(sug.question);
+    // Pergunta sobre algo já informado (nome, público, região) não aparece.
+    setAiQuestion(reconcileQuestion(sug.question, next));
     // Textos editados à mão ficaram; a pessoa pode trocar pelos novos.
     setKeptEdits(before.edited.length ? { base: before, sug } : null);
     // Segmento escolhido à mão foi mantido, mas a descrição aponta outro: pergunta, sem trocar sozinho.

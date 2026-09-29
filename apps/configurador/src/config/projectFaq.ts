@@ -5,7 +5,7 @@
    limites vêm de packages.ts para nunca divergirem do configurador.
    Nada de formas de pagamento, garantias ou condições que não existam.
    ========================================================================== */
-import { brl, externalCosts, packages, priceNotes, priceRange, revisionRounds, serviceTerms } from './packages';
+import { brl, packages, priceNotes, priceRange, revisionRounds, serviceTerms } from './packages';
 
 const [essencial, profissional, completo] = packages;
 const numbers = packages.flatMap((p) => p.deadline.match(/\d+/g) ?? []).map(Number);
@@ -27,7 +27,7 @@ export const projectFaq: [string, string][] = [
   ],
   [
     'Domínio e hospedagem estão incluídos?',
-    `Não. ${externalCosts.join(', ')} são pagos à parte, direto aos fornecedores. Produção de textos, fotos e vídeos também não está incluída.`,
+    'Não. O domínio (o endereço do site) e a hospedagem são pagos à parte, direto aos fornecedores — assim como um e-mail profissional ou ferramentas externas, se você quiser e se forem combinados. A produção de textos, fotos e vídeos também não está incluída.',
   ],
   [
     'Qual é o prazo de desenvolvimento?',

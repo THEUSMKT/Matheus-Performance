@@ -4,6 +4,7 @@ import localFont from 'next/font/local';
 import { contact } from '@/config/contact';
 import { priceRange } from '@/config/packages';
 import { isProduction } from '@/config/integrations';
+import { shareImage } from '@/config/share';
 import { AppFallback } from '@/components/AppFallback';
 import { AppReady } from '@/components/AppReady';
 import './globals.css';
@@ -46,8 +47,9 @@ export const metadata: Metadata = {
     url: '/',
     title,
     description,
+    images: [shareImage],
   },
-  twitter: { card: 'summary_large_image', title, description },
+  twitter: { card: 'summary_large_image', title, description, images: [shareImage] },
 };
 
 export const viewport: Viewport = {

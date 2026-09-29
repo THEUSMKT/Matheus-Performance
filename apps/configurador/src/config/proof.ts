@@ -7,6 +7,8 @@
    Capturas em public/projetos/ (origem e data no README.md de lá).
    ========================================================================== */
 
+import { contact } from './contact';
+
 export type RealProject = {
   id: string;
   /** Nome como aparece no cartão. */
@@ -56,8 +58,9 @@ export const realProjects: RealProject[] = [
     category: 'Marketing e serviços profissionais',
     description: 'Site de serviços com apresentação da marca, metodologia de trabalho, pacotes e chamadas para atendimento.',
     need: 'Explicar os serviços de gestão de tráfego e o método de trabalho, com caminhos claros para pedir atendimento.',
-    url: 'https://theusmkt.github.io/Matheus-Performance/',
-    domain: 'theusmkt.github.io/Matheus-Performance',
+    // O mesmo endereço do site de tráfego (contact.ts): muda junto com o domínio.
+    url: contact.mainSiteUrl,
+    domain: contact.mainSiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''),
     ownBrand: true,
     image: '/projetos/matheus-beck',
     alt: 'Página inicial do site Matheus Beck — Gestão de Tráfego e Posicionamento Digital',

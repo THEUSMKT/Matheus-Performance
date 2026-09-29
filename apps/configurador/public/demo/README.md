@@ -12,6 +12,8 @@ de imagens.
   `confeitaria-bolo`, `confeitaria-vitrine`, `confeitaria-doces`, `marmitas`, `buffet-mesa`,
   `fotografia`, `design-estudio` e `treino` — para que cada tipo de negócio
   tenha imagem própria (uma clínica de consultas nunca usa a de banho).
+- 29/09/2026 (jardinagem): `jardim` e `jardim-cuidados`, para que jardinagem
+  e paisagismo não recebam a bancada de ferramentas de reparos.
 - Licença: uso livre neste projeto, sem atribuição a terceiros.
 - Catálogo: `src/config/assets.ts` registra cada arquivo com categoria, tipos
   de negócio compatíveis, cortes testados, ponto focal, texto alternativo,

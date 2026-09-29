@@ -24,7 +24,11 @@ export const contact = {
   instagram: '',
   instagramHandle: '',
 
-  /** Site de gestão de tráfego, publicado na raiz do mesmo repositório. */
+  /**
+   * Site de gestão de tráfego, publicado na raiz do mesmo repositório.
+   * Domínio próprio: troque aqui e em siteUrl (passo a passo em docs/DOMINIO.md).
+   * Constante de propósito: o Worker da IA importa este arquivo e não tem process.env.
+   */
   mainSiteUrl: 'https://theusmkt.github.io/Matheus-Performance/',
 
   /**
@@ -34,7 +38,11 @@ export const contact = {
    */
   indexarNoGoogle: false,
 
-  /** Endereço público, usado em canonical, Open Graph e sitemap. */
+  /**
+   * Endereço público (sem barra no fim), usado em canonical, Open Graph,
+   * sitemap, robots e links compartilhados. Precisa acompanhar o prefixo do
+   * build (NEXT_PUBLIC_BASE_PATH no workflow) — ver docs/DOMINIO.md.
+   */
   siteUrl: 'https://theusmkt.github.io/Matheus-Performance/configurador',
 
   /** Abertura da mensagem enviada ao WhatsApp com o briefing montado. */

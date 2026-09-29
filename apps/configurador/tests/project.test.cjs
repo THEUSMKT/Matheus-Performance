@@ -212,6 +212,13 @@ test('Tipo de negócio e imagem seguem o serviço; nome fictício só nos exempl
   assert.equal(at('local', 'Pintura').image, 'servico-pintura');
   assert.equal(at('local', 'Limpeza residencial').image, 'limpeza', 'limpeza tem imagem própria');
   assert.equal(at('local', 'Reforma de banheiro').image, 'reparos');
+  // Jardinagem (§15.2): imagem de jardim, nunca a bancada de ferramentas.
+  for (const q of ['Jardinagem', 'Paisagismo', 'Corte de grama e poda']) {
+    assert.equal(at('local', q).sub, 'jardinagem', q);
+    assert(['jardim', 'jardim-cuidados'].includes(at('local', q).image), `${q}: ${at('local', q).image}`);
+  }
+  // Tipo genérico escolhido pela IA com um serviço que não é dele: topo neutro.
+  assert.equal(at('local', 'Aluguel de brinquedos', { subsegment: 'servicos-locais' }).image, '', 'genérico explícito sem serviço conhecido: sem imagem de ferramentas');
   assert.equal(at('local', '').name, 'Oficina do Lar'); assert.equal(at('local', '').image, 'reparos');
   assert.equal(at('local', 'Banho e tosa', { name: 'Pet Feliz' }).name, 'Pet Feliz', 'nome informado sempre vale');
   assert.equal(at('beleza', 'Pilates').image, 'treino'); assert(at('beleza', 'Pilates').services.includes('Treinos personalizados'));
@@ -1037,6 +1044,28 @@ test('A13/A14: nova geração mantém textos editados à mão, a não ser que a 
   assert.equal(ai.withDetails('Faço pintura residencial.', d), 'Faço pintura residencial.\nQuem atendo: famílias. Onde atendo: Porto Alegre.');
   assert.equal(ai.withDetails('x'.repeat(ai.DESCRIPTION_MAX), d), 'x'.repeat(ai.DESCRIPTION_MAX), 'sem estourar o limite');
   assert.equal(model.normalizeProject({ ...base(), details: { region: 'a'.repeat(500) } }).details.region.length, 120);
+});
+
+test('Nome já informado: vai no pedido à IA e a pergunta sobre ele não aparece de novo (§15.1)', () => {
+  const none = { audience: '', region: '', highlights: '' };
+  // O nome digitado acompanha a descrição (sem repetir quando ela já o cita).
+  assert.equal(ai.withDetails('Cuido de jardins residenciais.', none, { name: 'Jardim Exemplo', nameLater: false }), 'Cuido de jardins residenciais.\nNome da empresa: Jardim Exemplo.');
+  assert.equal(ai.withDetails('A Jardim Exemplo cuida de jardins.', none, { name: 'Jardim Exemplo', nameLater: false }), 'A Jardim Exemplo cuida de jardins.');
+  assert.equal(ai.withDetails('Cuido de jardins.', none, { name: '', nameLater: true }), 'Cuido de jardins.\nA empresa ainda não tem nome definido.');
+  assert.equal(ai.withDetails('Cuido de jardins.', none, { name: '', nameLater: false }), 'Cuido de jardins.', 'sem nome e sem escolha: nada a acrescentar');
+  // Pergunta redundante some; pergunta necessária continua.
+  const named = { name: 'Jardim Exemplo', nameLater: false, details: none };
+  for (const q of ['Qual é o nome da sua empresa?', 'Como se chama o seu negócio?', 'Qual o nome da empresa?']) assert.equal(ai.reconcileQuestion(q, named), '', q);
+  assert.equal(ai.reconcileQuestion('Qual é o nome da sua empresa?', { name: '', nameLater: true, details: none }), '', 'ainda sem nome: não insiste');
+  assert.equal(ai.reconcileQuestion('Qual é o nome da sua empresa?', { name: '', nameLater: false, details: none }), 'Qual é o nome da sua empresa?', 'nome ainda não informado: pergunta fica');
+  assert.equal(ai.reconcileQuestion('Você faz manutenção mensal ou só projetos novos?', named), 'Você faz manutenção mensal ou só projetos novos?');
+  const withRegion = { ...named, details: { ...none, region: 'Canoas' } };
+  assert.equal(ai.reconcileQuestion('Em qual cidade você atende?', withRegion), '');
+  assert.equal(ai.reconcileQuestion('Em qual cidade você atende?', named), 'Em qual cidade você atende?');
+  // O nome digitado continua valendo mesmo que a IA sugira outro.
+  const p = model.normalizeProject({ ...model.initialProject(), name: 'Jardim Exemplo' });
+  const s = ai.sanitizeSuggestion({ ...goodAnswer, name: 'Outro Nome', nameOrigin: 'descricao' }, 'essencial', { description: 'Outro Nome cuida de jardins.' });
+  assert.equal(ai.applySuggestion(p, s).name, 'Jardim Exemplo');
 });
 
 /* ── Evolução comercial (28/09): regressões relatadas ──────────────────── */
