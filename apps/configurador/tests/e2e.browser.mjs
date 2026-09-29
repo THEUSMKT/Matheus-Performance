@@ -112,7 +112,7 @@ const PK = URL + 'pacotes/';
 const modelCards = (page) => page.locator('#modelos li[class*=exampleCard]:not([class*=otherCard])');
 const modelCard = (page, name) => modelCards(page).filter({ has: page.getByRole('heading', { name, exact: true }) });
 
-await scenario('Início: título curto, projeto real, uma ação principal, preço em uma linha, projetos, benefícios, como funciona, pacotes e sob medida, Matheus, dúvidas e chamada final', async (page) => {
+await scenario('Início: título curto, sites publicados em carrossel, uma ação principal, preço em uma linha, benefícios, como funciona, pacotes e sob medida, Matheus, dúvidas e chamada final', async (page) => {
   await page.goto(URL);
   assert.equal((await page.getByRole('heading', { level: 1 }).innerText()).replace(/\s+/g, ' ').trim(), 'Um site à altura da sua empresa.');
   const hero = page.locator('main > section').first();
@@ -135,44 +135,44 @@ await scenario('Início: título curto, projeto real, uma ação principal, pre�
   assert(href.startsWith('https://wa.me/') && decodeURIComponent(href).includes('quero conversar sobre o site da minha empresa'));
   assert.equal(await talk.getAttribute('target'), '_blank');
   assert.equal(await hero.locator('a[class*=primary], a[class*=secondary]').count(), 1, 'uma só ação principal no topo');
-  // Destaque visual: captura real publicada, carregada de imediato, com legenda que não fica coberta.
-  const fig = page.locator('main figure').first();
-  const shot = fig.locator('img').first();
-  assert((await shot.getAttribute('alt')).includes('Schay Corretora'));
-  assert.equal(await shot.getAttribute('fetchpriority'), 'high');
-  assert.notEqual(await shot.getAttribute('loading'), 'lazy');
-  assert.equal((await fig.locator('figcaption').innerText()).replace(/\s+/g, ' ').trim(), 'Projeto publicado · Schay Corretora');
-  const cap = await fig.locator('figcaption').boundingBox();
-  const phone = await fig.locator('[class*=phone]').boundingBox();
-  assert(cap.y >= phone.y + phone.height - 1 || cap.x + cap.width <= phone.x + 1, 'legenda fora do celular');
-  const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
-  assert.deepEqual(ids, ['projetos', 'beneficios', 'como-funciona', 'contratar', 'quem-atende', 'perguntas']);
-  // Projetos reais: captura estática, selo, segmento, nome, necessidade, o que foi feito e duas ações.
+  // Topo: os sites publicados em carrossel (Schay primeiro), a primeira captura com prioridade.
   const projects = page.locator('#projetos');
-  assert.equal((await projects.getByRole('heading', { level: 2 }).innerText()).replace(/\s+/g, ' ').trim(), 'Da ideia ao ar: conheça sites que criamos.');
-  assert.deepEqual(await projects.locator('h3').allInnerTexts(), ['Schay Corretora', 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital']);
-  const cards = projects.locator('li');
-  const c0 = await cards.nth(0).innerText();
-  for (const s of ['Projeto publicado', 'Mercado imobiliário', 'Site imobiliário com apresentação profissional', 'Ver detalhes']) assert(c0.includes(s), s);
-  // A necessidade atendida fica em "Ver detalhes", inteira.
-  await cards.nth(0).locator('summary').click();
-  assert((await cards.nth(0).innerText()).includes('Necessidade: Apresentar a corretora e os imóveis com credibilidade'));
-  // Lado a lado no computador: sem controles de carrossel.
-  assert.equal(await projects.locator('[class*=carouselNav]').isVisible(), false, 'sem setas no computador');
-  assert(!c0.includes('Projeto da própria marca'), 'cliente não aparece como marca própria');
-  assert((await cards.nth(1).innerText()).includes('Marketing e serviços profissionais') && (await cards.nth(1).innerText()).includes('Projeto da própria marca'));
+  assert.equal(await projects.getAttribute('aria-roledescription'), 'carrossel');
+  const shots = projects.locator('li img');
+  assert((await shots.nth(0).getAttribute('alt')).includes('Schay Corretora'));
+  assert.equal(await shots.nth(0).getAttribute('fetchpriority'), 'high');
+  assert.equal(await shots.nth(1).getAttribute('fetchpriority'), null, 'só a primeira tem prioridade');
+  for (let i = 0; i < 2; i++) assert.equal(await shots.nth(i).getAttribute('loading'), 'eager');
+  const slides = projects.locator('li');
+  const badges = await slides.locator('[class*=badge]').allInnerTexts();
+  assert.deepEqual(badges.map((b) => b.replace(/\s+/g, ' ').trim()), ['Projeto publicado · Schay Corretora', 'Projeto publicado · Matheus Beck · Gestão de Tráfego']);
+  const s0 = (await slides.nth(0).innerText()).replace(/\s+/g, ' ');
+  const s1 = (await slides.nth(1).innerText()).replace(/\s+/g, ' ');
+  assert(s0.includes('Mercado imobiliário') && !s0.includes('marca própria'), 'cliente não aparece como marca própria');
+  assert(s1.includes('Marketing e serviços profissionais · marca própria'));
+  for (const bad of ['Ver detalhes', 'Necessidade', 'Conversar sobre um projeto assim']) assert(!(s0 + s1).includes(bad), `sem "${bad}" no topo`);
   for (const [name, url] of [['Schay Corretora', 'https://schaycorretora.com.br/'], ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'https://theusmkt.github.io/Matheus-Performance/']]) {
-    const link = projects.getByRole('link', { name: `Visitar site: ${name} (abre em nova aba)` });
-    assert.equal(await link.getAttribute('href'), url);
-    assert.equal(await link.getAttribute('target'), '_blank');
-    assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
-    const chat = projects.getByRole('link', { name: `Conversar sobre um projeto assim: ${name} (abre o WhatsApp em nova aba)` });
-    assert(decodeURIComponent(await chat.getAttribute('href')).includes(`“${name}”`), `mensagem cita ${name}`);
+    for (const label of [`Visitar site: ${name} (abre em nova aba)`, `Ver site: ${name} (abre em nova aba)`]) {
+      const link = projects.getByRole('link', { name: label });
+      assert.equal(await link.getAttribute('href'), url);
+      assert.equal(await link.getAttribute('target'), '_blank');
+      assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
+    }
   }
+  // Mesmo tamanho em todos os slides (computador).
+  const heights = await slides.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+  assert(Math.max(...heights) - Math.min(...heights) <= 1, `slides da mesma altura: ${heights}`);
+  // Arrastável também no computador: o próximo aparece pela borda e há bolinhas e setas.
+  assert(await projects.getByRole('button', { name: 'Ir para Matheus Beck · Gestão de Tráfego' }).isVisible());
+  assert(await projects.getByText('Arraste para ver mais').isVisible());
   assert.equal(await page.locator('iframe').count(), 0, 'sem iframes');
-  const imgs = await projects.locator('img').evaluateAll((els) => els.map((e) => [e.getAttribute('width'), e.getAttribute('height'), e.loading, e.getAttribute('srcset')?.includes('1280w'), e.alt]));
-  for (const [w, h, loading, srcset, alt] of imgs) assert(w && h && loading === 'lazy' && srcset && alt.length > 10, 'imagem responsiva, adiada e com texto alternativo');
   assert(!/R\$/.test(await projects.innerText()), 'projeto sem preço ou pacote');
+  // A antiga seção "Da ideia ao ar" saiu; #projetos e #exemplos continuam como âncoras.
+  assert.equal(await page.getByText('Da ideia ao ar').count(), 0);
+  assert.equal(await page.getByText('Dois sites no ar').count(), 0);
+  assert((await page.locator('#exemplos').getByRole('link', { name: 'Explorar exemplos de sites' }).getAttribute('href')).endsWith('/configurador/exemplos/'));
+  const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
+  assert.deepEqual(ids, ['beneficios', 'como-funciona', 'contratar', 'quem-atende', 'perguntas']);
   // Benefícios e como funciona (demonstração identificada como ilustrativa).
   assert.deepEqual(await page.locator('#beneficios h3').allInnerTexts(), ['Serviços bem apresentados', 'A identidade do seu negócio', 'Contato em poucos toques']);
   assert.deepEqual(await page.locator('#como-funciona ol h3').allInnerTexts(), ['Conte sobre o negócio', 'Veja e ajuste a prévia', 'Converse e confirme']);
@@ -314,61 +314,60 @@ await scenario('Menu do celular: abre, fecha com Esc e ao escolher, sem rolagem 
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 const phone390 = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
-const carouselPos = (page) => page.locator('#projetos [class*=carouselPos]').innerText();
+const dotCurrent = (page) => page.locator('#projetos button[aria-current=true]').getAttribute('aria-label');
+const waitDot = (page, name) => page.waitForFunction((n) => document.querySelector('#projetos button[aria-current=true]')?.getAttribute('aria-label') === n, `Ir para ${name}`);
 
-await scenario('Celular: projetos reais em carrossel (Schay primeiro), próximo cartão aparecendo, "1 de 2", setas e teclado', async (page) => {
+await scenario('Celular: sites publicados no topo em carrossel (Schay primeiro), mesmo tamanho, próximo aparecendo, bolinhas, setas e teclado', async (page) => {
   await page.goto(URL);
   const projects = page.locator('#projetos');
-  await projects.scrollIntoViewIfNeeded();
-  assert.deepEqual(await projects.locator('h3').allInnerTexts(), ['Schay Corretora', 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital']);
-  const region = projects.getByRole('region', { name: 'Projetos reais' });
+  const region = page.getByRole('region', { name: 'Sites publicados' });
   assert.equal(await region.getAttribute('aria-roledescription'), 'carrossel');
-  const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width]; }));
-  assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] < 390, 'primeiro cartão inteiro');
-  assert(boxes[1][0] < 390 && boxes[1][0] + boxes[1][1] > 390, 'o próximo cartão aparece na borda');
+  const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
+  assert.equal(boxes.length, 2);
+  assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] < 390, 'primeiro slide inteiro');
+  assert(boxes[1][0] < 390 && boxes[1][0] + boxes[1][1] > 390, 'o próximo aparece na borda');
+  assert(Math.abs(boxes[0][1] - boxes[1][1]) <= 1 && Math.abs(boxes[0][2] - boxes[1][2]) <= 1, `mesma largura e altura: ${JSON.stringify(boxes)}`);
   assert.equal(await scrollWidth(page), 390, 'sem rolagem lateral da página');
-  assert(await projects.getByText('Arraste para ver outro projeto').isVisible());
-  assert.equal(await carouselPos(page), '1 de 2');
-  const prev = projects.getByRole('button', { name: 'Projeto anterior' });
-  const nextBtn = projects.getByRole('button', { name: 'Próximo projeto' });
+  assert(await projects.getByText('Arraste para ver mais').isVisible());
+  assert.equal(await dotCurrent(page), 'Ir para Schay Corretora');
+  const prev = projects.getByRole('button', { name: 'Site anterior' });
+  const nextBtn = projects.getByRole('button', { name: 'Próximo site' });
   assert(await prev.isDisabled() && !(await nextBtn.isDisabled()), 'anterior desativado no início');
-  for (const b of [prev, nextBtn]) {
+  for (const b of [prev, nextBtn, projects.getByRole('button', { name: /^Ir para/ }).first()]) {
     const box = await b.boundingBox();
-    assert(box.width >= 44 && box.height >= 44, 'setas com 44 px');
+    assert(box.width >= 44 && box.height >= 44, 'controles com 44 px');
   }
   // Sem avanço automático.
   await page.waitForTimeout(2500);
-  assert.equal(await carouselPos(page), '1 de 2');
+  assert.equal(await dotCurrent(page), 'Ir para Schay Corretora');
   await nextBtn.click();
-  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
+  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
   assert(await nextBtn.isDisabled(), 'próximo desativado no fim (sem loop)');
-  // Teclado: volta com Enter no botão anterior.
+  // Teclado: volta com Enter no botão anterior; bolinha leva direto ao slide.
   await prev.focus();
   await page.keyboard.press('Enter');
-  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
+  await waitDot(page, 'Schay Corretora');
+  await projects.getByRole('button', { name: 'Ir para Matheus Beck · Gestão de Tráfego' }).click();
+  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
   // Arrastar (rolagem nativa) também atualiza o indicador.
-  await page.locator('[data-carousel]').evaluate((el) => el.scrollTo({ left: el.scrollWidth, behavior: 'instant' }));
-  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
+  await page.locator('[data-carousel]').evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' }));
+  await waitDot(page, 'Schay Corretora');
   const snap = await page.locator('[data-carousel]').evaluate((el) => getComputedStyle(el).scrollSnapType);
   assert(snap.includes('x') && snap.includes('mandatory'), `scroll-snap: ${snap}`);
   // Gestos: este Chromium de teste não converte toque sintetizado em rolagem (nem da página),
   // então o arraste com o dedo é conferido no aparelho. Aqui: rolagem horizontal de trackpad/roda
-  // começando em cima de "Visitar site" (não abre o link), volta, gesto vertical sobre o carrossel
-  // e zoom por pinça.
-  await page.locator('[data-carousel]').evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' }));
-  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
+  // começando em cima da captura (não abre o link), volta, gesto vertical sobre o carrossel e pinça.
   const opened = [];
   page.context().on('page', (p) => opened.push(p.url()));
-  const visit = await projects.locator('li').first().getByRole('link', { name: /Visitar site/ }).boundingBox();
-  await page.mouse.move(visit.x + visit.width / 2, visit.y + visit.height / 2);
+  const shot = await projects.locator('li').first().locator('img').boundingBox();
+  await page.mouse.move(shot.x + shot.width / 2, shot.y + shot.height / 2);
   await page.mouse.wheel(300, 0);
-  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
+  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
   await page.mouse.wheel(-300, 0);
-  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
+  await waitDot(page, 'Schay Corretora');
   assert.equal(page.url(), URL, 'rolar não navega');
   const cdp = await page.context().newCDPSession(page);
-  await page.locator('[data-carousel] li').first().evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
-  const box = await page.locator('[data-carousel] li').first().boundingBox();
+  const box = await projects.locator('li').first().boundingBox();
   const y0 = await page.evaluate(() => scrollY);
   await cdp.send('Input.synthesizeScrollGesture', { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + 100), yDistance: -300, gestureSourceType: 'mouse', speed: 900 });
   await page.waitForFunction((y) => scrollY > y + 100, y0);
@@ -379,6 +378,33 @@ await scenario('Celular: projetos reais em carrossel (Schay primeiro), próximo 
   await cdp.send('Input.synthesizePinchGesture', { x: 195, y: 400, scaleFactor: 2, gestureSourceType: 'mouse' });
   await page.waitForFunction(() => (window.visualViewport?.scale ?? 1) > 1.2);
 }, phone390);
+
+await scenario('Computador: arrastar a captura com o mouse passa para o próximo site e não abre o link', async (page, ctx) => {
+  await page.goto(URL);
+  const projects = page.locator('#projetos');
+  const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
+  assert(Math.abs(boxes[0][2] - boxes[1][2]) <= 1, `mesma altura: ${JSON.stringify(boxes)}`);
+  const list = await page.locator('[data-carousel]').boundingBox();
+  assert(boxes[1][0] < list.x + list.width, 'o próximo aparece pela borda também no computador');
+  const opened = [];
+  ctx.on('page', (p) => opened.push(p.url()));
+  const shot = await projects.locator('li').first().locator('img').boundingBox();
+  await page.mouse.move(shot.x + shot.width * 0.8, shot.y + shot.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(shot.x + shot.width * 0.8 - i * 30, shot.y + shot.height / 2);
+  await page.mouse.up();
+  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
+  await page.waitForTimeout(400);
+  assert.deepEqual(opened, [], 'arrastar não abre o site');
+  assert.equal(page.url(), URL);
+  // Um clique simples abre o site em nova aba e registra a origem.
+  await ctx.route('https://theusmkt.github.io/Matheus-Performance/', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'site' }));
+  const [popup] = await Promise.all([ctx.waitForEvent('page'), projects.getByRole('link', { name: /^Visitar site: Matheus Beck/ }).click()]);
+  await popup.waitForLoadState();
+  assert.equal(popup.url(), 'https://theusmkt.github.io/Matheus-Performance/');
+  await popup.close();
+  assert((await allEvents(page)).some((e) => e.event === 'real_project_open' && e.context === 'inicio_topo' && e.project === 'matheus-beck'));
+}, { viewport: { width: 1280, height: 800 } });
 
 await scenario('Celular: botão flutuante "Gerar minha prévia gratuita" aparece quando o do topo sai da tela e some perto da chamada final', async (page) => {
   await page.goto(URL);
@@ -394,8 +420,10 @@ await scenario('Celular: botão flutuante "Gerar minha prévia gratuita" aparece
   assert((await link.getAttribute('href')).endsWith('/configurador/criar/'));
   const lb = await link.boundingBox();
   assert(lb.height >= 44 && lb.y + lb.height <= 844 && lb.x >= 0 && lb.x + lb.width <= 390, 'inteiro na tela, com toque confortável');
-  // Menu aberto: o botão sai de cena.
-  await page.locator('header summary').click();
+  // Menu aberto: o botão sai de cena. Toque na posição do botão do menu (o clique do Playwright
+  // rolaria a página até ele antes, e a primeira tela voltaria a aparecer).
+  const menuBox = await page.locator('header summary').boundingBox();
+  await page.touchscreen.tap(menuBox.x + menuBox.width / 2, menuBox.y + menuBox.height / 2);
   await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'hidden');
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'visible');
@@ -1770,33 +1798,34 @@ await scenario('Celular 390px: exemplo abre na versão de celular de verdade, se
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 for (const [width, height] of [[320, 568], [360, 740], [375, 667], [390, 700], [390, 844], [430, 932]]) {
-  await scenario(`Apresentação ${width}×${height}: título, captura real e botão principal na primeira tela`, async (page) => {
+  await scenario(`Apresentação ${width}×${height}: título, sites publicados e botão principal no começo da página`, async (page) => {
     await page.goto(URL);
     const h1 = await page.getByRole('heading', { level: 1 }).boundingBox();
     assert(h1.y >= 0 && h1.y + h1.height <= height, 'título inteiro');
     const cta = await heroCta(page).boundingBox();
-    const img = await page.locator('main figure img').first().boundingBox();
-    assert(img.y > h1.y + h1.height && img.y + img.height <= cta.y, 'imagem entre o título e o botão');
-    // Nas telas de referência (360×740 em diante), título, imagem inteira e botão sem rolar.
-    if (height >= 700) assert(cta.y + cta.height <= height, `botão principal visível sem rolar (${Math.round(cta.y + cta.height)} de ${height})`);
-    else assert(img.y < height, 'a imagem começa na primeira tela');
+    const img = await page.locator('#projetos img').first().boundingBox();
+    assert(img.y > h1.y + h1.height && img.y + img.height <= cta.y, 'carrossel entre o título e o botão');
+    assert(img.y < height, 'a captura começa na primeira tela');
+    // 390×844 em diante: título, carrossel e botão principal sem rolar.
+    if (height >= 844) assert(cta.y + cta.height <= height, `botão principal visível sem rolar (${Math.round(cta.y + cta.height)} de ${height})`);
     assert(cta.height >= 44, 'toque confortável');
     const talk = await page.locator('main > section').first().getByRole('link', { name: /Conversar sobre meu projeto/ }).boundingBox();
     assert(talk.height >= 44, 'toque confortável na conversa direta');
     assert(talk.y >= cta.y + cta.height, 'botões sem sobreposição');
     assert(await page.getByText('Sites de página única:').isVisible());
     // A imagem aparece de imediato (sem esperar animação).
-    assert.equal(await page.locator('main figure img').first().evaluate((e) => getComputedStyle(e).opacity), '1');
+    assert.equal(await page.locator('#projetos img').first().evaluate((e) => getComputedStyle(e).opacity), '1');
     // Título com quebras naturais: nenhuma palavra partida.
     const hw = await page.getByRole('heading', { level: 1 }).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth }));
     assert(hw.w <= hw.cw + 1, 'título sem estourar a largura');
     assert.equal(await scrollWidth(page), width);
     const ev = await allEvents(page);
     assert(ev.every((e) => e.device === 'celular'), 'eventos com a categoria do aparelho');
-    // Projetos reais logo depois, em carrossel: o primeiro inteiro, o segundo aparecendo.
-    const boxes = await page.locator('#projetos li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width]; }));
+    // Carrossel: o primeiro inteiro, o segundo aparecendo, mesmo tamanho.
+    const boxes = await page.locator('#projetos li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
     assert.equal(boxes.length, 2);
     assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] <= width && boxes[1][0] < width, 'primeiro inteiro, próximo à vista');
+    assert(Math.abs(boxes[0][2] - boxes[1][2]) <= 1, 'mesma altura');
   }, { viewport: { width, height }, isMobile: true, hasTouch: true });
 }
 
@@ -2140,7 +2169,8 @@ for (const [w, h] of [[360, 740], [390, 844], [430, 932]]) {
     const tap = await visible(page.locator('[data-bar=configurador] button')).boundingBox();
     assert(tap.height >= 44, 'botões da barra com área de toque');
     await visible(page.getByRole('button', { name: 'Editar minha descrição' })).click();
-    assert.equal(await page.locator('#descricao-ia').inputValue(), c.descricao, 'descrição preservada');
+    // O campo recupera o rascunho logo depois de montar: espera o valor em vez de ler de imediato.
+    await page.waitForFunction((d) => document.querySelector('#descricao-ia')?.value === d, c.descricao, { timeout: 5000 });
   }, { viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
 }
 

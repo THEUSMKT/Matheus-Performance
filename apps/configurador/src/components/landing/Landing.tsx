@@ -1,16 +1,15 @@
 'use client';
 /* ==========================================================================
-   Página inicial — pensada primeiro para o celular, em oito blocos:
-   1. título curto, a captura real publicada logo abaixo, uma ação principal
-      ("Gerar minha prévia gratuita", ou "Continuar minha prévia" quando há
-      um projeto salvo), "Conversar sobre meu projeto" como link discreto e
-      o investimento em uma linha;
-   2. projetos reais ("Da ideia ao ar"), em carrossel no celular;
-   3. benefícios concretos; 4. como funciona, com a demonstração do
+   Página inicial — pensada primeiro para o celular, em sete blocos:
+   1. título curto, os sites publicados num carrossel arrastável (em todas
+      as larguras), uma ação principal ("Gerar minha prévia gratuita", ou
+      "Continuar minha prévia" quando há um projeto salvo), "Conversar sobre
+      meu projeto" como link discreto e o investimento em uma linha;
+   2. benefícios concretos; 3. como funciona, com a demonstração do
       configurador identificada como ilustrativa;
-   5. dois caminhos de contratação: pacotes e projeto sob medida;
-   6. Matheus Beck e o atendimento direto; 7. dúvidas essenciais;
-   8. chamada final com prévia e contato direto.
+   4. dois caminhos de contratação: pacotes e projeto sob medida;
+   5. Matheus Beck e o atendimento direto; 6. dúvidas essenciais;
+   7. chamada final com prévia e contato direto.
    A galeria completa de modelos e a comparação dos pacotes ficam em
    /exemplos/ e /pacotes/. Preços e condições vêm de config/packages.ts.
    Todos os caminhos principais são links comuns: funcionam mesmo se o
@@ -21,14 +20,13 @@ import { ArrowRight, BadgeCheck, LayoutList, MessageCircle, MessagesSquare, Pale
 import { contact } from '@/config/contact';
 import { brl, packages, priceRange } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
-import { realProjects } from '@/config/proof';
 import { ctaVariants, heroVariants } from '@/config/experiments';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { Footer, Header, asset, builderHref, examplesHref, packagesHref } from './Chrome';
 import { FloatingCta } from './FloatingCta';
 import { HeroShowcase } from './HeroShowcase';
-import { RealProjectCards } from './RealProjects';
+import { HeroProjects } from './HeroProjects';
 import { useProject } from './useProject';
 import s from './Landing.module.css';
 import h from './Home.module.css';
@@ -61,7 +59,6 @@ const benefits = [
 ] as const;
 
 const FAQ_PREVIEW = 6;
-const hero = realProjects[0];
 
 /** Link do WhatsApp que registra o clique (não o envio da mensagem). */
 function Talk({ message, context, className, children }: { message: string; context: string; className: string; children: React.ReactNode }) {
@@ -97,8 +94,8 @@ export default function Landing() {
     <div className={`${s.page} ${s.bright}`} id="topo">
       <Header ctaLabel={primaryLabel} onStart={start('cabecalho')} />
       <main id="conteudo">
-        {/* 1. Primeira tela, montada para o celular: título, apoio, o trabalho real,
-            a ação principal, a alternativa discreta e o investimento em uma linha. */}
+        {/* 1. Primeira tela, montada para o celular: título, apoio, os sites publicados
+            (carrossel), a ação principal, a alternativa discreta e o investimento. */}
         <section className={h.hero} aria-labelledby="hero-titulo">
           <div className={`${s.wrap} ${h.heroGrid}`}>
             <div className={h.heroHead}>
@@ -112,7 +109,15 @@ export default function Landing() {
               </h1>
               <p className={h.lead}>Apresente seus serviços com clareza e facilite os pedidos de orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.</p>
             </div>
-            <HeroVisual />
+            <div className={h.visual}>
+              <HeroProjects />
+              {/* O id mantém o atalho antigo #exemplos mesmo sem script. */}
+              <p className={h.more} id="exemplos">
+                <a href={examplesLink} onClick={() => track('nav_click', { target: 'exemplos', context: 'inicio' })}>
+                  Explorar exemplos de sites <ArrowRight aria-hidden="true" />
+                </a>
+              </p>
+            </div>
             <div className={h.heroAct} data-cta-zone="">
               <a className={`${s.primary} ${s.shine} ${h.mainCta}`} href={builderHref} onClick={start('hero')} data-main-cta="">
                 <Sparkles aria-hidden="true" />
@@ -147,29 +152,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* 2. Projetos reais */}
-        <section className={`${s.section} ${h.projects}`} id="projetos" aria-labelledby="projetos-titulo">
-          <div className={s.wrap}>
-            <div className={h.head}>
-              <p className={h.pill}>
-                <BadgeCheck aria-hidden="true" /> Projetos publicados
-              </p>
-              <h2 id="projetos-titulo">
-                Da ideia ao ar: <em className={h.mark}>conheça sites que criamos.</em>
-              </h2>
-              <p>Dois sites no ar, desenvolvidos pela Beck Performance: um de cliente e um da própria marca.</p>
-            </div>
-            <RealProjectCards context="inicio" />
-            {/* O id mantém o atalho antigo #exemplos mesmo sem script. */}
-            <p className={h.more} id="exemplos">
-              <a href={examplesLink} onClick={() => track('nav_click', { target: 'exemplos', context: 'inicio' })}>
-                Explorar exemplos de sites <ArrowRight aria-hidden="true" />
-              </a>
-            </p>
-          </div>
-        </section>
-
-        {/* 3. Benefícios concretos */}
+        {/* 2. Benefícios concretos */}
         <section className={`${s.section} ${h.benefitsBand}`} id="beneficios" aria-labelledby="beneficios-titulo">
           <div className={s.wrap}>
             <div className={h.head}>
@@ -191,7 +174,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* 4. Como funciona */}
+        {/* 3. Como funciona */}
         <section className={s.section} id="como-funciona" aria-labelledby="processo-titulo">
           <div className={`${s.wrap} ${h.howGrid}`}>
             <div>
@@ -219,7 +202,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* 5. Dois caminhos de contratação. */}
+        {/* 4. Dois caminhos de contratação. */}
         <section className={`${s.section} ${h.pathsBand}`} id="contratar" aria-labelledby="caminhos-titulo">
           <div className={s.wrap}>
             <div className={h.head}>
@@ -270,7 +253,7 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* 6. Matheus Beck */}
+        {/* 5. Matheus Beck */}
         <section className={s.section} id="quem-atende" aria-labelledby="sobre-titulo">
           <div className={`${s.wrap} ${h.about}`}>
             <div className={h.photoWrap}>
@@ -304,10 +287,10 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* 7. Dúvidas essenciais */}
+        {/* 6. Dúvidas essenciais */}
         <Faq />
 
-        {/* 8. Chamada final */}
+        {/* 7. Chamada final */}
         <section className={s.final} aria-labelledby="final-titulo" data-cta-zone="">
           <div className={s.wrap}>
             <h2 id="final-titulo" className={h.finalTitle}>
@@ -341,59 +324,6 @@ function Marked({ text, mark }: { text: string; mark: string }) {
       <em className={h.mark}>{mark}</em>
       {text.slice(at + mark.length)}
     </>
-  );
-}
-
-/**
- * Destaque visual: a captura real do primeiro projeto (Schay Corretora),
- * aparecendo de imediato (carregamento prioritário, sem esperar animação).
- * No celular, uma imagem principal legível; o celular complementar entra só
- * quando há espaço. A legenda "Projeto publicado · nome" identifica o
- * trabalho como site de cliente no ar — não uma prévia do configurador.
- */
-function HeroVisual() {
-  return (
-    <figure className={h.visual} aria-labelledby="hero-legenda">
-      <div className={h.stage}>
-        <span className={h.halo} aria-hidden="true" />
-        <span className={h.shapes} aria-hidden="true" />
-        <div className={h.browser}>
-          <div className={h.browserBar} aria-hidden="true">
-            <span className={h.dots}>
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className={h.url}>{hero.domain}</span>
-          </div>
-          <img
-            src={asset(`${hero.image}-640.webp`)}
-            srcSet={`${asset(`${hero.image}-640.webp`)} 640w, ${asset(`${hero.image}-1080.webp`)} 1080w`}
-            sizes="(min-width: 1000px) 560px, (min-width: 560px) 480px, calc(100vw - 32px)"
-            width={1280}
-            height={800}
-            alt={`${hero.alt}, no computador`}
-            fetchPriority="high"
-            decoding="async"
-          />
-        </div>
-        <div className={h.phone} aria-hidden="true">
-          <img
-            src={asset(`${hero.image}-celular-300.webp`)}
-            srcSet={`${asset(`${hero.image}-celular-300.webp`)} 300w, ${asset(`${hero.image}-celular-600.webp`)} 600w`}
-            sizes="150px"
-            width={300}
-            height={600}
-            alt=""
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-        <figcaption id="hero-legenda" className={h.published}>
-          <i aria-hidden="true" /> Projeto publicado · {hero.name}
-        </figcaption>
-      </div>
-    </figure>
   );
 }
 
