@@ -351,30 +351,32 @@ await scenario('Celular: projetos reais em carrossel (Schay primeiro), próximo 
   await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
   const snap = await page.locator('[data-carousel]').evaluate((el) => getComputedStyle(el).scrollSnapType);
   assert(snap.includes('x') && snap.includes('mandatory'), `scroll-snap: ${snap}`);
-  // Gestos de toque reais (CDP): arrastar começando em cima de "Visitar site" não abre o link.
+  // Gestos: este Chromium de teste não converte toque sintetizado em rolagem (nem da página),
+  // então o arraste com o dedo é conferido no aparelho. Aqui: rolagem horizontal de trackpad/roda
+  // começando em cima de "Visitar site" (não abre o link), volta, gesto vertical sobre o carrossel
+  // e zoom por pinça.
   await page.locator('[data-carousel]').evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' }));
   await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
-  const cdp = await page.context().newCDPSession(page);
-  const visit = await projects.locator('li').first().getByRole('link', { name: /Visitar site/ }).boundingBox();
   const opened = [];
   page.context().on('page', (p) => opened.push(p.url()));
-  const swipe = (x, y, dx, dy) => cdp.send('Input.synthesizeScrollGesture', { x: Math.round(x), y: Math.round(y), xDistance: dx, yDistance: dy, gestureSourceType: 'touch', speed: 900 });
-  await swipe(visit.x + visit.width / 2, visit.y + visit.height / 2, -260, 0);
+  const visit = await projects.locator('li').first().getByRole('link', { name: /Visitar site/ }).boundingBox();
+  await page.mouse.move(visit.x + visit.width / 2, visit.y + visit.height / 2);
+  await page.mouse.wheel(300, 0);
   await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
-  assert.equal(page.url(), URL, 'arrastar não navega');
-  // E volta pelo mesmo gesto.
-  const box = await page.locator('[data-carousel]').boundingBox();
-  await swipe(box.x + 60, box.y + 120, 320, 0);
+  await page.mouse.wheel(-300, 0);
   await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
-  // O gesto vertical sobre o carrossel continua rolando a página.
+  assert.equal(page.url(), URL, 'rolar não navega');
+  const cdp = await page.context().newCDPSession(page);
+  await page.locator('[data-carousel] li').first().evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  const box = await page.locator('[data-carousel] li').first().boundingBox();
   const y0 = await page.evaluate(() => scrollY);
-  await swipe(box.x + box.width / 2, box.y + 120, 0, -300);
+  await cdp.send('Input.synthesizeScrollGesture', { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + 100), yDistance: -300, gestureSourceType: 'mouse', speed: 900 });
   await page.waitForFunction((y) => scrollY > y + 100, y0);
   assert.deepEqual(opened, [], 'nenhuma aba aberta durante os gestos');
   // Zoom por pinça continua permitido.
   const meta = await page.locator('meta[name=viewport]').getAttribute('content');
   assert(!/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(\.0)?\b/.test(meta), `zoom permitido: ${meta}`);
-  await cdp.send('Input.synthesizePinchGesture', { x: 195, y: 400, scaleFactor: 2, gestureSourceType: 'touch' });
+  await cdp.send('Input.synthesizePinchGesture', { x: 195, y: 400, scaleFactor: 2, gestureSourceType: 'mouse' });
   await page.waitForFunction(() => (window.visualViewport?.scale ?? 1) > 1.2);
 }, phone390);
 
