@@ -1,10 +1,11 @@
 'use client';
 /* ==========================================================================
    Página inicial — pensada primeiro para o celular, em oito blocos:
-   1. benefício principal, destaque visual (captura real publicada) e dois
-      caminhos: "Criar minha prévia grátis" (ou "Continuar minha prévia"
-      quando há um projeto salvo) e "Conversar sobre meu projeto";
-   2. projetos reais ("Da ideia ao ar");
+   1. título curto, a captura real publicada logo abaixo, uma ação principal
+      ("Gerar minha prévia gratuita", ou "Continuar minha prévia" quando há
+      um projeto salvo), "Conversar sobre meu projeto" como link discreto e
+      o investimento em uma linha;
+   2. projetos reais ("Da ideia ao ar"), em carrossel no celular;
    3. benefícios concretos; 4. como funciona, com a demonstração do
       configurador identificada como ilustrativa;
    5. dois caminhos de contratação: pacotes e projeto sob medida;
@@ -25,6 +26,7 @@ import { ctaVariants, heroVariants } from '@/config/experiments';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { Footer, Header, asset, builderHref, examplesHref, packagesHref } from './Chrome';
+import { FloatingCta } from './FloatingCta';
 import { HeroShowcase } from './HeroShowcase';
 import { RealProjectCards } from './RealProjects';
 import { useProject } from './useProject';
@@ -95,13 +97,11 @@ export default function Landing() {
     <div className={`${s.page} ${s.bright}`} id="topo">
       <Header ctaLabel={primaryLabel} onStart={start('cabecalho')} />
       <main id="conteudo">
-        {/* 1. Benefício principal e os dois caminhos */}
+        {/* 1. Primeira tela, montada para o celular: título, apoio, o trabalho real,
+            a ação principal, a alternativa discreta e o investimento em uma linha. */}
         <section className={h.hero} aria-labelledby="hero-titulo">
           <div className={`${s.wrap} ${h.heroGrid}`}>
-            <div className={h.heroCopy}>
-              <p className={h.pill}>
-                <Sparkles aria-hidden="true" /> Prévia gratuita do seu site
-              </p>
+            <div className={h.heroHead}>
               <h1 id="hero-titulo" className={h.heroTitle}>
                 {title.lines.map((line, i) => (
                   <span key={line} className={h.line}>
@@ -110,32 +110,40 @@ export default function Landing() {
                   </span>
                 ))}
               </h1>
-              <p className={h.lead}>
-                Um site com a identidade do seu negócio, serviços organizados e um caminho fácil para pedir orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.
-              </p>
-              <div className={h.actions}>
-                <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('hero')} data-main-cta="">
-                  <span>{primaryLabel}</span>
-                </a>
-                <Talk className={s.secondary} message={contact.whatsappConversa} context="inicio">
+              <p className={h.lead}>Veja uma prévia grátis e imagine seu negócio com uma presença profissional.</p>
+            </div>
+            <HeroVisual />
+            <div className={h.heroAct} data-cta-zone="">
+              <a className={`${s.primary} ${s.shine} ${h.mainCta}`} href={builderHref} onClick={start('hero')} data-main-cta="">
+                <Sparkles aria-hidden="true" />
+                <span>{primaryLabel}</span>
+              </a>
+              <p className={h.alt}>
+                <span className={h.safe}>Sem cadastro. Sem compromisso.</span>
+                <Talk className={h.talkLink} message={contact.whatsappConversa} context="inicio">
                   <MessageCircle aria-hidden="true" /> Conversar sobre meu projeto
                 </Talk>
-              </div>
-              <p className={h.micro}>Sem cadastro para criar a prévia. Sem compromisso.</p>
+              </p>
               {resumable && (
                 <p className={h.newPreview}>
                   <a href={`${builderHref}#novo`}>Começar uma nova prévia</a>
                 </p>
               )}
-              <div className={h.offer}>
-                <p className={h.offerMain}>
-                  Sites de página única de <span className={h.price}>{priceRange}</span>.
-                </p>
-                <p className={h.offerMain}>Projetos com outras necessidades: orçamento sob medida.</p>
-                <p className={h.offerNote}>Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.</p>
-              </div>
             </div>
-            <HeroVisual />
+            <div className={h.priceLine}>
+              <p>
+                <strong>
+                  Sites de página única: <span className={h.price}>{priceRange}</span>.
+                </strong>{' '}
+                Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.
+              </p>
+              <p className={h.priceLinks}>
+                <a href={packagesHref} onClick={() => track('nav_click', { target: 'pacotes', context: 'inicio_topo' })}>
+                  Ver pacotes e condições
+                </a>
+                <a href="#contratar">Outras necessidades: orçamento sob medida</a>
+              </p>
+            </div>
           </div>
         </section>
 
@@ -300,7 +308,7 @@ export default function Landing() {
         <Faq />
 
         {/* 8. Chamada final */}
-        <section className={s.final} aria-labelledby="final-titulo">
+        <section className={s.final} aria-labelledby="final-titulo" data-cta-zone="">
           <div className={s.wrap}>
             <h2 id="final-titulo" className={h.finalTitle}>
               Veja o site da sua empresa <em className={h.mark}>antes de contratar.</em>
@@ -318,6 +326,7 @@ export default function Landing() {
         </section>
       </main>
       <Footer />
+      <FloatingCta label={primaryLabel} />
     </div>
   );
 }
@@ -336,52 +345,54 @@ function Marked({ text, mark }: { text: string; mark: string }) {
 }
 
 /**
- * Destaque visual: a captura do primeiro projeto real (computador e celular),
- * com o selo "Projeto publicado". Decorativo por fora (halo e moldura); a
- * imagem tem texto alternativo e a legenda leva ao cartão do projeto.
+ * Destaque visual: a captura real do primeiro projeto (Schay Corretora),
+ * aparecendo de imediato (carregamento prioritário, sem esperar animação).
+ * No celular, uma imagem principal legível; o celular complementar entra só
+ * quando há espaço. A legenda "Projeto publicado · nome" identifica o
+ * trabalho como site de cliente no ar — não uma prévia do configurador.
  */
 function HeroVisual() {
   return (
     <figure className={h.visual} aria-labelledby="hero-legenda">
       <div className={h.stage}>
-      <span className={h.halo} aria-hidden="true" />
-      <div className={h.browser}>
-        <div className={h.browserBar} aria-hidden="true">
-          <span className={h.dots}>
-            <i />
-            <i />
-            <i />
-          </span>
-          <span className={h.url}>{hero.domain}</span>
+        <span className={h.halo} aria-hidden="true" />
+        <span className={h.shapes} aria-hidden="true" />
+        <div className={h.browser}>
+          <div className={h.browserBar} aria-hidden="true">
+            <span className={h.dots}>
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className={h.url}>{hero.domain}</span>
+          </div>
+          <img
+            src={asset(`${hero.image}-640.webp`)}
+            srcSet={`${asset(`${hero.image}-640.webp`)} 640w, ${asset(`${hero.image}-1080.webp`)} 1080w`}
+            sizes="(min-width: 1000px) 560px, (min-width: 560px) 480px, calc(100vw - 32px)"
+            width={1280}
+            height={800}
+            alt={`${hero.alt}, no computador`}
+            fetchPriority="high"
+            decoding="async"
+          />
         </div>
-        <img
-          src={asset(`${hero.image}-640.webp`)}
-          srcSet={`${asset(`${hero.image}-640.webp`)} 640w, ${asset(`${hero.image}-1080.webp`)} 1080w`}
-          sizes="(min-width: 1000px) 540px, (min-width: 560px) 460px, calc(100vw - 54px)"
-          width={1280}
-          height={800}
-          alt={`${hero.alt}, no computador`}
-          decoding="async"
-        />
+        <div className={h.phone} aria-hidden="true">
+          <img
+            src={asset(`${hero.image}-celular-300.webp`)}
+            srcSet={`${asset(`${hero.image}-celular-300.webp`)} 300w, ${asset(`${hero.image}-celular-600.webp`)} 600w`}
+            sizes="150px"
+            width={300}
+            height={600}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+        <figcaption id="hero-legenda" className={h.published}>
+          <i aria-hidden="true" /> Projeto publicado · {hero.name}
+        </figcaption>
       </div>
-      <div className={h.phone}>
-        <img
-          src={asset(`${hero.image}-celular-300.webp`)}
-          srcSet={`${asset(`${hero.image}-celular-300.webp`)} 300w, ${asset(`${hero.image}-celular-600.webp`)} 600w`}
-          sizes="150px"
-          width={300}
-          height={600}
-          alt={`${hero.alt}, no celular`}
-          decoding="async"
-        />
-      </div>
-      <span className={h.published}>
-        <i aria-hidden="true" /> Projeto publicado
-      </span>
-      </div>
-      <figcaption id="hero-legenda" className={h.visualCaption}>
-        {hero.name} — site no ar. <a href="#projetos">Ver projetos reais</a>
-      </figcaption>
     </figure>
   );
 }

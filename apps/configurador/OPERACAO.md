@@ -164,7 +164,7 @@ Todos os eventos saem de `src/lib/analytics.ts`, como
 
 | Evento | Quando | Propriedades |
 |---|---|---|
-| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `final`, `pacotes`, `exemplo`); `package` quando vem de “Criar prévia com este pacote” |
+| `start_click` | Clique num botão que leva à criação | `context` (`hero`, `cabecalho`, `flutuante`, `final`, `pacotes`, `exemplo`); `package` quando vem de “Criar prévia com este pacote” |
 | `nav_click` | “Explorar exemplos de sites” / “Ver pacotes e valores” | `target` (`exemplos`, `pacotes`), `context` (página de origem) |
 | `real_project_open` | “Visitar site” de um projeto real (abre em nova aba) | `project`, `context` (`inicio`, `exemplos`) |
 | `configurator_start` | Abrir a página de criação (1× por sessão) | — |

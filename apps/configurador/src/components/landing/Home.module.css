@@ -10,7 +10,7 @@
 .hero {
   position: relative;
   overflow: hidden;
-  padding-block: 22px 40px;
+  padding-block: 16px 36px;
   background:
     radial-gradient(70% 55% at 100% 0%, rgb(147 197 253 / 0.32), transparent 70%),
     radial-gradient(60% 45% at 0% 100%, rgb(240 237 255 / 0.9), transparent 70%),
@@ -19,13 +19,12 @@
 .heroGrid {
   position: relative;
   display: grid;
-  gap: 30px;
-  align-items: center;
+  gap: 18px;
+  /* Celular: título → imagem → ação → investimento. */
+  grid-template-areas: 'head' 'visual' 'act' 'price';
 }
-.heroCopy {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+.heroHead {
+  grid-area: head;
   min-width: 0;
 }
 .pill {
@@ -56,11 +55,11 @@
   color: #8b5cf6;
 }
 .heroTitle {
-  margin-top: 14px;
-  font-size: clamp(31px, 8.2vw, 58px);
-  line-height: 1.07;
+  font-size: clamp(30px, 8vw, 56px);
+  line-height: 1.08;
   font-weight: 800;
   letter-spacing: -0.025em;
+  text-wrap: balance;
 }
 .heroTitle .line {
   display: block;
@@ -76,33 +75,65 @@
   text-decoration-skip-ink: auto;
 }
 .lead {
-  margin-top: 14px;
-  max-width: 36rem;
+  margin-top: 10px;
+  max-width: 34rem;
   font-size: 17px;
-  line-height: 1.55;
+  line-height: 1.5;
   color: var(--c-text);
 }
-.actions {
-  margin-top: 22px;
-  display: grid;
-  gap: 10px;
-  width: 100%;
+/* Ação principal e alternativa discreta */
+.heroAct {
+  grid-area: act;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
 }
-.actions > * {
+.mainCta {
   width: 100%;
+  min-height: 54px;
+  font-size: 17px;
 }
-.actions svg {
+.mainCta svg {
+  position: relative;
+  z-index: 1;
   width: 20px;
   height: 20px;
   flex: none;
 }
-.micro {
-  margin-top: 10px;
+.alt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 12px;
+  margin-top: 4px;
+}
+.safe {
   font-size: 14px;
   color: var(--c-text);
 }
-.newPreview {
-  margin-top: 4px;
+/* "Conversar sobre meu projeto": link com ícone, peso menor que o botão principal. */
+.talkLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding-inline: 2px;
+  color: var(--c-link);
+  font-size: 15px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: rgb(29 78 216 / 0.35);
+  text-underline-offset: 4px;
+}
+.talkLink:hover {
+  text-decoration-color: currentColor;
+}
+.talkLink svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
 }
 .newPreview a {
   display: inline-flex;
@@ -113,55 +144,91 @@
   font-weight: 600;
   text-underline-offset: 3px;
 }
-/* Oferta: faixa de preço, sob medida e custos à parte, juntos. */
-.offer {
-  margin-top: 16px;
-  width: 100%;
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: rgb(255 255 255 / 0.92);
+/* Investimento em uma linha, com as condições junto e os links para detalhes. */
+.priceLine {
+  grid-area: price;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.85);
   border: 1px solid var(--c-border);
-  box-shadow: var(--c-card-shadow);
-}
-.offer p {
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.45;
+  color: var(--c-text);
 }
-.offer .offerMain {
+.priceLine strong {
   color: var(--c-strong);
-  font-weight: 650;
+  font-weight: 700;
 }
 .price {
   color: var(--c-title);
   font-weight: 800;
   white-space: nowrap;
 }
-.offer .offerNote {
-  font-size: 13.5px;
-  color: var(--c-text);
+.priceLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  margin-top: 2px;
+}
+.priceLinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--c-link);
+  font-weight: 650;
+  text-underline-offset: 3px;
 }
 
 /* Destaque visual: captura real publicada, com halo suave atrás. */
 .visual {
+  grid-area: visual;
   width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
+  margin: 0;
+  min-width: 0;
 }
-/* Palco da captura: o celular e o selo se posicionam aqui, sem cobrir a legenda. */
+/* Palco da captura: celular, selo e formas se posicionam aqui. Entrada curta
+   só com transformação: a imagem aparece de imediato, sem esperar a animação. */
 .stage {
   position: relative;
-  padding: 6px 22px 26px 0;
+  animation: stageIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes stageIn {
+  from {
+    transform: translateY(10px) scale(0.985);
+  }
 }
 .halo {
   position: absolute;
   z-index: 0;
-  inset: -10% -12% -6% -8%;
+  inset: -12% -10% -10% -8%;
   pointer-events: none;
   background:
     radial-gradient(closest-side at 55% 50%, rgb(56 189 248 / 0.34), rgb(147 197 253 / 0.22) 55%, transparent 100%),
-    radial-gradient(closest-side at 20% 85%, rgb(196 181 253 / 0.35), transparent 100%);
+    radial-gradient(closest-side at 18% 90%, rgb(196 181 253 / 0.35), transparent 100%);
+}
+/* Pequenas formas que conduzem o olhar para a captura (decorativas). */
+.shapes {
+  position: absolute;
+  z-index: 0;
+  top: -10px;
+  right: -6px;
+  width: 54px;
+  height: 54px;
+  pointer-events: none;
+  border-radius: 14px;
+  border: 2px solid rgb(56 189 248 / 0.45);
+  transform: rotate(12deg);
+}
+.shapes::after {
+  content: '';
+  position: absolute;
+  left: -34px;
+  bottom: -18px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  opacity: 0.8;
 }
 .browser {
   position: relative;
@@ -169,16 +236,18 @@
   overflow: hidden;
   border-radius: 14px;
   background: #fff;
-  border: 1px solid #cddcf7;
+  border: 1px solid #c7d8f7;
   box-shadow:
-    0 0 0 5px rgb(255 255 255 / 0.6),
+    0 0 0 1px rgb(147 197 253 / 0.35),
+    0 0 26px -8px rgb(56 189 248 / 0.45),
+    0 2px 6px rgb(15 23 42 / 0.06),
     0 30px 60px -30px rgb(29 78 216 / 0.6);
 }
 .browserBar {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 28px;
+  height: 26px;
   padding: 0 10px;
   background: #f1f5fd;
   border-bottom: 1px solid #dde6f7;
@@ -212,12 +281,14 @@
   aspect-ratio: 1280 / 800;
   background: #0f172a;
 }
+/* Celular complementar: só com espaço para ficar legível. */
 .phone {
+  display: none;
   position: absolute;
   z-index: 2;
   right: 0;
   bottom: 0;
-  width: 27%;
+  width: 25%;
   max-width: 150px;
   overflow: hidden;
   border-radius: 16px;
@@ -235,36 +306,33 @@
   position: absolute;
   z-index: 3;
   left: 10px;
-  bottom: 8px;
+  bottom: 10px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 12px;
+  max-width: calc(100% - 20px);
+  padding: 5px 11px;
   border-radius: 99px;
   background: #fff;
   border: 1px solid #ccebd8;
   color: #166534;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.25;
   box-shadow: 0 10px 22px -14px rgb(22 101 52 / 0.6);
 }
 .published i {
+  flex: none;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: #22c55e;
   box-shadow: 0 0 0 3px rgb(34 197 94 / 0.2);
 }
-.visualCaption {
-  margin-top: 10px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--c-text);
-}
-.visualCaption a {
-  color: var(--c-link);
-  font-weight: 600;
+@media (prefers-reduced-motion: reduce) {
+  .stage {
+    animation: none;
+  }
 }
 
 /* ── Seções ─────────────────────────────────────────────────────────────── */
@@ -587,17 +655,28 @@
 
 /* ── ≥ 560px ────────────────────────────────────────────────────────────── */
 @media (min-width: 560px) {
-  .actions,
   .pathActions {
     display: flex;
     flex-wrap: wrap;
   }
-  .actions > *,
   .pathActions > * {
     width: auto;
   }
-  .visual {
-    max-width: 480px;
+  .stage {
+    padding: 0 30px 30px 0;
+  }
+  .phone {
+    display: block;
+  }
+  .mainCta {
+    width: auto;
+    padding-inline: 30px;
+  }
+  .heroAct {
+    align-items: flex-start;
+  }
+  .alt {
+    justify-content: flex-start;
   }
 }
 
@@ -621,27 +700,27 @@
 /* ── ≥ 1000px ───────────────────────────────────────────────────────────── */
 @media (min-width: 1000px) {
   .hero {
-    padding-block: 56px 72px;
+    padding-block: 48px 64px;
   }
+  /* Computador: texto, ação e investimento à esquerda; o trabalho real à direita. */
   .heroGrid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
-    gap: 44px;
-  }
-  .heroTitle {
-    font-size: clamp(44px, 4.2vw, 58px);
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      'head visual'
+      'act visual'
+      'price visual';
+    column-gap: 48px;
+    row-gap: 20px;
+    align-items: start;
   }
   .visual {
-    max-width: 640px;
-    margin-right: 0;
+    align-self: center;
   }
-  .stage {
-    padding: 0 34px 34px 0;
+  .heroTitle {
+    font-size: clamp(44px, 4.2vw, 56px);
   }
-  .phone {
-    width: 25%;
-    max-width: 158px;
-  }
-  .offer {
+  .priceLine {
     max-width: 34rem;
   }
   .howGrid {

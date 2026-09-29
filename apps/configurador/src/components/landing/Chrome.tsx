@@ -59,7 +59,7 @@ function hrefOf(item: NavItem, where: Where) {
 
 export function Header({
   where = 'inicio',
-  ctaLabel = 'Criar minha prévia grátis',
+  ctaLabel = 'Gerar minha prévia gratuita',
   ctaHref = builderHref,
   onStart,
 }: {
@@ -112,7 +112,8 @@ export function Header({
           <a href={ctaHref} className={`${s.primary} ${s.small} ${s.navCta}`} onClick={onStart}>
             {ctaLabel}
           </a>
-          <details className={s.menu} ref={menu}>
+          {/* Com o menu aberto, o botão flutuante sai de cena (html[data-menu-open]). */}
+          <details className={s.menu} ref={menu} onToggle={(ev) => document.documentElement.toggleAttribute('data-menu-open', ev.currentTarget.open)}>
             <summary className={s.menuButton}>
               <span className={s.menuClosed}>Menu</span>
               <span className={s.menuOpen}>Fechar</span>
@@ -160,7 +161,7 @@ export function Footer({ where = 'inicio' }: { where?: Where }) {
                 </li>
               ))}
               <li>
-                <a href={builderHref}>Criar minha prévia grátis</a>
+                <a href={builderHref}>Gerar minha prévia gratuita</a>
               </li>
             </ul>
           </div>
