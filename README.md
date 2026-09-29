@@ -74,10 +74,16 @@ Substitua os arquivos abaixo. **Mantenha os mesmos nomes** e o site funciona sem
 | `hero.svg` → `hero.webp` | fundo da primeira dobra | 2000×1250, você à direita do enquadramento |
 | `sobre.svg` → `sobre.webp` | seção "Quem está por trás" | 800×1000 (retrato 4:5) |
 | `assinatura.svg` | assinatura sob a frase de autoridade | PNG/SVG com fundo transparente |
-| `avatar.svg` | fotos dos depoimentos | 112×112 (uma por depoente) |
+| `depoimentos/<nome>-720.webp` e `-1200.webp` | foto do cliente em destaque (seção Acompanhamento) | fundo preto puro, proporção natural da foto |
+| `depoimentos/<nome>-avatar.webp` | fotinho redonda no selo do Instagram | 200×200, rosto centralizado |
 | `logo.svg` | slot da sua logo | SVG de preferência |
 | `favicon.svg` | ícone da aba | 64×64 |
 | `og-image.jpg` | prévia ao compartilhar no WhatsApp/redes | 1200×630 |
+
+**Próximos depoimentos:** a seção Acompanhamento tem a lista `<ul class="testimonials">`.
+Cada novo depoimento é um `<li class="testimonials__item">` com um `<figure class="testimonial">`
+(`<blockquote>` + `<figcaption>`). Eles aparecem como cartões menores, em grade, abaixo do cliente em destaque.
+Publique só depoimentos reais, com autorização do cliente.
 
 > **Dica de performance:** exporte as fotos em WebP com qualidade 80.
 > A foto do hero é a única imagem carregada com prioridade; todas as outras já usam `lazy loading`.
