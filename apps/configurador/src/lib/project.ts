@@ -1344,7 +1344,11 @@ function ownTexts(p: Project): string[] {
  * `lean`: versão enxuta (sem os textos editados), usada quando a completa
  * passa de MESSAGE_LIMIT; ela avisa que o arquivo do projeto tem o resto.
  */
-export function projectMessage(p: Project, origin?: string, opts: { logo?: boolean; lean?: boolean } = {}): string {
+/**
+ * `conversation`: "Conversar sobre esta prévia" — mesmo resumo, com abertura e
+ * fechamento de conversa (ainda não é o pedido de desenvolvimento).
+ */
+export function projectMessage(p: Project, origin?: string, opts: { logo?: boolean; lean?: boolean; conversation?: boolean } = {}): string {
   const pkg = currentPackage(p);
   const custom = isCustom(p);
   const blocks: string[][] = [];
@@ -1395,14 +1399,15 @@ export function projectMessage(p: Project, origin?: string, opts: { logo?: boole
   const decisao = decisionRoles.find((d) => d.id === lead.decision);
   block('SOBRE MIM', [lead.name.trim() && `Meu nome: ${lead.name.trim()}`, quando && `Quando quero começar: ${quando.name}`, decisao && `Decisão: ${decisao.name}`]);
 
-  const intro = custom ? contact.whatsappPersonalizado : contact.whatsappIntro;
+  const intro = custom ? contact.whatsappPersonalizado : opts.conversation ? contact.whatsappPrevia : contact.whatsappIntro;
+  const closing = opts.conversation ? contact.whatsappPreviaClosing : contact.whatsappClosing;
   // A referência só liga esta mensagem ao arquivo exportado: o projeto fica salvo no aparelho do visitante.
   const ref = [p.id && `Referência (a mesma do arquivo do projeto): ${p.id}`, origin && `Origem: ${origin}`].filter(Boolean).join(' · ');
-  return [intro, ...blocks.map((b) => b.join('\n')), contact.whatsappClosing, ...(ref ? [ref] : [])].join('\n\n');
+  return [intro, ...blocks.map((b) => b.join('\n')), closing, ...(ref ? [ref] : [])].join('\n\n');
 }
 
 /** A mensagem que vai para o WhatsApp: a completa, ou a enxuta quando a completa é longa demais. */
-export function requestMessage(p: Project, origin?: string, opts: { logo?: boolean } = {}): { text: string; lean: boolean } {
+export function requestMessage(p: Project, origin?: string, opts: { logo?: boolean; conversation?: boolean } = {}): { text: string; lean: boolean } {
   const full = projectMessage(p, origin, opts);
   if (full.length <= MESSAGE_LIMIT) return { text: full, lean: false };
   return { text: projectMessage(p, origin, { ...opts, lean: true }), lean: true };

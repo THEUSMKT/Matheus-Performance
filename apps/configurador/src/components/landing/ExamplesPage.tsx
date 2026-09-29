@@ -27,7 +27,7 @@ export default function ExamplesPage() {
   }, [state.origin.segment]);
 
   return (
-    <div className={`${s.page} ${s.inner}`} id="topo">
+    <div className={`${s.page} ${s.inner} ${s.bright}`} id="topo">
       <Header where="exemplos" ctaLabel={ctaLabel} onStart={() => track('start_click', { context: 'cabecalho' })} />
       <main id="conteudo">
         <section className={s.pageHead} aria-labelledby="exemplos-titulo">

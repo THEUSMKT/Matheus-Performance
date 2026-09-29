@@ -5,7 +5,7 @@
    limites vêm de packages.ts para nunca divergirem do configurador.
    Nada de formas de pagamento, garantias ou condições que não existam.
    ========================================================================== */
-import { brl, customNeeds, externalCosts, packages, priceNotes, priceRange, revisionRounds } from './packages';
+import { brl, externalCosts, packages, priceNotes, priceRange, revisionRounds, serviceTerms } from './packages';
 
 const [essencial, profissional, completo] = packages;
 const numbers = packages.flatMap((p) => p.deadline.match(/\d+/g) ?? []).map(Number);
@@ -35,11 +35,11 @@ export const projectFaq: [string, string][] = [
   ],
   [
     'O que preciso enviar para o site final?',
-    'Para a prévia, nada. Para o site final: a logo (se tiver), fotos da empresa, dos produtos ou dos trabalhos, e os serviços, horários e formas de contato. Os textos sugeridos na prévia são revisados com você antes de entrar no site.',
+    `Para a prévia, nada. Para o site final: a logo (se tiver), fotos da empresa, dos produtos ou dos trabalhos, e os serviços, horários e formas de contato. ${serviceTerms.textReview}`,
   ],
   [
     'Posso alterar o site depois da entrega?',
-    `Antes da publicação, estão incluídas ${revisionRounds} rodadas de ajustes. Depois da publicação, alterações e manutenção são combinadas e orçadas à parte.`,
+    `Antes da publicação, estão incluídas ${revisionRounds} rodadas de ajustes. ${serviceTerms.afterDelivery}`,
   ],
   [
     'Por que existem três pacotes?',
@@ -51,15 +51,15 @@ export const projectFaq: [string, string][] = [
   ],
   [
     'Quem fornece os textos?',
-    'Você fornece as informações da empresa. Os textos sugeridos na prévia são um ponto de partida e são revisados com você antes de entrar no site.',
+    `Você fornece as informações da empresa. ${serviceTerms.textReview} ${serviceTerms.contentProduction}`,
   ],
   [
     'O site funciona no celular?',
     'Sim. Todos os pacotes incluem layout responsivo, pensado primeiro para o celular e ajustado para o computador.',
   ],
   [
-    'Posso contratar algo mais complexo?',
-    `Sim, como projeto personalizado, com orçamento separado. Por exemplo: ${customNeeds.slice(0, 5).map((n) => n.name.toLowerCase()).join(', ')}. Os pacotes vão de ${priceRange}.`,
+    'Meu projeto precisa de mais que uma página. E agora?',
+    `Sim. Quando a necessidade vai além de uma página — por exemplo, mais de uma página ou informações de várias unidades —, conte o que sua empresa precisa: o escopo é avaliado na conversa e a proposta é feita sob medida. Os pacotes de página única vão de ${priceRange}.`,
   ],
   [
     'Quem fica com o domínio e os acessos?',

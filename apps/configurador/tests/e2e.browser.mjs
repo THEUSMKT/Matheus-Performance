@@ -96,7 +96,7 @@ async function toSite(page, opts) {
 /** Vai até uma escolha da personalização (a partir da prévia pronta ou da revisão). */
 async function toChoice(page, question) {
   if ((await title(page)) === Q.revisao) await page.getByRole('button', { name: 'Voltar a personalizar' }).click();
-  if ((await title(page)) === Q.pronta) await visible(page.getByRole('button', { name: 'Personalizar meu site' })).click();
+  if ((await title(page)) === Q.pronta) await visible(page.getByRole('button', { name: /^Personalizar( meu site)?$/ })).click();
   for (let i = 0; i < 7 && (await title(page)) !== question; i++) await next(page);
   assert.equal(await title(page), question);
 }
@@ -109,56 +109,90 @@ const PK = URL + 'pacotes/';
 const modelCards = (page) => page.locator('#modelos li[class*=exampleCard]:not([class*=otherCard])');
 const modelCard = (page, name) => modelCards(page).filter({ has: page.getByRole('heading', { name, exact: true }) });
 
-await scenario('Início: apresentação, dois projetos reais, como funciona, acessos, quem desenvolve, dúvidas e chamada final', async (page) => {
+await scenario('Início: dois caminhos, projetos reais, benefícios, como funciona, pacotes e sob medida, Matheus, dúvidas e chamada final', async (page) => {
   await page.goto(URL);
-  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Um site profissional para apresentar sua empresa e facilitar novos contatos.');
+  assert.equal((await page.getByRole('heading', { level: 1 }).innerText()).replace(/\s+/g, ' ').trim(), 'Sua empresa bem apresentada. O próximo contato começa aqui.');
   const copy = page.locator('[class*=heroCopy]');
-  const text = await copy.innerText();
-  for (const s of ['Veja uma prévia grátis. Depois, a Beck Performance desenvolve seu site com a identidade e as informações do seu negócio.', 'Desenvolvimento de R$ 500 a R$ 1.000.', 'Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.', 'Sem cadastro. Sem compromisso.']) assert(text.includes(s), s);
+  const text = (await copy.innerText()).replace(/\s+/g, ' ');
+  for (const s of [
+    'Um site com a identidade do seu negócio, serviços organizados e um caminho fácil para pedir orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.',
+    'Sem cadastro para criar a prévia. Sem compromisso.',
+    'Sites de página única de R$ 500 a R$ 1.000.',
+    'Projetos com outras necessidades: orçamento sob medida.',
+    'Domínio e hospedagem à parte.',
+  ])
+    assert(text.includes(s), s);
   assert.equal((await heroCta(page).innerText()).trim(), 'Criar minha prévia grátis');
   assert((await heroCta(page).getAttribute('href')).endsWith('/configurador/criar/'), 'botão principal abre a criação');
-  assert.equal(await copy.locator('a[class*=primary], a[class*=secondary]').count(), 1, 'um único botão no topo');
+  // Conversa direta, sem passar pelo configurador.
+  const talk = copy.getByRole('link', { name: /Conversar sobre meu projeto/ });
+  const href = await talk.getAttribute('href');
+  assert(href.startsWith('https://wa.me/') && decodeURIComponent(href).includes('quero conversar sobre o site da minha empresa'));
+  assert.equal(await talk.getAttribute('target'), '_blank');
+  assert.equal(await copy.locator('a[class*=primary], a[class*=secondary]').count(), 2, 'dois caminhos no topo');
+  // Destaque visual: captura real publicada, com legenda que não fica coberta.
+  const fig = page.locator('main figure').first();
+  assert((await fig.locator('img').first().getAttribute('alt')).includes('Schay Corretora'));
+  assert((await fig.innerText()).includes('Projeto publicado'));
+  const cap = await fig.locator('figcaption').boundingBox();
+  const phone = await fig.locator('[class*=phone]').boundingBox();
+  assert(cap.y >= phone.y + phone.height - 1, 'legenda abaixo do celular');
   const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
-  assert.deepEqual(ids, ['projetos', 'como-funciona', 'explorar', 'quem-atende', 'perguntas']);
-  // Projetos reais: captura estática, categoria, nome, frase e "Visitar site" em nova aba.
+  assert.deepEqual(ids, ['projetos', 'beneficios', 'como-funciona', 'contratar', 'quem-atende', 'perguntas']);
+  // Projetos reais: captura estática, selo, segmento, nome, necessidade, o que foi feito e duas ações.
   const projects = page.locator('#projetos');
-  assert.equal(await projects.getByRole('heading', { level: 2 }).innerText(), 'Da ideia ao ar: conheça sites que criamos.');
-  assert((await projects.innerText()).includes('Explore dois projetos desenvolvidos pela Beck Performance e veja diferentes formas de apresentar um negócio na internet.'));
+  assert.equal((await projects.getByRole('heading', { level: 2 }).innerText()).replace(/\s+/g, ' ').trim(), 'Da ideia ao ar: conheça sites que criamos.');
   assert.deepEqual(await projects.locator('h3').allInnerTexts(), ['Schay Corretora', 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital']);
   const cards = projects.locator('li');
-  assert((await cards.nth(0).innerText()).includes('Mercado imobiliário'));
-  assert((await cards.nth(0).innerText()).includes('Site imobiliário com apresentação profissional, vitrine de imóveis e caminhos de contato pelo WhatsApp.'));
-  assert(!(await cards.nth(0).innerText()).includes('Projeto da própria marca'), 'cliente não aparece como marca própria');
+  const c0 = await cards.nth(0).innerText();
+  for (const s of ['Projeto publicado', 'Mercado imobiliário', 'Necessidade:', 'O que foi desenvolvido:', 'Site imobiliário com apresentação profissional']) assert(c0.includes(s), s);
+  assert(!c0.includes('Projeto da própria marca'), 'cliente não aparece como marca própria');
   assert((await cards.nth(1).innerText()).includes('Marketing e serviços profissionais') && (await cards.nth(1).innerText()).includes('Projeto da própria marca'));
-  for (const [name, href] of [['Schay Corretora', 'https://schaycorretora.com.br/'], ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'https://theusmkt.github.io/Matheus-Performance/']]) {
+  for (const [name, url] of [['Schay Corretora', 'https://schaycorretora.com.br/'], ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'https://theusmkt.github.io/Matheus-Performance/']]) {
     const link = projects.getByRole('link', { name: `Visitar site: ${name} (abre em nova aba)` });
-    assert.equal(await link.getAttribute('href'), href);
+    assert.equal(await link.getAttribute('href'), url);
     assert.equal(await link.getAttribute('target'), '_blank');
     assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
+    const chat = projects.getByRole('link', { name: `Conversar sobre um projeto assim: ${name} (abre o WhatsApp em nova aba)` });
+    assert(decodeURIComponent(await chat.getAttribute('href')).includes(`“${name}”`), `mensagem cita ${name}`);
   }
   assert.equal(await page.locator('iframe').count(), 0, 'sem iframes');
   const imgs = await projects.locator('img').evaluateAll((els) => els.map((e) => [e.getAttribute('width'), e.getAttribute('height'), e.loading, e.getAttribute('srcset')?.includes('1280w'), e.alt]));
   for (const [w, h, loading, srcset, alt] of imgs) assert(w && h && loading === 'lazy' && srcset && alt.length > 10, 'imagem responsiva, adiada e com texto alternativo');
   assert(!/R\$/.test(await projects.innerText()), 'projeto sem preço ou pacote');
+  // Benefícios e como funciona (demonstração identificada como ilustrativa).
+  assert.deepEqual(await page.locator('#beneficios h3').allInnerTexts(), ['Serviços bem apresentados', 'A identidade do seu negócio', 'Contato em poucos toques']);
+  assert.deepEqual(await page.locator('#como-funciona ol h3').allInnerTexts(), ['Conte sobre o negócio', 'Veja e ajuste a prévia', 'Converse e confirme']);
+  assert((await page.locator('#como-funciona').innerText()).includes('Exemplo ilustrativo do configurador'));
+  // Dois caminhos: pacotes (valores de packages.ts) e sob medida.
+  const paths = page.locator('#contratar');
+  const pt = (await paths.innerText()).replace(/\s+/g, ' ');
+  for (const s of ['Essencial', 'R$ 500', 'Apresentar a empresa e os serviços.', 'Profissional', 'R$ 750', 'Completo', 'R$ 1.000', 'Domínio e hospedagem à parte.', 'Seu projeto precisa ir além de uma página?', 'Conte o que sua empresa precisa. Definimos o escopo e preparamos uma proposta de acordo com o projeto.']) assert(pt.includes(s), s);
+  assert(!/sistema|integraç|loja virtual|login/i.test(pt), 'sob medida sem prometer sistemas ou integrações');
+  assert(decodeURIComponent(await paths.getByRole('link', { name: /Conversar sobre um projeto sob medida/ }).getAttribute('href')).includes('ir além de uma página'));
+  assert((await page.getByRole('link', { name: 'Explorar exemplos de sites' }).getAttribute('href')).endsWith('/configurador/exemplos/'));
+  assert((await page.getByRole('link', { name: 'Ver pacotes e valores' }).getAttribute('href')).endsWith('/configurador/pacotes/'));
   // Sem galeria nem comparação extensa na página inicial.
   assert.equal(await page.locator('main [class*=exampleCard], main table, main [class*=compareBlocks]').count(), 0);
   assert.equal(await page.getByRole('link', { name: /Criar prévia com/ }).count(), 0);
-  const steps = await page.locator('#como-funciona ol h3').allInnerTexts();
-  assert.deepEqual(steps, ['Crie sua prévia', 'Ajuste e escolha o pacote', 'Converse e confirme']);
-  // Acessos às páginas internas.
-  assert((await page.getByRole('link', { name: 'Explorar exemplos de sites' }).getAttribute('href')).endsWith('/configurador/exemplos/'));
-  assert((await page.getByRole('link', { name: 'Ver pacotes e valores' }).getAttribute('href')).endsWith('/configurador/pacotes/'));
-  assert((await page.locator('#explorar').innerText()).includes('Essencial R$ 500'));
-  // Nada flutua sobre o conteúdo.
+  // Matheus, com foto e atendimento direto.
+  assert((await page.locator('#quem-atende img').getAttribute('alt')).includes('Matheus Beck'));
+  assert(await page.locator('#quem-atende').getByRole('link', { name: /Conversar com o Matheus/ }).isVisible());
+  // Nada flutua sobre o conteúdo; decoração não recebe toques.
   const fixed = await page.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => getComputedStyle(e).position === 'fixed' && e.getBoundingClientRect().height > 0).length);
   assert.equal(fixed, 0, 'sem elementos fixos sobre o conteúdo');
-  assert.equal(await page.locator('[data-float]').count(), 0);
+  assert.equal(await page.locator('[class*=halo]').evaluateAll((els) => els.filter((e) => getComputedStyle(e).pointerEvents !== 'none').length), 0, 'halo não intercepta toques');
   const body = await page.locator('body').innerText();
-  for (const bad of [/minutos/, /\+ ?R\$/, /a partir de/i, /garant/i, /mais vendido/i, /restam|últimas vagas|apenas hoje/i, /depoimento aqui/i]) assert(!bad.test(body), bad);
+  for (const bad of [/minutos/, /\+ ?R\$/, /a partir de R/i, /garant/i, /mais vendido/i, /restam|últimas vagas|apenas hoje/i, /depoimento aqui/i, /aument\w* (as |suas )?vendas/i]) assert(!bad.test(body), bad);
+  // Clique no WhatsApp é registrado como clique, com a origem.
+  await page.evaluate(() => (window.open = () => null));
+  await talk.click({ modifiers: [] }).catch(() => {});
+  let ev = await allEvents(page);
+  assert(ev.some((e) => e.event === 'whatsapp_open' && e.context === 'inicio'), 'origem do contato: início');
   await heroCta(page).click();
   await page.waitForURL(/\/criar\/$/);
   await ready(page);
-  const ev = await allEvents(page);
+  ev = await allEvents(page);
   assert.equal(ev.find((e) => e.event === 'start_click').context, 'hero');
 });
 
@@ -413,7 +447,7 @@ await scenario('Modelo com rascunho: ver não mexe, usar pergunta antes, "Manter
 
 /* ── Página de pacotes ─────────────────────────────────────────────────── */
 
-await scenario('Pacotes: abertura do maior para o menor, cartões completos, selo e diferenças de R$ 250', async (page) => {
+await scenario('Pacotes: abertura do maior para o menor, cartões enxutos, detalhes recolhíveis, selo e diferenças de R$ 250', async (page) => {
   await page.goto(PK);
   assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Escolha como sua empresa vai se apresentar ao mundo.');
   assert((await page.locator('[class*=pageHead]').innerText()).includes('Compare o que cada pacote entrega e encontre a opção adequada para o seu negócio.'));
@@ -423,40 +457,74 @@ await scenario('Pacotes: abertura do maior para o menor, cartões completos, sel
   assert(xs[0] < xs[1] && xs[1] < xs[2], 'computador: Essencial, Profissional e Completo lado a lado');
   assert.equal(await page.getByText('Equilíbrio entre apresentação e recursos').count(), 1);
   assert(await card('profissional').getByText('Equilíbrio entre apresentação e recursos').isVisible());
+  for (const [id, name, purpose, deadline, step] of [
+    ['essencial', 'Essencial', 'Apresentar a empresa e os serviços.', '3–5 dias úteis', ''],
+    ['profissional', 'Profissional', 'Mostrar trabalhos e organizar solicitações.', '5–8 dias úteis', 'R$ 250 a mais que o Essencial'],
+    ['completo', 'Completo', 'Apresentar produtos ou serviços com mais detalhe.', '7–12 dias úteis', 'R$ 250 a mais que o Profissional'],
+  ]) {
+    // textContent: o rótulo "Indicado para" aparece em caixa alta só pelo CSS.
+    const t = (await card(id).evaluate((e) => e.textContent)).replace(/\s+/g, ' ');
+    // Parte principal: sem abrir nada.
+    for (const s of ['Pagamento único · domínio e hospedagem à parte', 'Indicado para', purpose, `Prazo: ${deadline} após o envio dos materiais`, step].filter(Boolean)) assert(t.includes(s), `${id}: ${s}`);
+    for (const s of ['Pagamento único · domínio e hospedagem à parte', purpose]) assert(await card(id).getByText(s, { exact: false }).first().isVisible(), `${id}: ${s} visível sem abrir`);
+    const points = await card(id).locator('[class*=tierKey] li').count();
+    assert(points >= 3 && points <= 4, `${id}: 3 ou 4 diferenças (${points})`);
+    const link = card(id).getByRole('link', { name: `Criar prévia com este pacote: ${name}` });
+    assert((await link.getAttribute('href')).endsWith(`/criar/?pacote=${id}`));
+    const talk = card(id).getByRole('link', { name: `Conversar sobre este pacote: ${name} (abre o WhatsApp em nova aba)` });
+    assert(decodeURIComponent(await talk.getAttribute('href')).includes(`pacote ${name} (R$`), `${id}: mensagem com o pacote`);
+    // Detalhamento recolhido, abre por clique/toque.
+    const more = card(id).locator('details[class*=tierMore]');
+    assert.equal(await more.evaluate((d) => d.open), false, `${id}: detalhes começam recolhidos`);
+    assert.equal(await card(id).getByText('Recursos incluídos').isVisible(), false);
+    await more.locator('summary').click();
+    const full = await card(id).innerText();
+    for (const s of ['Recursos incluídos', 'Página única e responsiva', 'Botão de WhatsApp', '2 rodadas de ajustes', `Prazo: ${deadline}, contados após o recebimento de textos, imagens e logo.`]) assert(full.includes(s), `${id} aberto: ${s}`);
+  }
   const pro = await card('profissional').innerText();
   assert(pro.includes('R$ 250 a mais que o Essencial:') && pro.includes('galeria com até 8 fotos') && pro.includes('formulário que organiza a solicitação'));
   const com = await card('completo').innerText();
   assert(com.includes('R$ 250 a mais que o Profissional:') && com.includes('vitrine com até 10 produtos ou serviços') && com.includes('galeria com até 15 fotos'));
-  for (const [id, sections, deadline] of [['essencial', 'até 5', '3–5 dias úteis'], ['profissional', 'até 7', '5–8 dias úteis'], ['completo', 'até 8', '7–12 dias úteis']]) {
-    const t = await card(id).innerText();
-    for (const s of ['pagamento único pelo desenvolvimento', 'Recursos incluídos', 'Página única e responsiva', 'Botão de WhatsApp', '2 rodadas de ajustes', sections, `Prazo: ${deadline}, contados após o recebimento de textos, imagens e logo.`]) assert(t.includes(s), `${id}: ${s}`);
-    const link = card(id).getByRole('link', { name: `Criar prévia com este pacote: ${id[0].toUpperCase()}${id.slice(1)}` });
-    assert((await link.getAttribute('href')).endsWith(`/criar/?pacote=${id}`));
-  }
   assert.equal(await card('essencial').locator('li[data-extra]').count(), 0);
   assert.equal(await card('profissional').locator('li[data-extra]').count(), 4);
+  // Teclado: Enter no resumo abre e fecha.
+  const sum = card('essencial').locator('summary');
+  await sum.focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await card('essencial').locator('details[class*=tierMore]').evaluate((d) => d.open), false, 'Enter fecha');
+  await page.keyboard.press('Enter');
+  assert.equal(await card('essencial').locator('details[class*=tierMore]').evaluate((d) => d.open), true, 'Enter abre');
   // Preço em destaque, sem letras pequenas.
   const priceSize = await card('profissional').locator('[class*=tierPrice] strong').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   assert(priceSize >= 36, `preço em destaque (${priceSize}px)`);
   const small = await page.locator('main').evaluate((m) => [...m.querySelectorAll('p, li, td, th, dt, dd, a, span')].filter((e) => e.offsetParent && e.textContent.trim() && getComputedStyle(e).fontSize && parseFloat(getComputedStyle(e).fontSize) < 13).map((e) => e.textContent.trim().slice(0, 30)));
   assert.deepEqual(small, [], 'nada comercial abaixo de 13px');
-  const cond = await page.locator('#condicoes').innerText();
-  for (const s of ['Domínio e hospedagem', 'Pagos à parte', 'Depois da entrega', 'orçadas à parte', 'Não há mensalidade de desenvolvimento', 'Não incluído nos pacotes', 'Produção de textos, fotos ou vídeos', 'Projeto personalizado', 'o orçamento é separado']) assert(cond.includes(s), s);
-  assert(await page.locator('#condicoes').getByRole('link', { name: /Falar sobre um projeto personalizado/ }).isVisible());
+  const cond = (await page.locator('#condicoes').innerText()).replace(/\s+/g, ' ');
+  for (const s of ['Domínio e hospedagem', 'pagos à parte, direto aos fornecedores', 'Textos sugeridos pela IA', 'revisados com você', 'Produção de conteúdo', 'não está incluída nos pacotes', '2 rodadas de ajustes antes da publicação', 'orçadas à parte', 'Não há mensalidade de desenvolvimento', 'Seu projeto precisa ir além de uma página?']) assert(cond.includes(s), s);
+  assert(await page.locator('#condicoes').getByRole('link', { name: /Conversar sobre um projeto sob medida/ }).isVisible());
+  // No computador, a comparação completa já aparece aberta.
+  assert.equal(await page.locator('#comparar details').evaluate((d) => d.open), true);
   assert((await page.locator('#comparar').innerText()).includes('Valor total'));
   const body = await page.locator('main').innerText();
   for (const bad of [/mais vendido/i, /desconto/i, /promo/i, /restam|últimas|apenas hoje|só hoje/i, /mensal/i]) assert(!bad.test(body.replace('Não há mensalidade de desenvolvimento', '')), bad);
   assert.equal(await page.locator('main s, main del').count(), 0, 'sem preço riscado');
+  await card('profissional').getByRole('link', { name: /Conversar sobre este pacote/ }).click().catch(() => {});
+  const ev = await allEvents(page);
+  assert(ev.some((e) => e.event === 'whatsapp_open' && e.context === 'pacote' && e.package === 'profissional'), 'origem do contato: pacote');
 });
 
-await scenario('Pacotes no celular: Profissional primeiro, comparação em blocos e nada cortado', async (page) => {
+await scenario('Pacotes no celular: Profissional primeiro, cartões enxutos, comparação recolhida e nada cortado', async (page) => {
   await page.goto(PK);
   const ys = await Promise.all(['profissional', 'essencial', 'completo'].map(async (id) => (await page.locator(`#pacote-${id}`).boundingBox()).y));
   assert(ys[0] < ys[1] && ys[1] < ys[2], 'Profissional, Essencial e Completo');
   for (const id of ['profissional', 'essencial', 'completo']) {
     const b = await page.locator(`#pacote-${id}`).boundingBox();
     assert(b.x >= 0 && b.x + b.width <= 390, `cartão inteiro na tela: ${id}`);
+    assert(b.height < 900, `cartão enxuto no celular: ${id} (${Math.round(b.height)}px)`);
   }
+  const cmp = page.locator('#comparar details');
+  assert.equal(await cmp.evaluate((d) => d.open), false, 'comparação completa recolhida no celular');
+  await cmp.locator('summary').tap();
   assert(await page.locator('#comparar [class*=compareBlocks]').isVisible(), 'comparação em blocos');
   assert.equal(await page.locator('#comparar table').isVisible(), false);
   assert.equal(await scrollWidth(page), 390);
@@ -471,7 +539,8 @@ for (const width of [320, 360, 390, 430]) {
         .filter((e) => e.offsetParent && getComputedStyle(e).display !== 'inline' && !e.closest('[aria-hidden=true], [data-showcase], [class*=exampleThumb], p'))
         .map((e) => [e.textContent.trim().slice(0, 30), e.getBoundingClientRect().height]).filter(([, h]) => h < 43.9));
       assert.deepEqual(tiny, [], `alvos de toque (${path || 'início'})`);
-      const body = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('main p:not([class*=micro])')).fontSize));
+      // Primeiro parágrafo de texto (selos e microtexto não contam).
+      const body = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector('main p:not([class*=micro]):not([class*=pill])')).fontSize));
       assert(body >= 15, `texto principal (${body}px)`);
     }
   }, { viewport: { width, height: 740 }, isMobile: true, hasTouch: true });
@@ -1003,8 +1072,13 @@ for (const width of [360, 390, 430, 768]) {
     assert(await preview(page).isVisible(), 'a prévia aparece sozinha');
     assert(await page.getByRole('heading', { name: 'Sua prévia está pronta' }).filter({ visible: true }).isVisible());
     const bar = page.locator('[data-bar=configurador]');
-    assert.deepEqual((await bar.getByRole('button').allInnerTexts()).map((t) => t.trim()), ['Voltar ao objetivo', 'Personalizar meu site']);
-    await bar.getByRole('button', { name: 'Personalizar meu site' }).click();
+    // Próximo passo evidente: conversar sobre a prévia (com o resumo); personalizar continua à mão.
+    assert.deepEqual((await bar.getByRole('button').allInnerTexts()).map((t) => t.trim()), ['Personalizar']);
+    const talk = bar.getByRole('link', { name: /Conversar sobre esta prévia/ });
+    assert(await talk.isVisible() && (await talk.getAttribute('target')) === '_blank');
+    const tb = await talk.boundingBox();
+    assert(tb.height >= 44 && tb.x + tb.width <= width, 'botão inteiro e confortável na barra');
+    await bar.getByRole('button', { name: 'Personalizar' }).click();
     assert.equal(await title(page), Q.pacote);
     assert(!(await preview(page).isVisible()), 'nas escolhas, a prévia só abre quando a pessoa pede');
     // Os três nomes e preços à vista, sem rolagem lateral escondida.
@@ -1100,10 +1174,11 @@ await scenario('IA digitando: gera direto do texto; falha preserva a descrição
   });
   await page.goto(URL_AI + 'criar/');
   await ready(page);
-  assert(await page.getByRole('button', { name: 'Gravar minha ideia' }).isVisible());
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
+  // O campo já está aberto para digitar; gravar é alternativa à vista, e o exemplo não vem preenchido.
   const box = page.locator('#descricao-ia');
-  assert.equal(await page.evaluate(() => document.activeElement.id), 'descricao-ia', 'foco no campo');
+  assert(await box.isVisible() && (await box.inputValue()) === '', 'campo aberto e vazio');
+  assert((await page.locator('#guia-descricao').innerText()).includes('Tenho uma empresa de reformas.'));
+  assert(await page.getByRole('button', { name: 'Gravar minha ideia' }).isVisible());
   await box.fill('Meu WhatsApp é 51 99999-0000 e faço instalação de ar-condicionado.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   assert((await page.locator('#erro-descricao').innerText()).includes('Tire telefone'));
@@ -1232,7 +1307,7 @@ await scenario('Áudio: navegador sem gravação mostra o campo de texto com avi
   await page.goto(URL_AI + 'criar/');
   await ready(page);
   assert(await page.locator('#descricao-ia').isVisible());
-  assert(await page.getByText('A gravação de áudio não está disponível neste navegador.').isVisible());
+  assert(await page.getByText('A gravação de áudio não está disponível neste navegador — a descrição por texto funciona normalmente.').isVisible());
   assert.equal(await page.getByRole('button', { name: /Gravar/ }).count(), 0);
 });
 
@@ -1243,7 +1318,6 @@ await scenario('Celular 390px com IA: gerar abre a prévia direto, com "Sua pré
   });
   await page.goto(URL_AI + 'criar/');
   await ready(page);
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
   await page.locator('#descricao-ia').fill('A Clima Sul faz instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.getByRole('heading', { name: 'Sua prévia está pronta' }).filter({ visible: true }).waitFor();
@@ -1252,8 +1326,11 @@ await scenario('Celular 390px com IA: gerar abre a prévia direto, com "Sua pré
   const top = await preview(page).locator('[aria-roledescription=prévia]').boundingBox();
   assert(top.y < 844, 'o início do site aparece na tela');
   const bar = page.locator('[data-bar=configurador]');
-  assert.deepEqual((await bar.getByRole('button').allInnerTexts()).map((t) => t.trim()), ['Editar minha descrição', 'Personalizar meu site']);
-  await bar.getByRole('button', { name: 'Personalizar meu site' }).click();
+  assert.deepEqual((await bar.getByRole('button').allInnerTexts()).map((t) => t.trim()), ['Personalizar']);
+  const talk = bar.getByRole('link', { name: /Conversar sobre esta prévia/ });
+  const msg = decodeURIComponent(await talk.getAttribute('href'));
+  assert(msg.includes('Criei uma prévia do site da minha empresa') && msg.includes('Empresa: Clima Sul') && msg.includes('PACOTE ESCOLHIDO'), 'conversa com o resumo do projeto');
+  await bar.getByRole('button', { name: 'Personalizar' }).click();
   assert.equal(await title(page), Q.pacote);
   assert.equal(await scrollWidth(page), 390);
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
@@ -1267,7 +1344,6 @@ await scenario('IA: se a pessoa sai da etapa enquanto gera, nada muda sozinho; a
   });
   await page.goto(URL_AI + 'criar/');
   await ready(page);
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
   await page.locator('#descricao-ia').fill('A Clima Sul faz instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.getByRole('button', { name: 'Montando sua prévia…' }).waitFor();
@@ -1297,7 +1373,6 @@ await scenario('IA: gerar outra sugestão só para uma seção; as outras ficam 
   });
   await page.goto(URL_AI + 'criar/');
   await ready(page);
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
   await page.locator('#descricao-ia').fill('A Clima Sul faz instalação e manutenção de ar-condicionado e quero receber pedidos de orçamento.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
@@ -1328,7 +1403,6 @@ await scenario('IA: gerar de novo troca o segmento que a IA sugeriu, mas não o 
     route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion: replies.shift() }) }));
   await page.goto(URL_AI + 'criar/');
   await ready(page);
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
   const generate = async () => {
     if ((await title(page)) !== Q.negocio) await page.getByRole('button', { name: 'Editar minha descrição' }).click();
     await page.locator('#descricao-ia').fill('Sou corretora de imóveis e quero mostrar imóveis e agendar visitas.');
@@ -1422,13 +1496,25 @@ await scenario('Celular 390px: exemplo abre na versão de celular de verdade, se
   assert.equal(await scrollWidth(page), 390);
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-for (const [width, height] of [[360, 740], [390, 844], [430, 932]]) {
-  await scenario(`Apresentação ${width}px: título, preço e botão principal na primeira tela`, async (page) => {
+for (const [width, height] of [[320, 568], [360, 740], [375, 667], [390, 844], [430, 932]]) {
+  await scenario(`Apresentação ${width}px: título, os dois caminhos e a oferta na primeira tela, antes da imagem`, async (page) => {
     await page.goto(URL);
     const cta = await heroCta(page).boundingBox();
     assert(cta.y + cta.height <= height, `botão principal visível sem rolar (${Math.round(cta.y + cta.height)} de ${height})`);
     assert(cta.height >= 44, 'toque confortável');
-    assert(await page.getByText('Desenvolvimento de R$ 500 a R$ 1.000.').isVisible());
+    const talk = await page.locator('[class*=heroCopy]').getByRole('link', { name: /Conversar sobre meu projeto/ }).boundingBox();
+    assert(talk.height >= 44, 'toque confortável na conversa direta');
+    // Na tela de 320×568 (a menor que ainda existe), só o botão principal precisa caber.
+    if (height >= 667) assert(talk.y + talk.height <= height, `conversa direta também sem rolar (${Math.round(talk.y + talk.height)} de ${height})`);
+    assert(talk.y >= cta.y + cta.height, 'botões sem sobreposição');
+    const offer = page.getByText('Sites de página única de');
+    assert(await offer.isVisible());
+    // Mensagem e ações antes do elemento visual grande.
+    const fig = await page.locator('main figure').first().boundingBox();
+    assert(fig.y > talk.y + talk.height, 'imagem depois das ações');
+    // Título com quebras naturais: nenhuma palavra partida.
+    const h1 = await page.getByRole('heading', { level: 1 }).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth }));
+    assert(h1.w <= h1.cw + 1, 'título sem estourar a largura');
     assert.equal(await scrollWidth(page), width);
     const ev = await allEvents(page);
     assert(ev.every((e) => e.device === 'celular'), 'eventos com a categoria do aparelho');
@@ -1468,7 +1554,7 @@ await scenario('Celular 390px: etapa em uma linha, pacote compacto e revisão co
   assert((await menu.innerText()).startsWith('Etapa 1 de 4'));
   await business(page);
   await next(page); await next(page);
-  await visible(page.getByRole('button', { name: 'Personalizar meu site' })).click();
+  await visible(page.getByRole('button', { name: /^Personalizar( meu site)?$/ })).click();
   assert.equal(await title(page), Q.pacote);
   assert((await menu.innerText()).includes('Etapa 3 de 4'));
   assert(await page.getByText('Pacote inicial: você pode mudar, e nada é contratado agora.').first().isVisible());
@@ -1532,7 +1618,6 @@ await scenario('Modelo de estética + descrição de imobiliária: o segmento ac
   await page.waitForURL(/criar/);
   await ready(page);
   await visible(page.getByRole('button', { name: 'Editar minha descrição' })).click();
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
   await page.locator('#descricao-ia').fill('Sou corretora de imóveis, ajudo famílias a comprar e vender imóveis e quero agendar visitas.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
@@ -1549,7 +1634,6 @@ await scenario('Segmento escolhido à mão diferente da descrição: a tela perg
   await page.getByRole('button', { name: 'Prefiro escolher tudo passo a passo' }).click();
   await page.getByRole('radio', { name: 'Alimentação' }).click();
   await page.getByRole('button', { name: /Prefiro descrever/ }).click();
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click().catch(() => {});
   await page.locator('#descricao-ia').fill('Faço consultoria financeira para pequenas empresas e quero receber pedidos de diagnóstico.');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
@@ -1565,7 +1649,7 @@ await scenario('Navegador do Instagram: aviso sobre o microfone e opção de dig
   await page.goto(URL_AI + 'criar/');
   await ready(page);
   assert(await page.getByText('No navegador do Instagram ou do Facebook, o microfone pode não funcionar.').isVisible());
-  assert(await page.getByRole('button', { name: 'Prefiro digitar' }).isVisible());
+  assert(await page.locator('#descricao-ia').isVisible(), 'digitar continua disponível');
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 330.0.0.0' });
 
 /* ── Prévias por família (casos de negócio com respostas simuladas) ─────── */
@@ -1588,8 +1672,6 @@ async function mockAi(page, answer, { oldServer = false } = {}) {
 async function describeAndGenerate(page, text) {
   await page.goto(URL_AI + 'criar/');
   await ready(page);
-  const typeBtn = page.getByRole('button', { name: 'Prefiro digitar' });
-  if (await typeBtn.isVisible().catch(() => false)) await typeBtn.click();
   await page.locator('#descricao-ia').fill(text);
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
   await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
@@ -1603,7 +1685,6 @@ await scenario('Nome antes da prévia: campo, sugestão tirada da descrição e 
   const field = page.getByLabel('Como se chama seu negócio?');
   assert(await field.isVisible(), 'o nome vem junto com a ideia, antes de gravar ou digitar');
   assert(await page.getByText('Esse nome aparece na prévia.').isVisible());
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
   await page.locator('#descricao-ia').fill(c.descricao);
   const found = page.getByText(/Encontramos “Clínica Vila Pet” na sua descrição/);
   await found.waitFor();
@@ -1620,7 +1701,6 @@ await scenario('Nome antes da prévia: campo, sugestão tirada da descrição e 
   await ready(page);
   await page.getByText('Ainda não defini o nome.').click();
   assert(await page.getByText('A prévia usa “Seu negócio” como nome provisório.', { exact: false }).isVisible());
-  await page.getByRole('button', { name: 'Prefiro digitar' }).click();
   await page.locator('#descricao-ia').fill(c.descricao);
   assert.equal(await page.getByRole('button', { name: 'Usar este nome' }).count(), 0, 'sem sugestão quando a pessoa ainda não definiu');
   await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
@@ -1703,7 +1783,7 @@ await scenario('Composição e estilo mudam na hora, sem perder textos e sem cha
   const pv = livePreview(page);
   const words = (await pv.innerText()).includes('Bolos decorados e doces finos por encomenda');
   assert(words);
-  await visible(page.getByRole('button', { name: 'Personalizar meu site' })).click();
+  await visible(page.getByRole('button', { name: /^Personalizar( meu site)?$/ })).click();
   await toChoice(page, Q.estilo);
   const comp = page.getByRole('radiogroup', { name: 'Composição' });
   assert.equal(await comp.getByRole('radio').count(), 4, 'duas variantes, topo sem imagem e institucional');
@@ -1726,7 +1806,7 @@ await scenario('Trocar o nome atualiza cabeçalho, rodapé, apresentação, resu
   const c = caso('arquitetura');
   await mockAi(page, c.resposta);
   await describeAndGenerate(page, c.descricao);
-  await visible(page.getByRole('button', { name: 'Personalizar meu site' })).click();
+  await visible(page.getByRole('button', { name: /^Personalizar( meu site)?$/ })).click();
   await toChoice(page, Q.conteudo);
   const field = page.locator('#nome-conteudo');
   await field.fill('Ateliê Traço Fino');

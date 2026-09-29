@@ -1331,8 +1331,44 @@
   font-size: 16px;
   font-weight: 650;
 }
-.choose {
+/* Orientação curta e exemplo (nunca preenchido no campo). */
+.describeGuide {
   display: grid;
+  gap: 6px;
+  margin: 6px 0 8px;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.describeExample {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px dashed #b9cbea;
+  color: #33415e;
+  font-style: italic;
+}
+.describeExample span {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--navy);
+}
+/* Áudio como alternativa, à vista, depois de "Gerar minha prévia". */
+.audioAlt {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #c9dafb;
+}
+.audioAltLabel {
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+}
+.audioAlt .wideBtn {
+  margin-top: 6px;
+}
+.audioAlt .micNote {
+  margin-top: 6px;
 }
 .micMain {
   width: 100%;
@@ -1530,6 +1566,17 @@
   border-radius: var(--radius-sm);
   background: var(--tint);
   font-size: 14px;
+}
+.readyLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+}
+.readyNext {
+  margin-top: 14px;
+  color: var(--navy);
+  font-size: 15px;
+  font-weight: 650;
 }
 .readyActions {
   margin-top: 8px;

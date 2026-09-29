@@ -291,8 +291,13 @@ test('Perguntas frequentes pedidas, com valores vindos dos pacotes', () => {
   const qs = projectFaq.map(([q]) => q);
   // As 6 primeiras são as dúvidas que decidem a compra, nesta ordem.
   assert.deepEqual(qs.slice(0, 6), ['A prévia grátis já é o meu site?', 'O que está incluído no valor?', 'Domínio e hospedagem estão incluídos?', 'Qual é o prazo de desenvolvimento?', 'O que preciso enviar para o site final?', 'Posso alterar o site depois da entrega?']);
-  for (const q of ['Por que existem três pacotes?', 'Existe mensalidade?', 'Quem fornece os textos?', 'O site funciona no celular?', 'Posso contratar algo mais complexo?', 'Quem fica com o domínio e os acessos?']) assert(qs.includes(q), q);
+  for (const q of ['Por que existem três pacotes?', 'Existe mensalidade?', 'Quem fornece os textos?', 'O site funciona no celular?', 'Meu projeto precisa de mais que uma página. E agora?', 'Quem fica com o domínio e os acessos?']) assert(qs.includes(q), q);
   const text = JSON.stringify(projectFaq);
+  // Regras comerciais ditas do mesmo jeito em todas as páginas (config/packages.ts → serviceTerms).
+  for (const t of [pk.serviceTerms.textReview, pk.serviceTerms.contentProduction, pk.serviceTerms.afterDelivery]) assert(text.includes(t), t);
+  // Sob medida sem prometer sistemas, integrações nem loja com pagamento.
+  const custom = projectFaq.find(([q]) => q.startsWith('Meu projeto precisa'))[1];
+  assert(!/sistema|integra|loja virtual|login|estoque/i.test(custom), custom);
   assert(!/minutos/.test(text), 'sem promessa de tempo da prévia');
   for (const s of ['R$ 500', 'R$ 750', 'R$ 1.000', '3 a 12 dias úteis', '2 rodadas']) assert(text.includes(s), s);
   for (const bad of [/parcel/i, /cartão/i, /pix/i, /garantia de/i, /\+ R\$/]) assert(!bad.test(text), bad);
@@ -1134,6 +1139,45 @@ test('Rotas novas, links sem depender de script e alvo mínimo de compatibilidad
   assert(pkgJson.scripts['check:compat']);
   const builder = src('components/builder/Builder.tsx');
   assert(!/params\.size|searchParams\.size/.test(builder), 'URLSearchParams.size só existe no Safari 17+');
+});
+
+test('Pacotes: benefício antes da quantidade, fonte única e diferenças reais de R$ 250', () => {
+  assert.deepEqual(pk.packages.map((p) => p.purpose), ['Apresentar a empresa e os serviços.', 'Mostrar trabalhos e organizar solicitações.', 'Apresentar produtos ou serviços com mais detalhe.']);
+  for (const p of pk.packages) {
+    const points = pk.packageKeyPoints(p);
+    assert(points.length >= 3 && points.length <= 4, `${p.id}: 3 ou 4 diferenças`);
+    // Quantidades só depois do benefício (entre parênteses ou no fim), derivadas dos limites.
+    assert(points.some((t) => t.includes(String(p.maxSections))), `${p.id}: limite de seções`);
+    if (p.galleryImages) assert(points.some((t) => t.includes(`${p.galleryImages} fotos`)), `${p.id}: galeria`);
+    if (p.showcaseItems) assert(points.some((t) => t.includes(`${p.showcaseItems} itens`)), `${p.id}: vitrine`);
+    for (const t of points) assert(!/^\d|^Até \d+ fotos|^\d+ itens/.test(t) || /seções/.test(t), `${p.id}: benefício primeiro (${t})`);
+  }
+  assert.deepEqual(pk.packages.slice(1).map((p) => pk.upgradeNote(p).diff), [250, 250]);
+  // Sem comentários: eles explicam justamente o que não pode aparecer.
+  const pages = ['components/landing/PackagesPage.tsx', 'components/landing/Landing.tsx'].map((f) =>
+    fs.readFileSync(path.join(__dirname, '../src', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, ''),
+  );
+  for (const src of pages) assert(!/R\$ ?\d/.test(src), 'nenhum preço escrito à mão nas páginas: tudo vem de packages.ts');
+  const pacotes = pages[0];
+  assert(/Ver tudo que está incluído/.test(pacotes) && /<details className=\{s\.tierMore\}/.test(pacotes), 'detalhamento recolhível nativo');
+  assert(/domínio e hospedagem à parte/.test(pacotes), 'custos à parte visíveis no cartão, fora do detalhamento');
+  assert(!/mais vendido|mais escolhido|de R\$ \d+ por|últimas vagas/i.test(pacotes), 'sem selo sem dados, preço riscado ou urgência');
+});
+
+test('Contato direto: mensagens com o projeto, o pacote ou o resumo da prévia; clique ≠ envio', () => {
+  const contact = require('../src/config/contact.ts');
+  assert(contact.projectInterestMessage('Schay Corretora').includes('Schay Corretora'));
+  const m = contact.packageInterestMessage('Profissional', pk.brl(750));
+  assert(m.includes('Profissional') && m.includes('R$ 750'));
+  const p = { ...model.exampleProject('beleza'), name: 'Studio Aurora' };
+  const talk = model.requestMessage(p, undefined, { conversation: true }).text;
+  assert(talk.startsWith(contact.contact.whatsappPrevia) && talk.includes(contact.contact.whatsappPreviaClosing), 'abertura e fechamento de conversa');
+  assert(talk.includes('Empresa: Studio Aurora') && talk.includes(`${pk.packageById(p.pkg).name} — ${pk.brl(pk.packageById(p.pkg).price)}`), 'resumo do projeto junto');
+  assert(model.requestMessage(p).text.startsWith(contact.contact.whatsappIntro), 'o pedido continua com a abertura de pedido');
+  // Evento de clique: origem, projeto e pacote; nada de texto livre ou dado pessoal.
+  const clean = analytics.sanitize('whatsapp_open', { context: 'pacote', package: 'profissional', project: 'schay-corretora', message: 'oi', phone: '51999999999' });
+  assert.deepEqual(Object.keys(clean).sort(), ['context', 'package', 'project']);
+  assert(!('whatsapp_sent' in analytics.EVENTS) && !('lead_whatsapp' in analytics.EVENTS), 'clique no WhatsApp não vira envio nem lead');
 });
 
 Promise.all(pending).then(() => console.log(`${count} testes passaram.`)).catch((e) => { console.error(e); process.exit(1); });

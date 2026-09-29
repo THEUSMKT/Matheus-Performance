@@ -90,7 +90,7 @@ export default function Builder() {
   const [full, setFull] = useState(false);
   /** Caminho sem descrição (com a IA ligada): nome, segmento e serviço. */
   const [manual, setManual] = useState(false);
-  const [describePhase, setDescribePhase] = useState<DescribePhase>('escolher');
+  const [describePhase, setDescribePhase] = useState<DescribePhase>('texto');
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState('');
   /** Prévia gerada que chegou depois de a pessoa sair da etapa. */
@@ -534,6 +534,9 @@ export default function Builder() {
 
   const request = requestMessage(p, originTag(origin), { logo: Boolean(logo) });
   const message = request.text;
+  /** "Conversar sobre esta prévia": o mesmo resumo, como conversa (ainda não é o pedido). */
+  const talkHref = whatsappLink(requestMessage(p, originTag(origin), { logo: Boolean(logo), conversation: true }).text);
+  const talk = () => track('whatsapp_open', { context: 'previa' });
   const step = p.step;
   const choiceIndex = CHOICE_STEPS.indexOf(step);
   const phase = phaseOf(step);
@@ -672,6 +675,8 @@ export default function Builder() {
         onEditDescription={() => go(backFromReady(), { validate: false })}
         editLabel={editLabel}
         onReview={() => go(STEP.revisao)}
+        talkHref={talkHref}
+        onTalk={talk}
       />
     );
   } else if (step === STEP.pacote)
@@ -721,12 +726,13 @@ export default function Builder() {
       if (step === STEP.pronta)
         bar = (
           <>
-            <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={() => go(backFromReady(), { validate: false })}>
-              {editLabel}
+            <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={() => go(STEP.pacote)}>
+              Personalizar
             </button>
-            <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.pacote)}>
-              Personalizar meu site
-            </button>
+            <a className={`${s.primary} ${b.next}`} href={talkHref} target="_blank" rel="noopener noreferrer" onClick={talk}>
+              <MessageCircle aria-hidden="true" /> Conversar sobre esta prévia
+              <span className={s.srOnly}> (abre o WhatsApp em nova aba, com o resumo)</span>
+            </a>
           </>
         );
       else if (step === STEP.revisao)
@@ -763,9 +769,10 @@ export default function Builder() {
           <button type="button" className={`${b.backButton} ${b.barSecondary}`} onClick={showPreview}>
             <Eye aria-hidden="true" /> Ver minha prévia
           </button>
-          <button type="button" className={`${s.primary} ${b.next}`} onClick={() => go(STEP.pacote)}>
-            Personalizar meu site
-          </button>
+          <a className={`${s.primary} ${b.next}`} href={talkHref} target="_blank" rel="noopener noreferrer" onClick={talk}>
+            <MessageCircle aria-hidden="true" /> Conversar sobre esta prévia
+            <span className={s.srOnly}> (abre o WhatsApp em nova aba, com o resumo)</span>
+          </a>
         </>
       );
     else if (step === STEP.revisao)
@@ -1057,9 +1064,16 @@ export default function Builder() {
                       />
                     </div>
                   )}
-                  <button type="button" className={b.textButton} onClick={() => go(STEP.revisao)}>
-                    Gostei assim — revisar e solicitar
-                  </button>
+                  <p className={b.readyLinks}>
+                    <button type="button" className={b.textButton} onClick={() => go(STEP.revisao)}>
+                      Gostei assim — revisar e solicitar
+                    </button>
+                    {narrow && (
+                      <button type="button" className={b.textButton} onClick={() => go(backFromReady(), { validate: false })}>
+                        {editLabel}
+                      </button>
+                    )}
+                  </p>
                 </div>
               )}
               <div className={b.previewTop}>

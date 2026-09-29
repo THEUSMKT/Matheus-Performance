@@ -37,8 +37,12 @@ export const EVENTS = {
   package_changed: { once: false, props: ['from', 'to', 'source'] },
   /** Clique em "Solicitar desenvolvimento" (intenção). Confirmação só com generate_lead. */
   request_click: { once: false, props: ['mode', 'package'] },
-  /** Abertura de conversa no WhatsApp — não é pedido recebido nem contratação. */
-  whatsapp_open: { once: false, props: ['context'] },
+  /**
+   * Clique que abre o WhatsApp — não é mensagem enviada, pedido recebido nem
+   * contratação. `context` diz de onde veio (inicio, projeto_real, pacote,
+   * previa…); `project` e `package` identificam o projeto real ou o pacote.
+   */
+  whatsapp_open: { once: false, props: ['context', 'project', 'package'] },
   /** Prévia por descrição: pedido e resultado. Nunca leva o texto digitado. */
   ai_generate: { once: false, props: ['result', 'reason'] },
   /** Descrição por áudio: gravação transcrita ou falha. Nunca leva áudio nem texto. */

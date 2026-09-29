@@ -30,6 +30,23 @@
   --shadow: 0 1px 2px rgb(8 27 92 / 0.06), 0 12px 32px -18px rgb(8 27 92 / 0.28);
   --gutter: clamp(16px, 4vw, 40px);
   --max: 1200px;
+  /* Paleta luminosa por função — usada nas páginas públicas (.bright):
+     início, exemplos, pacotes e páginas legais. O azul-marinho acima
+     continua valendo para o configurador e os componentes existentes. */
+  --c-title: #2563eb; /* títulos principais (4,5:1 ou mais nos fundos claros) */
+  --c-title-accent: #3b82f6; /* só em títulos grandes (≥ 24 px): 3,2:1 ou mais */
+  --c-text: #475569; /* textos explicativos */
+  --c-strong: #1e293b; /* subtítulos e ênfases */
+  --c-link: #1d4ed8; /* links em texto */
+  --c-btn: #2563eb; /* botões principais, texto branco (5,2:1) */
+  --c-btn-hover: #1d4ed8;
+  --c-bg: #f4f8ff; /* fundo principal */
+  --c-alt: #eaf2ff; /* superfície alternada azul */
+  --c-alt-2: #f0edff; /* superfície alternada lavanda */
+  --c-glow: #38bdf8; /* brilhos e detalhes decorativos */
+  --c-glow-2: #93c5fd;
+  --c-border: #d6e2f8;
+  --c-card-shadow: 0 1px 2px rgb(37 99 235 / 0.06), 0 22px 44px -28px rgb(37 99 235 / 0.42);
 
   background: var(--bg);
   color: var(--navy);
@@ -293,130 +310,6 @@
   color: #fff;
 }
 
-/* ── Hero ───────────────────────────────────────────────────────────────── */
-.hero {
-  padding-block: 28px 4px;
-  display: grid;
-  gap: 32px;
-  /* A ilustração e a flutuação nunca criam rolagem lateral (hidden antes: Safari < 16 não tem clip). */
-  overflow-x: hidden;
-  overflow-x: clip;
-}
-.hero > *,
-.about > * {
-  min-width: 0;
-}
-.audience {
-  font-size: 14px;
-  font-weight: 650;
-  color: var(--blue-ink);
-}
-.heroCopy {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.hero h1 {
-  margin-top: 10px;
-  font-size: clamp(28px, 7.6vw, 48px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  max-width: 18ch;
-}
-.heroLead {
-  margin-top: 12px;
-  font-size: 17px;
-  color: var(--muted);
-  max-width: 40ch;
-}
-.heroPrice {
-  margin-top: 12px;
-  font-size: 18px;
-  font-weight: 650;
-}
-.heroPrice strong {
-  font-weight: 800;
-  white-space: nowrap;
-}
-/* Título: curto no celular (também deitado), completo a partir de 560px (o longo segue acessível). */
-.titleShort {
-  display: none;
-}
-@media (max-width: 559px), (orientation: landscape) and (max-height: 500px) {
-  .titleShort {
-    display: inline;
-  }
-  .titleLong {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-}
-/* Celular deitado: título menor para o preço e o botão aparecerem mais cedo. */
-@media (orientation: landscape) and (max-height: 500px) {
-  .hero h1 {
-    font-size: 30px;
-  }
-}
-.heroLead strong {
-  color: var(--navy);
-  font-weight: 750;
-  white-space: nowrap;
-}
-.priceNote {
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 14px;
-}
-.heroActions {
-  display: grid;
-  gap: 10px;
-  align-self: stretch;
-  margin-top: 22px;
-}
-.heroActions > * {
-  min-height: 52px;
-  font-size: 16px;
-}
-.micro {
-  align-self: center;
-  margin-top: 8px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.quiet,
-.quietLight {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.quiet {
-  align-self: center;
-  color: var(--muted);
-}
-.quiet:hover {
-  color: var(--navy);
-}
-.quietLight {
-  color: rgb(255 255 255 / 0.86);
-}
-.quietLight:hover {
-  color: #fff;
-}
-.quiet svg,
-.quietLight svg {
-  width: 16px;
-  height: 16px;
-}
-
 /* Botão principal com brilho: uma faixa de luz diagonal atravessa o botão
    devagar a cada 7 s, só três vezes. A faixa fica atrás do texto, não muda o tamanho do
    botão, não recebe cliques e some com "reduzir movimento". */
@@ -470,9 +363,7 @@
 .section {
   padding-block: 56px;
 }
-.hero + .section {
-  padding-top: 36px;
-}
+
 .sectionHead {
   max-width: 62ch;
   margin-bottom: 28px;
@@ -496,57 +387,6 @@
 .band {
   background: linear-gradient(180deg, #e8f0ff 0%, #f1f6ff 100%);
   border-block: 1px solid var(--line);
-}
-
-/* Processo: linha do tempo compacta */
-.process {
-  display: grid;
-  counter-reset: etapa;
-}
-.process li {
-  counter-increment: etapa;
-  position: relative;
-  padding: 0 0 18px 48px;
-}
-.process li::before {
-  content: counter(etapa);
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 1;
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--navy);
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-}
-.process li::after {
-  content: '';
-  position: absolute;
-  left: 15px;
-  top: 32px;
-  bottom: 0;
-  width: 2px;
-  background: var(--line-strong);
-}
-.process li:last-child {
-  padding-bottom: 0;
-}
-.process li:last-child::after {
-  display: none;
-}
-.process h3 {
-  padding-top: 4px;
-  font-size: 18px;
-}
-.process p {
-  margin-top: 2px;
-  font-size: 16px;
-  color: var(--muted);
 }
 
 /* ── Campos e opções (página de criação e confirmações) ─────────────────── */
@@ -898,34 +738,6 @@
   margin-top: 14px;
 }
 
-/* Quem atende */
-.about {
-  display: grid;
-  gap: 24px;
-  align-items: center;
-}
-.aboutPhoto {
-  width: 100%;
-  max-width: 280px;
-  aspect-ratio: 520 / 620;
-  object-fit: cover;
-  object-position: center 30%;
-  border-radius: var(--radius);
-  display: block;
-}
-.about h2 {
-  font-size: clamp(26px, 4vw, 34px);
-}
-.about p {
-  margin-top: 12px;
-  color: var(--muted);
-  font-size: 17px;
-  max-width: 58ch;
-}
-.aboutFacts {
-  margin-top: 16px;
-}
-
 /* FAQ */
 .faq {
   display: grid;
@@ -1255,21 +1067,7 @@
 
 /* ── ≥ 760px ────────────────────────────────────────────────────────────── */
 @media (min-width: 760px) {
-  .heroActions {
-    display: flex;
-    flex-wrap: wrap;
-    align-self: flex-start;
-  }
-  .heroActions > * {
-    padding-inline: 26px;
-  }
-  .micro,
-  .quiet {
-    align-self: flex-start;
-  }
-  .heroLead {
-    font-size: 19px;
-  }
+
   .options.twoCol{
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1284,10 +1082,7 @@
   .footerGrid {
     grid-template-columns: 1.3fr 1fr 1fr;
   }
-  .about {
-    grid-template-columns: 280px 1fr;
-    gap: 40px;
-  }
+
   .demoHead {
     padding: 16px 16px 12px 22px;
   }
@@ -1341,35 +1136,7 @@
   .menu {
     display: none;
   }
-  .hero {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    align-items: center;
-    gap: 56px;
-    padding-block: 56px 24px;
-  }
-  .hero h1 {
-    font-size: clamp(38px, 3.8vw, 50px);
-    max-width: 18ch;
-  }
-  .hero + .section {
-    padding-top: 56px;
-  }
-  .process {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-  }
-  .process li,
-  .process li:last-child {
-    padding: 46px 0 0;
-  }
-  .process li::after {
-    left: 40px;
-    right: -8px;
-    top: 15px;
-    bottom: auto;
-    width: auto;
-    height: 2px;
-  }
+
   .section {
     padding-block: 80px;
   }
@@ -1455,25 +1222,11 @@
   background: #fff;
 }
 
-
 /* ════════════════════════════════════════════════════════════════════════
    Página inicial objetiva, Exemplos e Pacotes (2026-09-28)
    ════════════════════════════════════════════════════════════════════════ */
 
-/* Topo: links discretos abaixo do botão principal. */
-.heroLinks {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0 20px;
-  align-self: stretch;
-}
-
 /* ── Projetos reais ─────────────────────────────────────────────────────── */
-.projectsBand {
-  background: linear-gradient(180deg, var(--lavender) 0%, #eaf1ff 100%);
-  border-block: 1px solid var(--lavender-line);
-}
 .projectList,
 .projectWide {
   display: grid;
@@ -1537,10 +1290,6 @@
   padding: 20px;
 }
 .projectCategory {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
   color: var(--blue-ink);
   font-size: 14px;
   font-weight: 700;
@@ -1563,11 +1312,46 @@
   color: var(--muted);
   font-size: 16px;
 }
-.visit {
-  margin-top: auto;
-}
 .projectText {
   margin-bottom: 6px;
+}
+.projectBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.projectLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 99px;
+  background: #ecfdf3;
+  border: 1px solid #c6ecd5;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 700;
+}
+.projectLive i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+.projectNeed,
+.projectText {
+  font-size: 15.5px;
+  color: var(--muted);
+}
+.projectActions {
+  margin-top: auto;
+  padding-top: 6px;
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+.projectActions .visit {
+  width: 100%;
 }
 .visit svg {
   width: 18px;
@@ -1599,61 +1383,6 @@
   border-bottom: 0;
   border-radius: 20px 20px 0 0;
   background: var(--navy);
-}
-
-/* ── Acessos às páginas internas ────────────────────────────────────────── */
-.paths {
-  display: grid;
-  gap: 16px;
-}
-.path {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 22px;
-  border-radius: 18px;
-  border: 1px solid var(--lavender-line);
-  background: var(--lavender);
-}
-.path[data-path='pacotes'] {
-  border-color: var(--sand-line);
-  background: var(--sand);
-}
-.path h3 {
-  font-size: 22px;
-  font-weight: 750;
-}
-.path p {
-  color: #3d4b69;
-  font-size: 16px;
-}
-.path .primary {
-  margin-top: auto;
-  align-self: stretch;
-  min-height: 52px;
-  background: var(--navy);
-  font-size: 16px;
-}
-.path .primary:hover {
-  background: #0d2a7a;
-}
-.pathPrices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.pathPrices span {
-  padding: 6px 12px;
-  border-radius: 10px;
-  background: #fff;
-  border: 1px solid var(--sand-line);
-  color: var(--navy);
-  font-size: 15px;
-}
-.pathPrices strong {
-  font-family: var(--font-head);
-  font-weight: 800;
-  white-space: nowrap;
 }
 
 /* ── Páginas internas: cabeçalho da página ──────────────────────────────── */
@@ -1719,13 +1448,7 @@
 .jump a:hover {
   border-color: var(--blue);
 }
-.inlineIcon {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  vertical-align: -3px;
-  color: var(--blue);
-}
+
 .backHome {
   display: inline-flex;
   align-items: center;
@@ -1762,7 +1485,6 @@
 }
 .exampleGrid > *,
 .projectList > *,
-.paths > *,
 .tiers > * {
   min-width: 0;
 }
@@ -1931,7 +1653,115 @@
 .tierFor {
   color: var(--navy);
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.tierFor span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+/* Diferença real de preço para o pacote anterior. */
+.tierStep {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: #fff;
+  border: 1px solid var(--line-strong);
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 700;
+}
+.tierKey {
+  display: grid;
+  gap: 8px;
+}
+.tierKey li {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.tierKey svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  color: var(--blue);
+}
+.tierActions {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+.tierActions > .primary,
+.tierActions > .secondary {
+  min-height: 52px;
+  font-size: 16px;
+}
+.tierTalk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--blue-ink);
+  font-size: 15px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.tierTalk svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+/* Detalhamento recolhível: <details> nativo (toque, clique e teclado). */
+.tierMore {
+  border-top: 1px solid var(--line);
+  margin-top: 2px;
+}
+.tierMore > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding-top: 8px;
+  color: var(--navy);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.tierMore > summary::-webkit-details-marker {
+  display: none;
+}
+.tierMore > summary svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  transition: transform 0.15s;
+}
+.tierMore[open] > summary svg {
+  transform: rotate(180deg);
+}
+.tierMoreBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 6px 0 4px;
+}
+.tierDeadlineFull {
+  color: #3d4b69;
+  font-size: 15px;
+}
+.termsSmall {
+  font-size: 14px;
 }
 .tierUp {
   padding: 12px 14px;
@@ -2010,10 +1840,7 @@
   color: #3d4b69;
   font-size: 15px;
 }
-.tier > a {
-  min-height: 52px;
-  font-size: 16px;
-}
+
 .compareBox {
   padding: 8px;
   border-radius: 16px;
@@ -2059,12 +1886,7 @@
 }
 
 @media (min-width: 760px) {
-  .heroLinks {
-    justify-content: flex-start;
-    align-self: flex-start;
-  }
   .projectList,
-  .paths,
   .terms {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2124,4 +1946,246 @@
   .tier {
     padding-inline: 16px;
   }
+}
+
+/* ==========================================================================
+   Páginas públicas (.bright): títulos em azul luminoso, texto em cinza-azulado,
+   links e botões por função. Não troca o azul-marinho global — o configurador
+   e as prévias continuam com as próprias cores.
+   ========================================================================== */
+.bright {
+  color: var(--c-text);
+}
+.bright :where(h1, h2) {
+  color: var(--c-title);
+}
+.bright :where(h3, h4, strong, dt) {
+  color: var(--c-strong);
+}
+/* Links em texto no conteúdo (o rodapé escuro mantém os próprios). */
+.bright main :where(p, li, dd) a:not([class]) {
+  color: var(--c-link);
+}
+.bright .primary {
+  background: var(--c-btn);
+}
+.bright .primary:hover {
+  background: var(--c-btn-hover);
+}
+.bright .secondary {
+  border-color: #bcd0f3;
+  color: var(--c-strong);
+}
+.bright .secondary:hover {
+  border-color: var(--c-btn);
+  color: var(--c-btn-hover);
+}
+.bright .shine {
+  box-shadow: 0 14px 28px -14px rgb(37 99 235 / 0.7);
+}
+.bright .navLinks a {
+  color: var(--c-text);
+}
+.bright .navLinks a:hover,
+.bright .navLinks a[aria-current='page'],
+.bright .mobileMenu a[aria-current='page'] {
+  color: var(--c-link);
+}
+.bright .mobileMenu a {
+  color: var(--c-strong);
+}
+.bright .mobileMenu .primary {
+  color: #fff;
+}
+.bright .sectionHead p,
+.bright .pageLead,
+.bright .pageNote,
+.bright .faq details p {
+  color: var(--c-text);
+}
+.bright .faq summary {
+  color: var(--c-strong);
+}
+.bright .faq details {
+  border-color: var(--c-border);
+}
+.bright .crumbs a {
+  color: var(--c-link);
+}
+.bright .band {
+  background: linear-gradient(180deg, var(--c-alt) 0%, #f4f8ff 100%);
+  border-color: var(--c-border);
+}
+.bright .pageHead {
+  background:
+    radial-gradient(60% 90% at 90% 0%, rgb(147 197 253 / 0.35), transparent 70%),
+    linear-gradient(170deg, var(--c-alt) 0%, var(--c-alt-2) 62%, var(--c-bg) 100%);
+  border-color: var(--c-border);
+}
+.bright .jump a {
+  color: var(--c-strong);
+  border-color: #c7d7f5;
+}
+.bright .jump a:hover {
+  border-color: var(--c-btn);
+}
+/* Chamada final: gradiente azul → índigo, luminoso, com texto branco (5,2:1 ou mais). */
+.bright .final {
+  background:
+    radial-gradient(50% 120% at 85% 0%, rgb(56 189 248 / 0.28), transparent 70%),
+    linear-gradient(120deg, #2563eb 0%, #1d4ed8 45%, #4f46e5 100%);
+}
+.bright .final h2 {
+  color: #fff;
+}
+.bright .final .primary {
+  background: #fff;
+  color: #1d4ed8;
+}
+.bright .final .primary:hover {
+  background: #eaf2ff;
+}
+.bright .final .secondary {
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.6);
+}
+.bright .final .secondary:hover {
+  border-color: #fff;
+  color: #fff;
+}
+
+/* Projetos reais nas páginas públicas: contorno luminoso discreto. */
+.bright .projectCard,
+.bright .projectWideItem {
+  border-color: #cfe0fb;
+  box-shadow:
+    0 0 0 1px rgb(147 197 253 / 0.35),
+    0 0 28px -10px rgb(56 189 248 / 0.45),
+    0 26px 48px -32px rgb(29 78 216 / 0.55);
+}
+.bright .projectCategory {
+  color: var(--c-link);
+}
+.bright .projectNeed,
+.bright .projectText {
+  color: var(--c-text);
+}
+.bright .projectWideShots {
+  background: linear-gradient(160deg, var(--c-alt), var(--c-alt-2));
+}
+@media (min-width: 560px) {
+  .projectActions {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .projectActions .visit {
+    width: auto;
+  }
+}
+
+/* Pacotes nas páginas públicas: preço em destaque, bordas e fundos por pacote. */
+.bright .tier {
+  background: #fff;
+  border-color: var(--c-border);
+  border-top-color: #7aa7f5;
+  box-shadow: var(--c-card-shadow);
+}
+.bright .tier[data-tier='completo'] {
+  background: linear-gradient(180deg, #f6f3ff 0, #fff 220px);
+  border-color: #ddd5fb;
+  border-top-color: #8b5cf6;
+}
+.bright .tier[data-featured] {
+  border: 2px solid var(--c-btn);
+  background: linear-gradient(180deg, var(--c-alt) 0, #fff 220px);
+  box-shadow:
+    0 0 0 4px rgb(147 197 253 / 0.25),
+    0 28px 54px -30px rgb(37 99 235 / 0.7);
+}
+.bright .tierBadge {
+  background: var(--c-btn);
+}
+.bright .tierName {
+  color: var(--c-strong);
+}
+.bright .tierPrice strong {
+  color: var(--c-title);
+}
+.bright .tierPrice span,
+.bright .tierDeadline,
+.bright .tierDeadlineFull,
+.bright .tierUp,
+.bright .tierFeatures li,
+.bright .terms p,
+.bright .dotList {
+  color: var(--c-text);
+}
+.bright .tierFor,
+.bright .tierStep,
+.bright .tierMore > summary,
+.bright .tierFeatures li[data-extra] {
+  color: var(--c-strong);
+}
+.bright .tierFor span {
+  color: var(--c-link);
+}
+.bright .tierKey svg,
+.bright .tierFeatures li[data-extra] svg {
+  color: var(--c-btn);
+}
+.bright .tier[data-tier='completo'] .tierKey svg {
+  color: #7c3aed;
+}
+.bright .tierTalk {
+  color: var(--c-link);
+}
+.bright .ladderName {
+  color: var(--c-title);
+}
+.bright .ladderFor {
+  color: var(--c-text);
+}
+.bright .ladder a {
+  border-color: var(--c-border);
+}
+.bright .terms article {
+  background: #fff;
+  border-color: var(--c-border);
+}
+.bright .terms .termsCustom {
+  background: linear-gradient(165deg, #fff 0%, var(--c-alt-2) 100%);
+  border-color: #ddd5fb;
+}
+.bright .compareBox {
+  border-color: var(--c-border);
+}
+
+/* Comparação completa recolhível (página de pacotes). */
+.compareMore > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  margin-bottom: 12px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--c-border);
+  background: #fff;
+  color: var(--c-strong);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.compareMore > summary::-webkit-details-marker {
+  display: none;
+}
+.compareMore > summary svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  transition: transform 0.15s;
+}
+.compareMore[open] > summary svg {
+  transform: rotate(180deg);
 }

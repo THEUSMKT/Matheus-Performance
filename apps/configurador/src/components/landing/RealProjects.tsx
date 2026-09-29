@@ -1,29 +1,46 @@
 'use client';
 /* ==========================================================================
-   Projetos reais: captura estática (nunca iframe), categoria, nome, uma
-   frase e "Visitar site" em nova aba. Sem pacote, preço, resultado ou
-   depoimento associado. O site da própria marca é identificado como tal.
+   Projetos reais: captura estática (nunca iframe), selo "Projeto publicado",
+   segmento, nome, a necessidade atendida, o que foi desenvolvido, "Visitar
+   site" em nova aba e "Conversar sobre um projeto assim" (a mensagem do
+   WhatsApp já cita o projeto). Sem pacote, preço, resultado ou depoimento
+   associado. O site da própria marca é identificado como tal.
    Dados em config/proof.ts; capturas em public/projetos/.
    ========================================================================== */
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, MessageCircle } from 'lucide-react';
+import { projectInterestMessage } from '@/config/contact';
 import { realProjects, type RealProject } from '@/config/proof';
 import { track } from '@/lib/analytics';
+import { whatsappLink } from '@/lib/whatsapp';
 import { asset } from './Chrome';
 import s from './Landing.module.css';
 
-function VisitLink({ project, context }: { project: RealProject; context: string }) {
+function Actions({ project, context }: { project: RealProject; context: string }) {
   return (
-    <a
-      className={`${s.primary} ${s.visit}`}
-      href={project.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() => track('real_project_open', { project: project.id, context })}
-      aria-label={`Visitar site: ${project.name} (abre em nova aba)`}
-    >
-      Visitar site
-      <ExternalLink aria-hidden="true" />
-    </a>
+    <div className={s.projectActions}>
+      <a
+        className={`${s.primary} ${s.visit}`}
+        href={project.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track('real_project_open', { project: project.id, context })}
+        aria-label={`Visitar site: ${project.name} (abre em nova aba)`}
+      >
+        Visitar site
+        <ExternalLink aria-hidden="true" />
+      </a>
+      <a
+        className={`${s.secondary} ${s.visit}`}
+        href={whatsappLink(projectInterestMessage(project.name))}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track('whatsapp_open', { context: 'projeto_real', project: project.id })}
+        aria-label={`Conversar sobre um projeto assim: ${project.name} (abre o WhatsApp em nova aba)`}
+      >
+        <MessageCircle aria-hidden="true" />
+        Conversar sobre um projeto assim
+      </a>
+    </div>
   );
 }
 
@@ -57,12 +74,20 @@ function Meta({ project, level }: { project: RealProject; level: 3 | 2 }) {
   const Title = level === 2 ? 'h2' : 'h3';
   return (
     <>
-      <p className={s.projectCategory}>
-        {project.category}
+      <p className={s.projectBadges}>
+        <span className={s.projectLive}>
+          <i aria-hidden="true" /> Projeto publicado
+        </span>
         {project.ownBrand && <span className={s.projectOwn}>Projeto da própria marca</span>}
       </p>
+      <p className={s.projectCategory}>{project.category}</p>
       <Title className={s.projectName}>{project.name}</Title>
-      <p className={s.projectText}>{project.description}</p>
+      <p className={s.projectNeed}>
+        <strong>Necessidade:</strong> {project.need}
+      </p>
+      <p className={s.projectText}>
+        <strong>O que foi desenvolvido:</strong> {project.description}
+      </p>
     </>
   );
 }
@@ -76,7 +101,7 @@ export function RealProjectCards({ context }: { context: string }) {
           <Shot project={project} sizes="(min-width: 900px) 540px, calc(100vw - 40px)" />
           <div className={s.projectBody}>
             <Meta project={project} level={3} />
-            <VisitLink project={project} context={context} />
+            <Actions project={project} context={context} />
           </div>
         </li>
       ))}
@@ -107,7 +132,7 @@ export function RealProjectShowcase({ context }: { context: string }) {
           </div>
           <div className={s.projectBody}>
             <Meta project={project} level={3} />
-            <VisitLink project={project} context={context} />
+            <Actions project={project} context={context} />
           </div>
         </li>
       ))}

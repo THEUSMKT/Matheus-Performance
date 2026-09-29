@@ -140,6 +140,8 @@ export function StepReady({
   editLabel,
   onReview,
   narrow,
+  talkHref,
+  onTalk,
   keptEdits = [],
   onUseNewTexts,
   segConflict = null,
@@ -161,6 +163,9 @@ export function StepReady({
   editLabel: string;
   onReview: () => void;
   narrow: boolean;
+  /** "Conversar sobre esta prévia": WhatsApp com o resumo do projeto. */
+  talkHref: string;
+  onTalk: () => void;
 }) {
   return (
     <div className={b.ready}>
@@ -199,8 +204,13 @@ export function StepReady({
           </button>
         </div>
       )}
+      <p className={b.readyNext}>Gostou? Converse sobre esta prévia agora — o resumo vai junto. Os ajustes continuam disponíveis depois.</p>
       <div className={b.readyActions}>
-        <button type="button" className={`${s.primary} ${b.wideBtn}`} onClick={onPersonalize}>
+        <a className={`${s.primary} ${b.wideBtn}`} href={talkHref} target="_blank" rel="noopener noreferrer" onClick={onTalk}>
+          <MessageCircle aria-hidden="true" /> Conversar sobre esta prévia
+          <span className={s.srOnly}> (abre o WhatsApp em nova aba, com o resumo)</span>
+        </a>
+        <button type="button" className={`${s.secondary} ${b.wideBtn}`} onClick={onPersonalize}>
           Personalizar meu site
         </button>
         <button type="button" className={`${s.secondary} ${b.wideBtn}`} onClick={onEditDescription}>

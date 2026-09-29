@@ -4,6 +4,8 @@ import localFont from 'next/font/local';
 import { contact } from '@/config/contact';
 import { priceRange } from '@/config/packages';
 import { isProduction } from '@/config/integrations';
+import { AppFallback } from '@/components/AppFallback';
+import { AppReady } from '@/components/AppReady';
 import './globals.css';
 
 /**
@@ -91,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={fontVars}>
       <body>
+        <AppFallback />
         <a
           href="#conteudo"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xs focus:bg-ink focus:px-4 focus:py-2 focus:text-surface"
@@ -98,6 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Ir para o conteúdo
         </a>
         {children}
+        <AppReady />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
