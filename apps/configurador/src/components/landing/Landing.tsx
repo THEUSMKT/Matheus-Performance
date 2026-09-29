@@ -110,7 +110,7 @@ export default function Landing() {
                   </span>
                 ))}
               </h1>
-              <p className={h.lead}>Veja uma prévia grátis e imagine seu negócio com uma presença profissional.</p>
+              <p className={h.lead}>Apresente seus serviços com clareza e facilite os pedidos de orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.</p>
             </div>
             <HeroVisual />
             <div className={h.heroAct} data-cta-zone="">
@@ -316,7 +316,7 @@ export default function Landing() {
             <p>Crie uma prévia grátis, sem cadastro, ou converse direto sobre o seu projeto.</p>
             <div className={`${s.finalActions} ${h.finalActions}`}>
               <a className={s.primary} href={builderHref} onClick={start('final')} data-main-cta="">
-                {primaryLabel}
+                <Sparkles aria-hidden="true" /> {primaryLabel}
               </a>
               <Talk className={s.secondary} message={contact.whatsappConversa} context="final">
                 <MessageCircle aria-hidden="true" /> Conversar sobre meu projeto

@@ -1,5 +1,31 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — acabamento visual, correções confirmadas e preparação do domínio (29/09, fim do dia)
+
+Mesma ideia de produto, com acabamento mais cuidadoso e correções dos defeitos confirmados na revisão. Preços, prazos, limites, integração da IA e hospedagem não mudaram; o site de gestão de tráfego (raiz) não foi tocado; nada foi publicado.
+
+**Preservado de propósito:** o **carrossel arrastável dos projetos reais** (Schay Corretora e o site da própria marca, com os mesmos links), página inicial, exemplos, pacotes e configurador, prévia por texto e por áudio, modelos por segmento e filtros, escolha de pacote/modelo antes do configurador, retomada da prévia, mensagens de WhatsApp com contexto, contato direto, exportação/compartilhamento e os avisos comerciais.
+
+**Visual** (CSS e SVG, sem bibliotecas novas):
+- Abertura: linha de apoio "Apresente seus serviços com clareza e facilite os pedidos de orçamento. Veja uma prévia grátis ou converse sobre o seu projeto."; textura de pontos quase imperceptível só no canto da captura (com máscara; sem suporte, fica discreta na seção inteira); reflexo leve sobre a captura da Schay e sombra de apoio sob a moldura. A captura não foi alterada.
+- Carrossel: largura máxima no celular grande e espaço para a sombra e o contorno de foco não serem cortados (alinhados pelo topo: igualar a altura deixava um vão vazio no cartão mais curto). Gesto, setas, contagem e "Arraste para ver outro projeto" continuam.
+- Benefícios com ícones em leve relevo e fundos claros variados; "Como funciona" com número em relevo e linha ligando os passos; foto do Matheus com anel luminoso e o mesmo detalhe geométrico da abertura; chamada final com o ícone do botão principal; rodapé em duas colunas no celular.
+- Pacotes: superfícies distintas (Essencial azul-claro, Profissional em destaque com brilho discreto, Completo lavanda) e números com largura uniforme. Valores inalterados.
+- Exemplos: filtro ativo marcado também por um visto (não só pela cor); selo "Modelo demonstrativo" tracejado, diferente do "Projeto publicado".
+- Configurador: título da etapa no mesmo azul das páginas públicas. Fluxo, dados e contratos iguais.
+- Tokens semânticos `--c-success` e `--c-error` ao lado dos demais `--c-*`.
+
+**Correções** (conferidas antes de corrigir):
+- **Pergunta repetida sobre o nome (§15.1):** o nome digitado não ia no pedido à IA e a pergunta devolvida não era conferida. Agora `withDetails` acrescenta "Nome da empresa: …" (ou "ainda não tem nome definido") e `reconcileQuestion` descarta perguntas sobre nome, público ou região já informados; perguntas necessárias continuam. O nome digitado segue valendo sobre o da IA.
+- **Imagem sem relação com o segmento (§15.2):** jardinagem caía no tipo genérico, que usava a bancada de ferramentas. Novo tipo "Jardinagem e paisagismo" com duas ilustrações próprias (`jardim`, `jardim-cuidados`); o tipo genérico com serviço não reconhecido — mesmo quando escolhido pela IA — agora usa o topo tipográfico neutro.
+- **Textos (§15.3):** resposta sobre domínio e hospedagem sem a enumeração artificial; privacidade sem a referência antiga a "Prefiro digitar" e mencionando que o nome da empresa acompanha a descrição.
+- **Compartilhamento (§15.4):** o antigo `opengraph-image` saía sem extensão e o GitHub Pages o servia como `application/octet-stream`. Agora é `compartilhar.png` (gerado no build por `app/compartilhar.png/route.tsx`, 1200×630, preço vindo de `packages.ts`, fonte de títulos em cópias `.ttf` só para a imagem), nos metadados do início, exemplos e pacotes.
+- **Contingência (§15.5):** o aviso de falha só aparece 4 s após o carregamento quando houve erro registrado; sem erro (só lentidão), espera 12 s. Os detalhes técnicos ficam recolhidos em "Detalhes para o suporte".
+
+**Domínio, indexação e medição:** plano em `docs/DOMINIO.md` (estrutura `/sites/`, workflow, `contact.ts`, `ALLOWED_ORIGINS` do Worker, redirecionamento dos links antigos, `localStorage` por origem, origem do `noindex`, `robots.txt` da raiz, limites da medição). O endereço do projeto da marca passa a derivar de `contact.mainSiteUrl`.
+
+**Pendências comerciais (sem regra inventada):** entrada/parcelamento e o momento da quitação, o que conta como rodada de ajustes, prazo e valor de alterações após a entrega e quais necessidades sob medida são oferecidas.
+
 ## Edição — ajustes para o celular: primeira tela, carrossel, botão flutuante e "Começar novamente" (29/09)
 
 Cerca de 90% das visitas vêm do celular; esta rodada mexe só em usabilidade — preços, limites e integrações da IA não mudaram, e a landing de gestão de tráfego (raiz do repositório) não foi tocada.

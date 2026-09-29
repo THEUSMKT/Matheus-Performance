@@ -118,7 +118,7 @@ await scenario('Início: título curto, projeto real, uma ação principal, pre�
   const hero = page.locator('main > section').first();
   const text = (await hero.innerText()).replace(/\s+/g, ' ');
   for (const s of [
-    'Veja uma prévia grátis e imagine seu negócio com uma presença profissional.',
+    'Apresente seus serviços com clareza e facilite os pedidos de orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.',
     'Sem cadastro. Sem compromisso.',
     'Sites de página única: R$ 500 a R$ 1.000.',
     'Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.',
@@ -250,7 +250,7 @@ await scenario('Perguntas: 6 prioritárias primeiro e todas as 12', async (page)
   await page.getByRole('button', { name: /Ver todas as perguntas/ }).click();
   assert.equal(await list.count(), 12);
   const all = await page.locator('#lista-perguntas').textContent();
-  for (const s of ['Existe mensalidade?', 'Quem fica com o domínio e os acessos?', '3 a 12 dias úteis', 'Domínio (endereço do site)']) assert(all.includes(s), s);
+  for (const s of ['Existe mensalidade?', 'Quem fica com o domínio e os acessos?', '3 a 12 dias úteis', 'O domínio (o endereço do site) e a hospedagem são pagos à parte']) assert(all.includes(s), s);
 });
 
 await scenario('Atalhos antigos: #exemplos e #investimento levam às páginas novas', async (page) => {
@@ -351,12 +351,33 @@ await scenario('Celular: projetos reais em carrossel (Schay primeiro), próximo 
   await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
   const snap = await page.locator('[data-carousel]').evaluate((el) => getComputedStyle(el).scrollSnapType);
   assert(snap.includes('x') && snap.includes('mandatory'), `scroll-snap: ${snap}`);
-  // O gesto vertical sobre o carrossel continua rolando a página.
+  // Gestos: este Chromium de teste não converte toque sintetizado em rolagem (nem da página),
+  // então o arraste com o dedo é conferido no aparelho. Aqui: rolagem horizontal de trackpad/roda
+  // começando em cima de "Visitar site" (não abre o link), volta, gesto vertical sobre o carrossel
+  // e zoom por pinça.
+  await page.locator('[data-carousel]').evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' }));
+  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
+  const opened = [];
+  page.context().on('page', (p) => opened.push(p.url()));
+  const visit = await projects.locator('li').first().getByRole('link', { name: /Visitar site/ }).boundingBox();
+  await page.mouse.move(visit.x + visit.width / 2, visit.y + visit.height / 2);
+  await page.mouse.wheel(300, 0);
+  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '2 de 2');
+  await page.mouse.wheel(-300, 0);
+  await page.waitForFunction(() => document.querySelector('#projetos [class*=carouselPos]')?.textContent === '1 de 2');
+  assert.equal(page.url(), URL, 'rolar não navega');
+  const cdp = await page.context().newCDPSession(page);
+  await page.locator('[data-carousel] li').first().evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  const box = await page.locator('[data-carousel] li').first().boundingBox();
   const y0 = await page.evaluate(() => scrollY);
-  const box = await page.locator('[data-carousel]').boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + 60);
-  await page.mouse.wheel(0, 400);
-  await page.waitForFunction((y) => scrollY > y, y0);
+  await cdp.send('Input.synthesizeScrollGesture', { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + 100), yDistance: -300, gestureSourceType: 'mouse', speed: 900 });
+  await page.waitForFunction((y) => scrollY > y + 100, y0);
+  assert.deepEqual(opened, [], 'nenhuma aba aberta durante os gestos');
+  // Zoom por pinça continua permitido.
+  const meta = await page.locator('meta[name=viewport]').getAttribute('content');
+  assert(!/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(\.0)?\b/.test(meta), `zoom permitido: ${meta}`);
+  await cdp.send('Input.synthesizePinchGesture', { x: 195, y: 400, scaleFactor: 2, gestureSourceType: 'mouse' });
+  await page.waitForFunction(() => (window.visualViewport?.scale ?? 1) > 1.2);
 }, phone390);
 
 await scenario('Celular: botão flutuante "Gerar minha prévia gratuita" aparece quando o do topo sai da tela e some perto da chamada final', async (page) => {
@@ -403,6 +424,37 @@ await scenario('Celular: botão flutuante "Gerar minha prévia gratuita" aparece
   await page.goto(EX);
   assert.equal(await floating(page).count(), 1, 'exemplos: presente');
 }, phone390);
+
+await scenario('Contingência: aviso com contato só quando a página não inicia; carregamento normal não mostra nada (§15.5)', async (page, ctx) => {
+  await page.goto(URL, { waitUntil: 'load' });
+  await page.waitForTimeout(4600);
+  assert.equal(await page.locator('#app-fallback').isVisible(), false, 'carregamento normal: sem aviso');
+  assert.equal(await page.evaluate(() => document.documentElement.getAttribute('data-app')), 'ok');
+  // Parte interativa bloqueada: o aviso aparece, com links comuns e detalhes recolhidos.
+  const broken = await ctx.newPage();
+  await broken.route(/_next\/static\/chunks\/.*\.js$/, (r) => r.abort());
+  await broken.goto(B, { waitUntil: 'load' });
+  await broken.locator('#app-fallback').waitFor({ state: 'visible', timeout: 9000 });
+  assert((await broken.locator('#app-fallback-wa').getAttribute('href')).startsWith('https://wa.me/'));
+  assert((await broken.locator('#app-fallback').getByRole('link', { name: 'Ver pacotes e valores' }).getAttribute('href')).endsWith('/configurador/pacotes/'));
+  assert.equal(await broken.locator('#app-fallback-tech').evaluate((d) => d.open), false, 'detalhes técnicos recolhidos');
+  await broken.close();
+});
+
+await scenario('Compartilhamento: imagem .png de verdade, 1200×630, nos metadados das páginas públicas (§15.4)', async (page) => {
+  for (const path of ['', 'exemplos/', 'pacotes/']) {
+    await page.goto(URL + path);
+    const og = await page.locator('meta[property="og:image"]').getAttribute('content');
+    assert(og.endsWith('/configurador/compartilhar.png'), `${path}: ${og}`);
+    assert.equal(await page.locator('meta[property="og:image:width"]').getAttribute('content'), '1200');
+    assert.equal(await page.locator('meta[name="twitter:image"]').getAttribute('content'), og);
+  }
+  const res = await page.request.get(URL + 'compartilhar.png');
+  assert.equal(res.status(), 200);
+  assert.equal(res.headers()['content-type'], 'image/png');
+  const png = await res.body();
+  assert.equal(png.readUInt32BE(16), 1200); assert.equal(png.readUInt32BE(20), 630);
+});
 
 await scenario('Sem JavaScript: menu, páginas novas e links de pacote e modelo continuam funcionando', async (page) => {
   await page.goto(URL);
@@ -1529,6 +1581,30 @@ await scenario('IA: se a pessoa sai da etapa enquanto gera, nada muda sozinho; a
   await late.getByRole('button', { name: 'Ver minha prévia' }).click();
   assert.equal(await title(page), Q.pronta);
   assert((await preview(page).innerText()).includes('Ar-condicionado instalado do jeito certo'));
+});
+
+await scenario('IA: nome já informado vai no pedido, a pergunta sobre ele não aparece e jardinagem usa imagem de jardim (§15.1, §15.2)', async (page) => {
+  const bodies = [];
+  const garden = {
+    ...aiAnswer, name: '', nameOrigin: 'nenhum', segment: 'local', subsegment: 'jardinagem', service: 'Manutenção de jardins', headline: 'Jardins bem cuidados o ano todo',
+    question: 'Qual é o nome da sua empresa?',
+  };
+  await page.route('https://ia.test/preview', (route) => {
+    bodies.push(JSON.parse(route.request().postData() || '{}'));
+    return route.fulfill({ status: 200, contentType: 'application/json', headers: cors, body: JSON.stringify({ ok: true, suggestion: garden }) });
+  });
+  await page.goto(URL_AI + 'criar/');
+  await ready(page);
+  await page.getByLabel('Como se chama seu negócio?').fill('Jardim Exemplo');
+  await page.locator('#descricao-ia').fill('Cuido de jardins residenciais: corte de grama, poda e limpeza de canteiros. Quero receber pedidos de orçamento.');
+  await page.getByRole('button', { name: 'Gerar minha prévia' }).click();
+  await page.waitForFunction(() => document.querySelector('#etapa-titulo')?.textContent?.includes('Sua prévia está pronta'));
+  assert(bodies[0].description.includes('Nome da empresa: Jardim Exemplo.'), 'o nome acompanha a descrição');
+  assert.equal(await page.getByText('Qual é o nome da sua empresa?').count(), 0, 'não pergunta de novo');
+  assert((await preview(page).innerText()).includes('Jardim Exemplo'), 'o nome digitado vale');
+  const imgs = await preview(page).locator('img').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
+  assert(imgs.some((src) => /demo\/jardim/.test(src)), `imagem de jardim: ${imgs}`);
+  assert(!imgs.some((src) => /demo\/reparos/.test(src)), 'nunca a bancada de ferramentas');
 });
 
 await scenario('IA: resposta que chega depois de "Começar novamente" não traz a prévia apagada de volta', async (page) => {

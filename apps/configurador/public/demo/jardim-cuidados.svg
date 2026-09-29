@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="480" height="360">
+  <!-- Cuidados com o jardim (ilustração própria, criada para os exemplos do configurador) -->
+  <defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef6e8"/><stop offset="1" stop-color="#dcebd2"/></linearGradient><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c79a6c"/><stop offset="1" stop-color="#a97c52"/></linearGradient></defs>
+<rect width="480" height="360" fill="url(#b)"/>
+<rect x="30" y="236" width="420" height="26" rx="6" fill="url(#w)"/><rect x="58" y="262" width="16" height="80" fill="#8a6446"/><rect x="406" y="262" width="16" height="80" fill="#8a6446"/>
+<g><path d="M78 236l-10-60h84l-10 60z" fill="#d97a4a"/><rect x="62" y="166" width="96" height="16" rx="4" fill="#e58d5c"/><path d="M110 166c-4-40-30-60-54-62 6 26 22 44 54 62z" fill="#4c9a4e"/><path d="M110 166c6-46 34-68 62-70-6 30-26 52-62 70z" fill="#5aa857"/><path d="M110 166v-70" stroke="#3f8a48" stroke-width="5"/><circle cx="110" cy="92" r="12" fill="#f472b6"/></g>
+<g><path d="M200 236l-8-44h66l-8 44z" fill="#e58d5c"/><rect x="186" y="182" width="78" height="14" rx="4" fill="#f0a878"/><ellipse cx="225" cy="168" rx="40" ry="26" fill="#58a257"/><circle cx="206" cy="160" r="6" fill="#fbbf24"/><circle cx="230" cy="150" r="6" fill="#fde68a"/><circle cx="246" cy="164" r="6" fill="#fbbf24"/></g>
+<g><path d="M300 222l58-54" stroke="#94a3b8" stroke-width="10" stroke-linecap="round"/><path d="M300 190l58 32" stroke="#64748b" stroke-width="10" stroke-linecap="round"/><circle cx="296" cy="226" r="14" fill="none" stroke="#2f7fbf" stroke-width="8"/><circle cx="296" cy="186" r="14" fill="none" stroke="#2f7fbf" stroke-width="8"/></g>
+<g><path d="M372 234c-2-28 6-50 22-54l16-2c14 6 18 24 14 56z" fill="#fbbf24"/><path d="M380 180l-6-24M392 178l-2-26M404 178l4-24M414 182l8-20" stroke="#fbbf24" stroke-width="10" stroke-linecap="round"/></g>
+</svg>

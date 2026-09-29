@@ -16,6 +16,18 @@
     radial-gradient(60% 45% at 0% 100%, rgb(240 237 255 / 0.9), transparent 70%),
     var(--c-bg);
 }
+.hero::before {
+  /* Textura: grade de pontos quase imperceptível, só no canto da captura.
+     Sem suporte a máscara, os pontos ficam espalhados — continuam discretos. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgb(37 99 235 / 0.14) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(55% 65% at 88% 35%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(55% 65% at 88% 35%, #000 0%, transparent 78%);
+}
 .heroGrid {
   position: relative;
   display: grid;
@@ -274,6 +286,27 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.browser::after {
+  /* Reflexo discreto sobre a captura (sem cobrir a informação). */
+  content: '';
+  position: absolute;
+  inset: 26px 0 0;
+  pointer-events: none;
+  background: linear-gradient(118deg, rgb(255 255 255 / 0.2) 0%, rgb(255 255 255 / 0.06) 22%, transparent 38%);
+}
+.stage::after {
+  /* Sombra de apoio sob a moldura: dá a sensação de a peça estar sobre a página. */
+  content: '';
+  position: absolute;
+  z-index: 0;
+  left: 8%;
+  right: 8%;
+  bottom: -14px;
+  height: 28px;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(29 78 216 / 0.28), transparent);
+}
 .browser img {
   display: block;
   width: 100%;
@@ -393,23 +426,43 @@
 .icon {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 13px;
-  background: #e0edff;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  /* Leve relevo: brilho em cima, sombra embaixo. */
+  background: linear-gradient(150deg, #f1f7ff 0%, #d7e7ff 100%);
   color: #1d4ed8;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 0 rgb(37 99 235 / 0.12),
+    0 10px 18px -12px rgb(37 99 235 / 0.6);
 }
 .icon svg {
   width: 22px;
   height: 22px;
 }
 .icon[data-tone='lavender'] {
-  background: #ece8ff;
+  background: linear-gradient(150deg, #f6f3ff 0%, #e4dcff 100%);
   color: #5b3fd0;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 0 rgb(91 63 208 / 0.12),
+    0 10px 18px -12px rgb(91 63 208 / 0.55);
 }
 .icon[data-tone='sky'] {
-  background: #dcf3fe;
+  background: linear-gradient(150deg, #effaff 0%, #d2effd 100%);
   color: #0369a1;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 0 rgb(3 105 161 / 0.12),
+    0 10px 18px -12px rgb(14 165 233 / 0.55);
+}
+.benefit:nth-child(2) {
+  background: linear-gradient(180deg, #fff 0%, #f8f6ff 100%);
+}
+.benefit:nth-child(3) {
+  background: linear-gradient(180deg, #fff 0%, #f2faff 100%);
+  border-color: #d6ebfb;
 }
 .benefit h3 {
   margin-top: 14px;
@@ -442,17 +495,34 @@
 .steps li::before {
   content: counter(passo);
   position: absolute;
-  left: 16px;
-  top: 16px;
+  z-index: 1;
+  left: 14px;
+  top: 14px;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #3b82f6 0%, #2563eb 55%, #4f46e5 100%);
   color: #fff;
+  font-family: var(--font-head);
   font-weight: 800;
-  font-size: 15px;
+  font-size: 16px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    0 8px 16px -8px rgb(37 99 235 / 0.7);
+}
+/* Linha que liga um passo ao seguinte (decorativa). */
+.steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 32px;
+  top: 52px;
+  bottom: -14px;
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(180deg, #93c5fd, rgb(147 197 253 / 0.15));
+  pointer-events: none;
 }
 .steps h3 {
   font-size: 18px;
@@ -605,8 +675,26 @@
   object-fit: cover;
   object-position: center 30%;
   border-radius: 20px;
+  /* Moldura em duas camadas: branco por dentro, anel azul luminoso por fora. */
   border: 4px solid #fff;
-  box-shadow: 0 24px 48px -28px rgb(29 78 216 / 0.55);
+  box-shadow:
+    0 0 0 1px #c7dbfb,
+    0 0 0 6px rgb(147 197 253 / 0.25),
+    0 28px 52px -28px rgb(29 78 216 / 0.6);
+}
+/* Detalhe geométrico, o mesmo da abertura (coerência entre seções). */
+.photoWrap::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  right: -16px;
+  top: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid rgb(56 189 248 / 0.45);
+  transform: rotate(12deg);
+  pointer-events: none;
 }
 .about h2 {
   margin-top: 10px;
@@ -664,6 +752,10 @@
   }
   .stage {
     padding: 0 30px 30px 0;
+  }
+  .stage::after {
+    right: 38px;
+    bottom: 16px;
   }
   .phone {
     display: block;

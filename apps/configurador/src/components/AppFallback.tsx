@@ -1,9 +1,11 @@
 /* ==========================================================================
    Aviso para quando o JavaScript da página não inicia (erro de execução,
    arquivo bloqueado, navegador antigo). Fica no fluxo da página, acima do
-   cabeçalho — nunca por cima de botões — e só aparece se, 4 s depois do
-   carregamento completo, a página ainda não marcou data-app="ok"
-   (AppReady). Tudo aqui é link comum: funciona sem script.
+   cabeçalho — nunca por cima de botões — e só aparece se a página não
+   marcou data-app="ok" (AppReady): 4 s depois do carregamento completo
+   quando houve erro registrado; sem erro (só lentidão), espera 12 s antes de
+   avisar. Tudo aqui é link comum: funciona sem script. Os detalhes técnicos
+   ficam recolhidos em "Detalhes para o suporte".
 
    O script é escrito à mão em ES5 para rodar até em navegadores que não
    entendem o restante do código. Ele guarda as primeiras mensagens de erro
@@ -19,9 +21,9 @@ const message = 'Olá, Matheus! Tentei usar o site da Beck Performance, mas a p�
 export const startWatch = `(function(){var d=document.documentElement,errs=[];function add(m){if(errs.length<3)errs.push(String(m||'erro').slice(0,120));}
 window.addEventListener('error',function(e){var t=e&&e.target,u=t&&(t.src||t.href);add(e&&(e.message||(u&&'arquivo não carregou: '+String(u).split('/').pop())));},true);
 window.addEventListener('unhandledrejection',function(e){add(e&&e.reason&&(e.reason.message||e.reason));});
-function check(){if(d.getAttribute('data-app')==='ok')return;d.setAttribute('data-app','falhou');var box=document.getElementById('app-fallback');if(!box)return;
+var waited=0;function check(){if(d.getAttribute('data-app')==='ok')return;if(!errs.length&&waited<8000){waited+=8000;setTimeout(check,8000);return;}d.setAttribute('data-app','falhou');var box=document.getElementById('app-fallback');if(!box)return;
 var m=navigator.userAgent.match(/OS (\\d+)_(\\d+)(?:_(\\d+))? like Mac/);var info=(m?'iOS '+m[1]+'.'+m[2]+(m[3]?'.'+m[3]:''):'')+(errs.length?(m?' · ':'')+errs.join(' | '):'');
-var code=document.getElementById('app-fallback-code');if(code&&info){code.textContent='Informação técnica: '+info;code.hidden=false;}
+var code=document.getElementById('app-fallback-code'),tech=document.getElementById('app-fallback-tech');if(code&&tech&&info){code.textContent=info;tech.hidden=false;}
 var wa=document.getElementById('app-fallback-wa');if(wa&&info)wa.href+=encodeURIComponent('\\n\\n(Informação técnica: '+info+')');
 var again=document.getElementById('app-fallback-again');if(again)again.href=location.href;box.hidden=false;}
 if(document.readyState==='complete')setTimeout(check,4000);else window.addEventListener('load',function(){setTimeout(check,4000);});})();`;
@@ -43,7 +45,10 @@ export function AppFallback() {
             Tentar de novo
           </a>
         </p>
-        <p id="app-fallback-code" className="app-fallback-code" hidden />
+        <details id="app-fallback-tech" className="app-fallback-code" hidden>
+          <summary>Detalhes para o suporte</summary>
+          <p id="app-fallback-code" />
+        </details>
       </div>
     </>
   );

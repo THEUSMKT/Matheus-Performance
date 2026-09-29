@@ -583,8 +583,15 @@
   font-weight: 700;
   text-underline-offset: 3px;
 }
-.app-fallback p.app-fallback-code {
-  margin-top: 4px;
+.app-fallback-code {
+  max-width: 1120px;
+  margin: 2px auto 0;
   color: #6b5220;
   font-size: 13px;
+}
+.app-fallback-code summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
 }

@@ -996,7 +996,8 @@ function isTypeName(p: Project, sub: Subsegment): boolean {
  */
 export function unrecognizedService(p: Project): boolean {
   const main = p.serviceLater ? '' : p.service.trim();
-  if (!main || !subsegmentOf(p).generic || subsegmentById(p.subsegment)) return false;
+  // Tipo genérico (escolhido pela pessoa ou pela IA) com um serviço que não é dele: topo neutro, sem imagem de outro negócio.
+  if (!main || !subsegmentOf(p).generic) return false;
   return !segmentOf(p).quick.some((q) => same(q, main));
 }
 

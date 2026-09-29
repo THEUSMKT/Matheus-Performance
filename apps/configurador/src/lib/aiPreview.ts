@@ -559,16 +559,43 @@ type FetchLike = (url: string, init: { method: string; headers: Record<string, s
  * detalhes opcionais que ela informou ("Deixar minha prévia mais
  * específica"). Nenhum campo novo no contrato com o servidor.
  */
-export function withDetails(description: string, details: Project['details']): string {
+/**
+ * Contexto enviado junto com a descrição: o nome já digitado (ou "ainda sem
+ * nome") e os detalhes opcionais. Assim a IA não pergunta de novo o que a
+ * pessoa já informou. Se o total passar do limite, vai só a descrição.
+ */
+export function withDetails(description: string, details: Project['details'], who?: Pick<Project, 'name' | 'nameLater'>): string {
+  const base = description.trim();
+  const name = who?.name.trim() ?? '';
   const extra = [
+    name && !mentions(base, name) && `Nome da empresa: ${name}.`,
+    !name && who?.nameLater && 'A empresa ainda não tem nome definido.',
     details.audience.trim() && `Quem atendo: ${details.audience.trim()}.`,
     details.region.trim() && `Onde atendo: ${details.region.trim()}.`,
     details.highlights.trim() && `Quero destacar: ${details.highlights.trim()}.`,
   ].filter(Boolean);
-  const base = description.trim();
   if (!extra.length) return base;
   const full = `${base}\n${extra.join(' ')}`;
   return full.length <= DESCRIPTION_MAX ? full : base;
+}
+
+/**
+ * A pergunta da IA só aparece se ainda fizer sentido: nome, público e região
+ * já informados (ou "ainda não defini o nome") não são perguntados de novo.
+ * Outras perguntas passam como vieram.
+ */
+export function reconcileQuestion(question: string, p: Pick<Project, 'name' | 'nameLater' | 'details'>): string {
+  const q = fold(question);
+  if (!q) return '';
+  const asks = {
+    name: /nome d[aoe] (sua |seu )?(empresa|negocio|marca|loja|clinica|salao|escritorio|estudio|consultorio)|qual (e )?o (seu )?nome|como (a sua empresa |sua empresa |o seu negocio |seu negocio )?(se )?chama/.test(q),
+    audience: /quem (voce )?atende|publico|clientes? (voce )?atende/.test(q),
+    region: /onde (voce )?atende|regiao|cidade|bairro/.test(q),
+  };
+  if (asks.name && (p.name.trim() || p.nameLater)) return '';
+  if (asks.audience && p.details.audience.trim()) return '';
+  if (asks.region && p.details.region.trim()) return '';
+  return question;
 }
 
 export async function requestSuggestion(
