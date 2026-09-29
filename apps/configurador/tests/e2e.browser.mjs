@@ -420,8 +420,10 @@ await scenario('Celular: botão flutuante "Gerar minha prévia gratuita" aparece
   assert((await link.getAttribute('href')).endsWith('/configurador/criar/'));
   const lb = await link.boundingBox();
   assert(lb.height >= 44 && lb.y + lb.height <= 844 && lb.x >= 0 && lb.x + lb.width <= 390, 'inteiro na tela, com toque confortável');
-  // Menu aberto: o botão sai de cena.
-  await page.locator('header summary').click();
+  // Menu aberto: o botão sai de cena. Toque na posição do botão do menu (o clique do Playwright
+  // rolaria a página até ele antes, e a primeira tela voltaria a aparecer).
+  const menuBox = await page.locator('header summary').boundingBox();
+  await page.touchscreen.tap(menuBox.x + menuBox.width / 2, menuBox.y + menuBox.height / 2);
   await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'hidden');
   await page.keyboard.press('Escape');
   await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'visible');
@@ -2167,7 +2169,8 @@ for (const [w, h] of [[360, 740], [390, 844], [430, 932]]) {
     const tap = await visible(page.locator('[data-bar=configurador] button')).boundingBox();
     assert(tap.height >= 44, 'botões da barra com área de toque');
     await visible(page.getByRole('button', { name: 'Editar minha descrição' })).click();
-    assert.equal(await page.locator('#descricao-ia').inputValue(), c.descricao, 'descrição preservada');
+    // O campo recupera o rascunho logo depois de montar: espera o valor em vez de ler de imediato.
+    await page.waitForFunction((d) => document.querySelector('#descricao-ia')?.value === d, c.descricao, { timeout: 5000 });
   }, { viewport: { width: w, height: h }, isMobile: true, hasTouch: true });
 }
 

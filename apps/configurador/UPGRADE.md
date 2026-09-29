@@ -1,5 +1,13 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — sites publicados no topo, em carrossel (29/09, noite)
+
+- **Topo:** a captura única da Schay deu lugar a um carrossel com os dois sites publicados (`config/proof.ts`), arrastável em todas as larguras (no computador também com o mouse), com o próximo slide aparecendo pela borda, bolinhas ("Ir para …"), setas e a dica "Arraste para ver mais". Sem avanço automático nem loop. Componente `HeroProjects.tsx`; a lógica (índice pela rolagem real, setas, "reduzir movimento", arraste com o mouse e cancelamento do clique depois de arrastar mais de ~8 px) ficou em `useCarousel.ts`.
+- **Slides do mesmo tamanho:** imagem 16/10 (`object-fit: cover`, topo), selo "● Projeto publicado · nome" em uma linha com reticências, linha de baixo com altura fixa (segmento — "· marca própria" no site da marca — e "Ver site ↗"). Novo campo opcional `shortName` em `RealProject` ("Matheus Beck · Gestão de Tráfego" no selo).
+- **Clique:** a captura inteira e o "Ver site" abrem o site em nova aba e registram `real_project_open` com `context: inicio_topo`. Necessidade, detalhes e "Conversar sobre um projeto assim" continuam só em /exemplos/.
+- **Seção "Da ideia ao ar" removida** (dava a impressão de "só dois sites"). `#projetos` agora é o carrossel do topo e `#exemplos` o link "Explorar exemplos de sites →", logo abaixo dele — atalhos antigos continuam funcionando. `RealProjectCards` e o CSS sem uso saíram.
+- A primeira captura tem `fetchPriority="high"`; a segunda carrega de imediato, sem prioridade. Em 390×844 (e também em 390×700), título, carrossel e botão principal aparecem sem rolar.
+
 ## Edição — acabamento visual, correções confirmadas e preparação do domínio (29/09, fim do dia)
 
 Mesma ideia de produto, com acabamento mais cuidadoso e correções dos defeitos confirmados na revisão. Preços, prazos, limites, integração da IA e hospedagem não mudaram; o site de gestão de tráfego (raiz) não foi tocado; nada foi publicado.
