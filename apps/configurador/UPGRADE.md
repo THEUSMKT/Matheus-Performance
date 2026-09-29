@@ -8,7 +8,7 @@ Mesma ideia de produto, com acabamento mais cuidadoso e correções dos defeitos
 
 **Visual** (CSS e SVG, sem bibliotecas novas):
 - Abertura: linha de apoio "Apresente seus serviços com clareza e facilite os pedidos de orçamento. Veja uma prévia grátis ou converse sobre o seu projeto."; textura de pontos quase imperceptível só no canto da captura (com máscara; sem suporte, fica discreta na seção inteira); reflexo leve sobre a captura da Schay e sombra de apoio sob a moldura. A captura não foi alterada.
-- Carrossel: cartões da mesma altura (peças da mesma coleção), largura máxima no celular grande e espaço para a sombra e o contorno de foco não serem cortados. Gesto, setas, contagem e "Arraste para ver outro projeto" continuam.
+- Carrossel: largura máxima no celular grande e espaço para a sombra e o contorno de foco não serem cortados (alinhados pelo topo: igualar a altura deixava um vão vazio no cartão mais curto). Gesto, setas, contagem e "Arraste para ver outro projeto" continuam.
 - Benefícios com ícones em leve relevo e fundos claros variados; "Como funciona" com número em relevo e linha ligando os passos; foto do Matheus com anel luminoso e o mesmo detalhe geométrico da abertura; chamada final com o ícone do botão principal; rodapé em duas colunas no celular.
 - Pacotes: superfícies distintas (Essencial azul-claro, Profissional em destaque com brilho discreto, Completo lavanda) e números com largura uniforme. Valores inalterados.
 - Exemplos: filtro ativo marcado também por um visto (não só pela cor); selo "Modelo demonstrativo" tracejado, diferente do "Projeto publicado".

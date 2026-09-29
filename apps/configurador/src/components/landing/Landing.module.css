@@ -2235,8 +2235,8 @@
    bloquear toques). A partir de 760 px, os dois cartões lado a lado. */
 .carousel .projectList {
   display: flex;
-  /* Cartões da mesma altura: peças da mesma coleção. */
-  align-items: stretch;
+  /* Alinhados pelo topo: sem vão vazio no cartão de texto mais curto. */
+  align-items: flex-start;
   gap: 12px;
   margin-inline: calc(-1 * var(--gutter));
   /* Espaço embaixo para a sombra e o contorno de foco não serem cortados. */
