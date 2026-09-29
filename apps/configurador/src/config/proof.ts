@@ -1,7 +1,8 @@
 /* ==========================================================================
    Projetos reais e depoimentos — EDITE AQUI (só com autorização)
-   Os projetos abaixo aparecem na página inicial ("Da ideia ao ar") e na
-   página de exemplos ("Projetos reais"). Nunca coloque exemplos fictícios,
+   Os projetos abaixo aparecem no carrossel do topo da página inicial
+   (HeroProjects) e na página de exemplos ("Projetos reais"). O site da
+   própria marca é sempre identificado como tal ("marca própria"). Nunca coloque exemplos fictícios,
    textos de preenchimento, logos de terceiros, resultados ou números sem
    comprovação, nem associe um projeto a pacote ou preço sem confirmação.
    Capturas em public/projetos/ (origem e data no README.md de lá).
@@ -13,6 +14,8 @@ export type RealProject = {
   id: string;
   /** Nome como aparece no cartão. */
   name: string;
+  /** Nome curto, para o selo do carrossel do topo (opcional; sem ele, vale `name`). */
+  shortName?: string;
   category: string;
   /** Uma frase: o que o site apresenta (sem resultados nem métricas). */
   description: string;
@@ -55,6 +58,7 @@ export const realProjects: RealProject[] = [
   {
     id: 'matheus-beck',
     name: 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital',
+    shortName: 'Matheus Beck · Gestão de Tráfego',
     category: 'Marketing e serviços profissionais',
     description: 'Site de serviços com apresentação da marca, metodologia de trabalho, pacotes e chamadas para atendimento.',
     need: 'Explicar os serviços de gestão de tráfego e o método de trabalho, com caminhos claros para pedir atendimento.',

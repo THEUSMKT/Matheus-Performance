@@ -1,8 +1,7 @@
 # Capturas dos projetos reais
 
-Capturas de tela das páginas iniciais dos dois projetos exibidos em
-"Da ideia ao ar: conheça sites que criamos" (página inicial) e em
-"Projetos reais" (página de exemplos). São imagens estáticas: a página não
+Capturas de tela das páginas iniciais dos projetos exibidos no carrossel
+do topo da página inicial e em "Projetos reais" (página de exemplos). São imagens estáticas: a página não
 carrega os sites em iframe.
 
 | Arquivo | Site | Origem da captura | Data |
