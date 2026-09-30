@@ -457,25 +457,27 @@ p{margin:0}
   content:"";display:block;width:min(240px,70%);height:1px;margin:26px 0 30px;
   background:linear-gradient(90deg,var(--gold),rgba(200,169,106,.05))
 }
-/* palco: foto atrás, avaliação por cima (celular) */
-.testimonial__stage{position:relative;display:flow-root;aspect-ratio:1/1.086}
-.testimonial__media{position:absolute;z-index:0;top:0;left:-5%;width:110%;pointer-events:none}
-.testimonial__media::before{
-  content:"";position:absolute;inset:0;
-  background:radial-gradient(closest-side at 52% 30%,var(--gold-soft),rgba(200,169,106,0))
-}
+/* palco: foto atrás, avaliação por cima (celular).
+   A foto é vertical (1556×1920); o palco tem no mínimo a altura dela, para
+   que a borda do cartão nunca corte o corpo — a base da foto esmaece antes. */
+.testimonial__stage{position:relative;display:flow-root;aspect-ratio:1556/1920}
+.testimonial__media{position:absolute;z-index:0;top:0;left:0;width:100%;pointer-events:none}
+/* Sem brilho, blend ou filtro: a foto aparece como a original.
+   No topo, só 3% de esmaecido — sobre o fundo preto, antes do cabelo (que começa em ~4,7%); laterais e base
+   esmaecem braços, cadeira e pernas para o preto do cartão. */
 .testimonial__media img{
-  position:relative;width:100%;height:auto;aspect-ratio:1200/1185;mix-blend-mode:lighten;
-  -webkit-mask-image:linear-gradient(to right,transparent,#000 15%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 4%,#000 78%,transparent);
+  position:relative;width:100%;height:auto;aspect-ratio:1556/1920;
+  -webkit-mask-image:linear-gradient(to right,transparent,#000 15%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 3%,#000 82%,transparent);
   -webkit-mask-composite:source-in;
-  mask-image:linear-gradient(to right,transparent,#000 15%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 4%,#000 78%,transparent);
+  mask-image:linear-gradient(to right,transparent,#000 15%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 3%,#000 82%,transparent);
   mask-composite:intersect
 }
-/* a margem em % é relativa à largura: o texto começa abaixo do queixo */
-.testimonial--featured .testimonial__quote{position:relative;z-index:2;margin:44% 0 0;padding:0 var(--pad) calc(var(--pad) + 16px)}
-/* véu de leitura: começa onde o texto começa (mesma margem de 44%) e vai até o fim do palco */
+/* a margem em % é relativa à largura: 50% da largura ≈ 40% da altura da foto,
+   a altura do peito — o texto começa abaixo do queixo e da gola */
+.testimonial--featured .testimonial__quote{position:relative;z-index:2;margin:50% 0 0;padding:0 var(--pad) calc(var(--pad) + 16px)}
+/* véu de leitura: começa onde o texto começa (mesma margem de 50%) e vai até o fim do palco */
 .testimonial__stage::before{
-  content:"";position:absolute;z-index:1;top:0;bottom:0;left:0;right:0;margin-top:44%;pointer-events:none;
+  content:"";position:absolute;z-index:1;top:0;bottom:0;left:0;right:0;margin-top:50%;pointer-events:none;
   background:linear-gradient(to bottom,rgba(1,1,1,0),rgba(1,1,1,.8) 76px,rgba(1,1,1,.8))
 }
 .testimonial--featured .testimonial__mark,
@@ -510,10 +512,10 @@ p{margin:0}
 /* computador: foto ao fundo, à direita; texto na metade esquerda */
 @media (min-width:900px){
   .testimonial--featured{
-    /* altura mínima ≈ a da foto (62% da largura do cartão); cresce se o texto pedir */
+    /* altura mínima ≈ a da foto (50% da largura do cartão × 1920/1556); cresce se o texto pedir */
     display:flex;flex-direction:column;justify-content:center;
     min-height:calc((min(var(--max), 100vw) - 2 * var(--pad)) * .61);
-    padding:var(--ty) 45% var(--ty) var(--tx)
+    padding:var(--ty) 48% var(--ty) var(--tx)
   }
   .testimonial--featured .testimonial__author{padding:0}
   .testimonial__stage{position:static;display:block;aspect-ratio:auto}
@@ -521,7 +523,12 @@ p{margin:0}
     right:auto;width:58%;margin-top:0;
     background:linear-gradient(to right,#010101 52%,rgba(1,1,1,0))
   }
-  .testimonial__media{top:auto;left:auto;right:0;bottom:0;width:62%}
+  .testimonial__media{top:auto;left:auto;right:0;bottom:0;width:50%}
+  /* lado do texto: esmaecido mais longo, para o braço e a cadeira sumirem antes do texto */
+  .testimonial__media img{
+    -webkit-mask-image:linear-gradient(to right,transparent,rgba(0,0,0,.12) 13%,#000 30%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 3%,#000 82%,transparent);
+    mask-image:linear-gradient(to right,transparent,rgba(0,0,0,.12) 13%,#000 30%,#000 85%,transparent),linear-gradient(to bottom,transparent,#000 3%,#000 82%,transparent)
+  }
   .testimonial--featured .testimonial__quote{margin:0;padding:0}
   .testimonial__avatar{width:72px;height:72px;padding:4px}
   .testimonial__profile{gap:16px}
