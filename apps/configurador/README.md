@@ -5,8 +5,8 @@ três pacotes de valor fixo (R$ 500, R$ 750 e R$ 1.000). Páginas:
 
 - **Início (`/`)**, objetiva:
   - apresentação;
-  - dois projetos reais ("Da ideia ao ar"), com "Visitar site" e
-    "Conversar sobre um projeto assim";
+  - carrossel com os sites publicados (Schay Corretora, Julia Studio
+    Makeup e o site da própria marca), cada um com "Ver site";
   - benefícios concretos;
   - como funciona, com a demonstração do configurador (ilustrativa);
   - dois caminhos de contratação: pacotes e projeto sob medida;

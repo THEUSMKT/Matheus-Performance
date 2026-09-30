@@ -142,16 +142,18 @@ await scenario('Início: título curto, sites publicados em carrossel, uma açã
   assert((await shots.nth(0).getAttribute('alt')).includes('Schay Corretora'));
   assert.equal(await shots.nth(0).getAttribute('fetchpriority'), 'high');
   assert.equal(await shots.nth(1).getAttribute('fetchpriority'), null, 'só a primeira tem prioridade');
-  for (let i = 0; i < 2; i++) assert.equal(await shots.nth(i).getAttribute('loading'), 'eager');
+  for (let i = 0; i < 3; i++) assert.equal(await shots.nth(i).getAttribute('loading'), 'eager');
   const slides = projects.locator('li');
   const badges = await slides.locator('[class*=badge]').allInnerTexts();
-  assert.deepEqual(badges.map((b) => b.replace(/\s+/g, ' ').trim()), ['Projeto publicado · Schay Corretora', 'Projeto publicado · Matheus Beck · Gestão de Tráfego']);
+  assert.deepEqual(badges.map((b) => b.replace(/\s+/g, ' ').trim()), ['Projeto publicado · Schay Corretora', 'Projeto publicado · Julia Studio Makeup', 'Projeto publicado · Matheus Beck · Gestão de Tráfego']);
   const s0 = (await slides.nth(0).innerText()).replace(/\s+/g, ' ');
   const s1 = (await slides.nth(1).innerText()).replace(/\s+/g, ' ');
+  const s2 = (await slides.nth(2).innerText()).replace(/\s+/g, ' ');
   assert(s0.includes('Mercado imobiliário') && !s0.includes('marca própria'), 'cliente não aparece como marca própria');
-  assert(s1.includes('Marketing e serviços profissionais · marca própria'));
-  for (const bad of ['Ver detalhes', 'Necessidade', 'Conversar sobre um projeto assim']) assert(!(s0 + s1).includes(bad), `sem "${bad}" no topo`);
-  for (const [name, url] of [['Schay Corretora', 'https://schaycorretora.com.br/'], ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'https://theusmkt.github.io/Matheus-Performance/']]) {
+  assert(s1.includes('Beleza e maquiagem') && !s1.includes('marca própria'), 'cliente não aparece como marca própria');
+  assert(s2.includes('Marketing e serviços profissionais · marca própria'));
+  for (const bad of ['Ver detalhes', 'Necessidade', 'Conversar sobre um projeto assim']) assert(!(s0 + s1 + s2).includes(bad), `sem "${bad}" no topo`);
+  for (const [name, url] of [['Schay Corretora', 'https://schaycorretora.com.br/'], ['Julia Studio Makeup', 'https://theusmkt.github.io/LANDING-PAGE-JULIA/'], ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'https://theusmkt.github.io/Matheus-Performance/']]) {
     for (const label of [`Visitar site: ${name} (abre em nova aba)`, `Ver site: ${name} (abre em nova aba)`]) {
       const link = projects.getByRole('link', { name: label });
       assert.equal(await link.getAttribute('href'), url);
@@ -323,10 +325,10 @@ await scenario('Celular: sites publicados no topo em carrossel (Schay primeiro),
   const region = page.getByRole('region', { name: 'Sites publicados' });
   assert.equal(await region.getAttribute('aria-roledescription'), 'carrossel');
   const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
-  assert.equal(boxes.length, 2);
+  assert.equal(boxes.length, 3);
   assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] < 390, 'primeiro slide inteiro');
   assert(boxes[1][0] < 390 && boxes[1][0] + boxes[1][1] > 390, 'o próximo aparece na borda');
-  assert(Math.abs(boxes[0][1] - boxes[1][1]) <= 1 && Math.abs(boxes[0][2] - boxes[1][2]) <= 1, `mesma largura e altura: ${JSON.stringify(boxes)}`);
+  for (const b of boxes.slice(1)) assert(Math.abs(boxes[0][1] - b[1]) <= 1 && Math.abs(boxes[0][2] - b[2]) <= 1, `mesma largura e altura: ${JSON.stringify(boxes)}`);
   assert.equal(await scrollWidth(page), 390, 'sem rolagem lateral da página');
   assert(await projects.getByText('Arraste para ver mais').isVisible());
   assert.equal(await dotCurrent(page), 'Ir para Schay Corretora');
@@ -341,11 +343,16 @@ await scenario('Celular: sites publicados no topo em carrossel (Schay primeiro),
   await page.waitForTimeout(2500);
   assert.equal(await dotCurrent(page), 'Ir para Schay Corretora');
   await nextBtn.click();
+  await waitDot(page, 'Julia Studio Makeup');
+  assert(!(await prev.isDisabled()) && !(await nextBtn.isDisabled()), 'setas ativas no meio');
+  await nextBtn.click();
   await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
   assert(await nextBtn.isDisabled(), 'próximo desativado no fim (sem loop)');
   // Teclado: volta com Enter no botão anterior; bolinha leva direto ao slide.
   await prev.focus();
   await page.keyboard.press('Enter');
+  await waitDot(page, 'Julia Studio Makeup');
+  await projects.getByRole('button', { name: 'Ir para Schay Corretora' }).click();
   await waitDot(page, 'Schay Corretora');
   await projects.getByRole('button', { name: 'Ir para Matheus Beck · Gestão de Tráfego' }).click();
   await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
@@ -362,7 +369,7 @@ await scenario('Celular: sites publicados no topo em carrossel (Schay primeiro),
   const shot = await projects.locator('li').first().locator('img').boundingBox();
   await page.mouse.move(shot.x + shot.width / 2, shot.y + shot.height / 2);
   await page.mouse.wheel(300, 0);
-  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
+  await waitDot(page, 'Julia Studio Makeup');
   await page.mouse.wheel(-300, 0);
   await waitDot(page, 'Schay Corretora');
   assert.equal(page.url(), URL, 'rolar não navega');
@@ -383,7 +390,7 @@ await scenario('Computador: arrastar a captura com o mouse passa para o próximo
   await page.goto(URL);
   const projects = page.locator('#projetos');
   const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
-  assert(Math.abs(boxes[0][2] - boxes[1][2]) <= 1, `mesma altura: ${JSON.stringify(boxes)}`);
+  assert(boxes.every((b) => Math.abs(boxes[0][2] - b[2]) <= 1), `mesma altura: ${JSON.stringify(boxes)}`);
   const list = await page.locator('[data-carousel]').boundingBox();
   assert(boxes[1][0] < list.x + list.width, 'o próximo aparece pela borda também no computador');
   const opened = [];
@@ -393,7 +400,7 @@ await scenario('Computador: arrastar a captura com o mouse passa para o próximo
   await page.mouse.down();
   for (let i = 1; i <= 10; i++) await page.mouse.move(shot.x + shot.width * 0.8 - i * 30, shot.y + shot.height / 2);
   await page.mouse.up();
-  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
+  await waitDot(page, 'Julia Studio Makeup');
   await page.waitForTimeout(400);
   assert.deepEqual(opened, [], 'arrastar não abre o site');
   assert.equal(page.url(), URL);
@@ -495,7 +502,7 @@ await scenario('Sem JavaScript: menu, páginas novas e links de pacote e modelo 
   await page.goto(EX);
   assert.equal(await page.getByRole('link', { name: 'Criar minha prévia com este modelo' }).count(), 8, 'um modelo por família visual');
   assert((await page.getByRole('link', { name: 'Criar minha prévia com este modelo' }).first().getAttribute('href')).endsWith('/criar/?modelo=local'));
-  assert.equal(await page.getByRole('link', { name: /Visitar site/ }).count(), 2);
+  assert.equal(await page.getByRole('link', { name: /Visitar site/ }).count(), 3);
   // Atalho antigo sem script: a âncora cai no acesso aos exemplos.
   await page.goto(URL + '#exemplos');
   assert(await page.locator('#exemplos').getByRole('link', { name: 'Explorar exemplos de sites' }).isVisible());
@@ -544,8 +551,8 @@ await scenario('Exemplos: dois grupos, projetos reais com "Visitar site" e model
   assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Inspire-se no próximo site da sua empresa.');
   assert.deepEqual(await page.locator('main h2').allInnerTexts(), ['Projetos reais', 'Modelos para imaginar o seu', 'Já sabe o que quer mostrar?']);
   const real = page.locator('#projetos-reais');
-  assert.equal(await real.getByRole('link', { name: /^Visitar site: .*\(abre em nova aba\)$/ }).count(), 2);
-  assert.equal(await real.locator('img').count(), 4, 'computador e celular de cada projeto');
+  assert.equal(await real.getByRole('link', { name: /^Visitar site: .*\(abre em nova aba\)$/ }).count(), 3);
+  assert.equal(await real.locator('img').count(), 6, 'computador e celular de cada projeto');
   assert(!(await real.innerText()).includes('Criar minha prévia'), 'projeto real não vira modelo');
   const names = await modelCards(page).locator('h3').allInnerTexts();
   assert.deepEqual(names, ['Serviços locais', 'Beleza e estética', 'Consultoria e serviços profissionais', 'Alimentação', 'Arquitetura ou portfólio criativo', 'Imóveis e corretores', 'Veterinária e cuidados pet', 'Outro segmento']);
@@ -1823,9 +1830,9 @@ for (const [width, height] of [[320, 568], [360, 740], [375, 667], [390, 700], [
     assert(ev.every((e) => e.device === 'celular'), 'eventos com a categoria do aparelho');
     // Carrossel: o primeiro inteiro, o segundo aparecendo, mesmo tamanho.
     const boxes = await page.locator('#projetos li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
-    assert.equal(boxes.length, 2);
+    assert.equal(boxes.length, 3);
     assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] <= width && boxes[1][0] < width, 'primeiro inteiro, próximo à vista');
-    assert(Math.abs(boxes[0][2] - boxes[1][2]) <= 1, 'mesma altura');
+    assert(boxes.every((b) => Math.abs(boxes[0][2] - b[2]) <= 1), 'mesma altura');
   }, { viewport: { width, height }, isMobile: true, hasTouch: true });
 }
 

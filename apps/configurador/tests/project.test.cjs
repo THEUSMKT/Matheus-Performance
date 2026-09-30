@@ -1135,10 +1135,11 @@ test('Página de pacotes: cada cartão lista tudo o que inclui e marca só o que
   assert.deepEqual(up2.gains, ['1 seção a mais (até 8)', 'galeria com até 15 fotos (no Profissional, até 8)', 'vitrine com até 10 produtos ou serviços']);
 });
 
-test('Projetos reais: dois sites, capturas locais, sem pacote, preço ou resultado associado', () => {
+test('Projetos reais: três sites, capturas locais, sem pacote, preço ou resultado associado', () => {
   const { realProjects, testimonials } = require('../src/config/proof.ts');
   assert.deepEqual(realProjects.map((r) => [r.name, r.category, r.url]), [
     ['Schay Corretora', 'Mercado imobiliário', 'https://schaycorretora.com.br/'],
+    ['Julia Studio Makeup', 'Beleza e maquiagem', 'https://theusmkt.github.io/LANDING-PAGE-JULIA/'],
     ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'Marketing e serviços profissionais', 'https://theusmkt.github.io/Matheus-Performance/'],
   ]);
   assert.equal(realProjects.filter((r) => r.ownBrand).map((r) => r.id).join(), 'matheus-beck', 'só o site da própria marca é identificado como tal');
