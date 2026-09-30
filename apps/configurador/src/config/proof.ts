@@ -56,6 +56,18 @@ export const realProjects: RealProject[] = [
     authorizedAt: '2026-09-28',
   },
   {
+    id: 'julia-studio',
+    name: 'Julia Studio Makeup',
+    category: 'Beleza e maquiagem',
+    description: 'Site de maquiagem profissional com portfólio, serviços por ocasião e pedido de horário montado direto no WhatsApp.',
+    need: 'Apresentar o trabalho da maquiadora e facilitar o agendamento de noivas, madrinhas, formandas e festas pelo WhatsApp.',
+    url: 'https://theusmkt.github.io/LANDING-PAGE-JULIA/',
+    domain: 'theusmkt.github.io/LANDING-PAGE-JULIA',
+    image: '/projetos/julia-studio',
+    alt: 'Página inicial do site Julia Studio Makeup',
+    authorizedAt: '2026-09-30',
+  },
+  {
     id: 'matheus-beck',
     name: 'Matheus Beck — Gestão de Tráfego e Posicionamento Digital',
     shortName: 'Matheus Beck · Gestão de Tráfego',

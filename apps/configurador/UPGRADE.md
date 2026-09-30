@@ -1,5 +1,12 @@
 # Upgrade — Beck Performance, configurador (setembro de 2026)
 
+## Edição — terceiro site publicado: Julia Studio Makeup (30/09)
+
+- **Novo projeto real** em `config/proof.ts`: Julia Studio Makeup (maquiadora em São Leopoldo, projeto de cliente), entre a Schay Corretora e o site da própria marca. Aparece no carrossel do topo (selo "Projeto publicado · Julia Studio Makeup", segmento "Beleza e maquiagem", "Ver site") e em /exemplos/ ("Projetos reais", computador e celular, "Visitar site" e "Conversar sobre um projeto assim"). Endereço: https://theusmkt.github.io/LANDING-PAGE-JULIA/.
+- **Textos só com o que está no site**: portfólio, serviços por ocasião (noivas, madrinhas, formandas, 15 anos, festas e ensaios) e pedido de horário montado no WhatsApp. Sem preço, pacote, resultado ou depoimento.
+- **Capturas** `public/projetos/julia-studio-*.webp` (mesmos tamanhos das outras), geradas do repositório `THEUSMKT/landing-page-julia`, commit `5b5ded5`; origem registrada em `public/projetos/README.md`.
+- O carrossel já era genérico: nada mudou em `HeroProjects.tsx`. Com três bolinhas, as vizinhas passam a dividir 12 px da área de toque (cada uma continua com 44×44 px e pelo menos 32 px só dela) e o espaço entre a dica e os controles caiu para 8 px: "Arraste para ver mais" fica em uma linha a partir de 390 px e em duas em 320–360 px, sem aumentar a altura da linha (44 px). O botão principal continua na primeira tela em 390×844.
+
 ## Edição — sites publicados no topo, em carrossel (29/09, noite)
 
 - **Topo:** a captura única da Schay deu lugar a um carrossel com os dois sites publicados (`config/proof.ts`), arrastável em todas as larguras (no computador também com o mouse), com o próximo slide aparecendo pela borda, bolinhas ("Ir para …"), setas e a dica "Arraste para ver mais". Sem avanço automático nem loop. Componente `HeroProjects.tsx`; a lógica (índice pela rolagem real, setas, "reduzir movimento", arraste com o mouse e cancelamento do clique depois de arrastar mais de ~8 px) ficou em `useCarousel.ts`.
