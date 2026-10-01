@@ -97,4 +97,11 @@ export const realProjects: RealProject[] = [
   },
 ];
 
-export const testimonials: Testimonial[] = [];
+// TODO: substituir pelo depoimento real — seção oculta até ter conteúdo aprovado
+export const testimonials: Testimonial[] = [
+  // { name: 'Schay Corretora', company: 'Schay Corretora', text: 'TODO: substituir pelo depoimento real', authorizedAt: '' },
+  // { name: 'Julia Studio Makeup', company: 'Julia Studio Makeup', text: 'TODO: substituir pelo depoimento real', authorizedAt: '' },
+  // { name: 'Pablo Cavalheiro', company: 'Pablo Cavalheiro · Design Gráfico', text: 'TODO: substituir pelo depoimento real', authorizedAt: '' },
+];
+
+export const SHOW_TESTIMONIALS = false;

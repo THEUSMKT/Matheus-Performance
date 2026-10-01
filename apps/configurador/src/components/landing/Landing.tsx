@@ -10,11 +10,11 @@
    são links comuns: funcionam mesmo se o JavaScript não carregar.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BadgeCheck, ChevronDown, ExternalLink, LayoutList, MessageCircle, MessagesSquare, Palette, Sparkles } from 'lucide-react';
+import { ArrowRight, BadgeCheck, ChevronDown, ExternalLink, LayoutList, MessageCircle, MessagesSquare, MoveRight, Palette, Sparkles } from 'lucide-react';
 import { contact } from '@/config/contact';
 import { brl, packages, priceRange } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
-import { realProjects, type RealProject } from '@/config/proof';
+import { realProjects, testimonials, SHOW_TESTIMONIALS, type RealProject } from '@/config/proof';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
 import { Footer, Header, asset, builderHref, examplesHref, packagesHref } from './Chrome';
@@ -98,16 +98,17 @@ export default function Landing() {
             <h1 id="hero-titulo" className={h.heroTitle}>
               Um site <em className={h.mark}>à altura</em> da sua empresa.
             </h1>
-            <p className={h.lead}>Escolha um modelo pronto ou gere uma prévia grátis para um site mais simples.</p>
+            <p className={h.lead}>Veja o site da sua empresa montado antes de pagar qualquer coisa. Gere uma prévia grátis em minutos ou escolha um dos modelos que já desenvolvi.</p>
             <div className={h.heroBtns}>
-              <a className={`${s.primary} ${s.shine} ${h.heroBtn}`} href="#exemplos" onClick={() => track('nav_click', { target: 'exemplos', context: 'hero' })}>
+              <a className={`${s.primary} ${h.heroBtn} ${h.heroPrimary}`} href={builderHref} onClick={start('hero')}>
+                Gerar prévia grátis <MoveRight className={h.heroArrow} aria-hidden="true" />
+              </a>
+              <a className={`${s.secondary} ${h.heroBtn} ${h.heroBtnOutline}`} href="#exemplos" onClick={() => track('nav_click', { target: 'exemplos', context: 'hero' })}>
                 Ver modelos de sites
               </a>
-              <a className={`${s.secondary} ${h.heroBtn} ${h.heroBtnOutline}`} href={builderHref} onClick={start('hero')}>
-                <Sparkles aria-hidden="true" /> Gerar prévia grátis
-              </a>
             </div>
-            <p className={h.safe}>Sem cadastro. Sem compromisso.</p>
+            <p className={h.safe}>Pronta em poucos minutos. Sem cadastro, sem compromisso.</p>
+            <p className={h.reassurance}>Quem responde sou eu, normalmente no mesmo dia.</p>
             <a className={h.scrollHint} href="#exemplos" aria-label="Rolar até os exemplos de sites">
               <span>Veja os sites que já criei</span>
               <ChevronDown aria-hidden="true" />
@@ -241,6 +242,31 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* 4b. Depoimentos — ocultos até receber conteúdo real */}
+        {SHOW_TESTIMONIALS && testimonials.length > 0 && (
+          <section className={`${s.section} ${h.testimonialsBand}`} id="depoimentos" aria-labelledby="depoimentos-titulo">
+            <div className={s.wrap}>
+              <div className={h.head}>
+                <h2 id="depoimentos-titulo">Quem já tem o site no ar</h2>
+              </div>
+              <ul className={h.testimonials}>
+                {testimonials.map((t) => (
+                  <li key={t.name} className={h.testimonialCard}>
+                    <div className={h.testimonialPhoto} aria-hidden="true" />
+                    <blockquote>
+                      <p>{t.text}</p>
+                    </blockquote>
+                    <p className={h.testimonialAuthor}>
+                      <strong>{t.name}</strong>
+                      {t.company && <span>{t.company}</span>}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
         {/* 5. Valores */}
         <section className={`${s.section} ${h.pathsBand}`} id="contratar" aria-labelledby="valores-titulo">
           <div className={s.wrap}>
@@ -312,6 +338,9 @@ export default function Landing() {
                   <BadgeCheck aria-hidden="true" /> Orientação para reunir logo, fotos e informações
                 </li>
                 <li>
+                  <BadgeCheck aria-hidden="true" /> Resposta pelo WhatsApp normalmente no mesmo dia
+                </li>
+                <li>
                   <BadgeCheck aria-hidden="true" /> WhatsApp {contact.whatsappDisplay}
                 </li>
               </ul>
@@ -336,12 +365,13 @@ export default function Landing() {
             <p>Crie uma prévia grátis, sem cadastro, ou converse direto sobre o seu projeto.</p>
             <div className={`${s.finalActions} ${h.finalActions}`}>
               <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('final')} data-main-cta="">
-                <Sparkles aria-hidden="true" /> {resumable ? 'Continuar minha prévia' : 'Gerar prévia grátis'}
+                {resumable ? 'Continuar minha prévia' : 'Gerar prévia grátis'} <MoveRight aria-hidden="true" />
               </a>
               <Talk className={s.secondary} message={contact.whatsappConversa} context="final">
                 <MessageCircle aria-hidden="true" /> Conversar sobre meu projeto
               </Talk>
             </div>
+            <p className={h.reassurance} style={{ color: 'rgb(255 255 255 / 0.65)' }}>Quem responde sou eu, normalmente no mesmo dia.</p>
           </div>
         </section>
       </main>
