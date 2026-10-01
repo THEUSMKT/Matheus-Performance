@@ -118,13 +118,15 @@
 }
 
 .heroBtnOutline {
-  background: transparent;
+  background: rgb(255 255 255 / 0.1);
   color: #fff;
-  border-color: rgb(255 255 255 / 0.35);
+  border-color: rgb(255 255 255 / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 .heroBtnOutline:hover {
-  background: rgb(255 255 255 / 0.08);
-  border-color: rgb(255 255 255 / 0.55);
+  background: rgb(255 255 255 / 0.18);
+  border-color: rgb(255 255 255 / 0.7);
 }
 .heroBtnOutline svg {
   width: 18px;
