@@ -4,7 +4,7 @@ import { LegalPage } from '@/components/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Termos de Uso',
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
 };
 
 export default function Termos() {

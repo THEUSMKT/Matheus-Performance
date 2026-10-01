@@ -5,7 +5,7 @@ import { LegalPage } from '@/components/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidade',
-  robots: { index: false, follow: true },
+  robots: { index: true, follow: true },
 };
 
 export default function Privacidade() {
