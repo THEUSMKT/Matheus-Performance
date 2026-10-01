@@ -139,6 +139,20 @@ const CONFIG = {
     requestAnimationFrame(() => el.classList.add('is-in'));
   };
 
+  // A foto do hero é o único elemento revelado com delay 0: a classe de estado
+  // final entraria no mesmo recálculo de estilo que o estado inicial e o
+  // browser pularia a transição. A Web Animations API não depende desse timing.
+  const revelaFotoHero = () => {
+    const img = $('#heroImg');
+    if (!img) return;
+    img.classList.add('is-in');
+    if (reduced || !img.animate) return;
+    img.animate(
+      [{ transform: 'scale(.88)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }],
+      { duration: 1800, easing: 'cubic-bezier(.22,.61,.36,1)' }
+    );
+  };
+
   /* ── 7. Contadores animados ────────────────────────────────────────────── */
   const runCounter = (el) => {
     if (el.dataset.done === '1') return;
@@ -173,7 +187,7 @@ const CONFIG = {
     if (reduced || !hasGSAP) {
       // Fallback coreografado só com CSS, mantendo o mesmo ritmo da versão GSAP.
       const step = reduced ? 0 : 1;
-      showCSS($('#heroImg'), 0);
+      revelaFotoHero();
       showCSS($('#heroEyebrow'), 400 * step);
       heroWords.forEach((w, i) => {
         w.style.transitionDelay = `${(700 + i * 80) * step}ms`;
@@ -195,9 +209,8 @@ const CONFIG = {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
     tl.fromTo('#heroImg',
-        { autoAlpha: 0, filter: 'brightness(.85) saturate(.95) blur(20px)', scale: 1.14 },
-        { autoAlpha: .75, filter: 'brightness(.85) saturate(.95) blur(0px)', scale: 1.02,
-          duration: 1.6, ease: 'power2.out' })
+        { autoAlpha: 0, scale: .88 },
+        { autoAlpha: 1, scale: 1, duration: 1.8, ease: 'power2.out' })
       .fromTo('#heroEyebrow',
         { autoAlpha: 0, letterSpacing: '.1em', y: 10 },
         { autoAlpha: 1, letterSpacing: '.32em', y: 0, duration: 1 }, 0.4)
@@ -214,12 +227,10 @@ const CONFIG = {
       .fromTo('#heroScroll', { autoAlpha: 0, y: -10 }, { autoAlpha: 1, y: 0, duration: .8 }, 2.4);
   };
 
-  /* ── 9. Ken Burns + parallax do hero ───────────────────────────────────── */
+  /* ── 9. Parallax do hero ───────────────────────────────────────────────── */
   const heroFX = () => {
     const img = $('#heroImg');
     if (!img || reduced || !hasGSAP) return;
-
-    gsap.to(img, { scale: 1.1, duration: 20, ease: 'none', repeat: -1, yoyo: true, delay: 1.6 });
 
     if (window.ScrollTrigger) {
       gsap.to(img, {
