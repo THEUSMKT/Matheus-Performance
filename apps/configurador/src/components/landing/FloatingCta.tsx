@@ -1,42 +1,26 @@
 "use client";
-/* ==========================================================================
-   Botão flutuante "Gerar minha prévia gratuita" (celular e tablet; no
-   computador o cabeçalho já mantém o botão à vista).
-
-   Aparece quando nenhuma "zona de ação" está na tela — o bloco do botão
-   principal do topo, a chamada final ou o topo de uma página interna,
-   marcados com data-cta-zone — observando a visibilidade, sem número fixo
-   de pixels. Some com o menu do celular aberto. Fica perto da base, com
-   margens e a área segura do aparelho; um espaçador no fim da página evita
-   que ele cubra o último conteúdo. Escondido, não recebe foco nem toque.
-   Leva à página de criação: a prévia salva continua de onde parou.
-   ========================================================================== */
 import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { builderHref } from "./Chrome";
 import f from "./FloatingCta.module.css";
 
-export function FloatingCta({ label }: { label: string }) {
+export function FloatingCta() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    const zones = [...document.querySelectorAll("[data-cta-zone]")];
-    if (!zones.length || typeof IntersectionObserver === "undefined") return;
-    const visible = new Map<Element, boolean>();
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) visible.set(e.target, e.isIntersecting);
-        // Só depois de conhecer todas as zonas, e só se nenhuma estiver à vista.
-        setShow(
-          visible.size === zones.length &&
-            [...visible.values()].every((v) => !v),
-        );
-      },
-      { threshold: 0 },
-    );
-    zones.forEach((z) => io.observe(z));
-    return () => io.disconnect();
+    function check() {
+      const scrolled = window.scrollY + window.innerHeight;
+      const threshold = document.documentElement.scrollHeight * 0.8;
+      setShow(scrolled >= threshold);
+    }
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
   }, []);
 
   return (
@@ -53,10 +37,10 @@ export function FloatingCta({ label }: { label: string }) {
           onClick={() => track("start_click", { context: "flutuante" })}
         >
           <Sparkles aria-hidden="true" />
-          <span>{label}</span>
+          <span className={f.labelFull}>Site simples? Crie uma prévia grátis</span>
+          <span className={f.labelShort}>Prévia grátis</span>
         </a>
       </div>
-      {/* Espaço reservado no fim da página: o botão nunca cobre o último conteúdo. */}
       <div className={f.spacer} aria-hidden="true" />
     </>
   );

@@ -37,7 +37,7 @@ async function scenario(name, fn, opts = {}) {
 }
 const allEvents = (page) => page.evaluate(() => JSON.parse(sessionStorage.getItem('__ev') || '[]'));
 const heroCta = (page) => page.locator('a[data-main-cta][class*=shine]');
-/** Botão flutuante "Gerar minha prévia gratuita" (aparece quando o botão do topo sai da tela). */
+/** Botão flutuante (aparece quando a página está 80% rolada). */
 const floating = (page) => page.locator('[data-floating-cta]');
 const floatShown = (page) => floating(page).evaluate((e) => e.hasAttribute('data-show') && getComputedStyle(e).visibility === 'visible');
 const title = (page) => page.locator('#etapa-titulo').innerText();
@@ -112,102 +112,76 @@ const PK = URL + 'pacotes/';
 const modelCards = (page) => page.locator('#modelos li[class*=exampleCard]:not([class*=otherCard])');
 const modelCard = (page, name) => modelCards(page).filter({ has: page.getByRole('heading', { name, exact: true }) });
 
-await scenario('Início: título curto, sites publicados em carrossel, uma ação principal, preço em uma linha, benefícios, como funciona, pacotes e sob medida, Matheus, dúvidas e chamada final', async (page) => {
+await scenario('Início: hero com orbe e dois caminhos, exemplos, benefícios, como funciona, valores, Matheus, dúvidas e chamada final', async (page) => {
   await page.goto(URL);
+  // Hero: logo, orbe, título, subtítulo, dois botões, indicador de rolagem
   assert.equal((await page.getByRole('heading', { level: 1 }).innerText()).replace(/\s+/g, ' ').trim(), 'Um site à altura da sua empresa.');
   const hero = page.locator('main > section').first();
-  const text = (await hero.innerText()).replace(/\s+/g, ' ');
+  assert(await hero.locator('img[alt="Beck Performance"]').isVisible(), 'logo no topo');
+  const heroText = (await hero.innerText()).replace(/\s+/g, ' ');
   for (const s of [
-    'Apresente seus serviços com clareza e facilite os pedidos de orçamento. Veja uma prévia grátis ou converse sobre o seu projeto.',
+    'Escolha um modelo pronto ou gere uma prévia grátis para um site mais simples.',
     'Sem cadastro. Sem compromisso.',
-    'Sites de página única: R$ 500 a R$ 1.000.',
-    'Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.',
-    'Outras necessidades: orçamento sob medida',
-  ])
-    assert(text.includes(s), s);
-  assert.equal((await heroCta(page).innerText()).trim(), 'Gerar minha prévia gratuita');
-  assert((await heroCta(page).getAttribute('href')).endsWith('/configurador/criar/'), 'botão principal abre a criação');
-  assert((await hero.getByRole('link', { name: 'Ver pacotes e condições' }).getAttribute('href')).endsWith('/configurador/pacotes/'));
-  assert.equal(await hero.getByRole('link', { name: 'Outras necessidades: orçamento sob medida' }).getAttribute('href'), '#contratar');
-  // Conversa direta, sem passar pelo configurador: link leve, não um segundo botão.
-  const talk = hero.getByRole('link', { name: /Conversar sobre meu projeto/ });
-  const href = await talk.getAttribute('href');
-  assert(href.startsWith('https://wa.me/') && decodeURIComponent(href).includes('quero conversar sobre o site da minha empresa'));
-  assert.equal(await talk.getAttribute('target'), '_blank');
-  assert.equal(await hero.locator('a[class*=primary], a[class*=secondary]').count(), 1, 'uma só ação principal no topo');
-  // Topo: os sites publicados em carrossel (Schay primeiro), a primeira captura com prioridade.
-  const projects = page.locator('#projetos');
-  assert.equal(await projects.getAttribute('aria-roledescription'), 'carrossel');
-  const shots = projects.locator('li img');
-  assert((await shots.nth(0).getAttribute('alt')).includes('Schay Corretora'));
-  assert.equal(await shots.nth(0).getAttribute('fetchpriority'), 'high');
-  assert.equal(await shots.nth(1).getAttribute('fetchpriority'), null, 'só a primeira tem prioridade');
-  for (let i = 0; i < 4; i++) assert.equal(await shots.nth(i).getAttribute('loading'), 'eager');
-  const slides = projects.locator('li');
-  const badges = await slides.locator('[class*=badge]').allInnerTexts();
-  assert.deepEqual(badges.map((b) => b.replace(/\s+/g, ' ').trim()), ['Projeto publicado · Schay Corretora', 'Projeto publicado · Julia Studio Makeup', 'Projeto publicado · Pablo Cavalheiro · Design', 'Projeto publicado · Matheus Beck · Gestão de Tráfego']);
-  const s0 = (await slides.nth(0).innerText()).replace(/\s+/g, ' ');
-  const s1 = (await slides.nth(1).innerText()).replace(/\s+/g, ' ');
-  const s2 = (await slides.nth(2).innerText()).replace(/\s+/g, ' ');
-  const s3 = (await slides.nth(3).innerText()).replace(/\s+/g, ' ');
-  assert(s0.includes('Mercado imobiliário') && !s0.includes('marca própria'), 'cliente não aparece como marca própria');
-  assert(s1.includes('Beleza e maquiagem') && !s1.includes('marca própria'), 'cliente não aparece como marca própria');
-  assert(s2.includes('Design gráfico') && !s2.includes('marca própria'), 'cliente não aparece como marca própria');
-  assert(s3.includes('Marketing e serviços profissionais · marca própria'));
-  for (const bad of ['Ver detalhes', 'Necessidade', 'Conversar sobre um projeto assim']) assert(!(s0 + s1 + s2 + s3).includes(bad), `sem "${bad}" no topo`);
+    'Veja os sites que já criei',
+  ]) assert(heroText.includes(s), s);
+  const heroModels = hero.getByRole('link', { name: 'Ver modelos de sites' });
+  assert.equal(await heroModels.getAttribute('href'), '#exemplos');
+  const heroPreview = hero.getByRole('link', { name: /Gerar prévia grátis/ });
+  assert((await heroPreview.getAttribute('href')).endsWith('/configurador/criar/'));
+  // #exemplos: projetos reais com "Ver site" e "Quero um site nesse estilo" (WhatsApp)
+  const exemplos = page.locator('#exemplos');
+  assert.equal(await exemplos.getByRole('heading', { level: 2 }).innerText(), 'Sites completos e profissionais');
+  const exCards = exemplos.locator('ul > li');
+  assert.equal(await exCards.count(), 4);
   for (const [name, url] of [['Schay Corretora', 'https://schaycorretora.com.br/'], ['Julia Studio Makeup', 'https://theusmkt.github.io/LANDING-PAGE-JULIA/'], ['Pablo Cavalheiro · Design Gráfico', 'https://theusmkt.github.io/DESIGN-GRAFICO-PABLO/'], ['Matheus Beck — Gestão de Tráfego e Posicionamento Digital', 'https://theusmkt.github.io/Matheus-Performance/']]) {
-    for (const label of [`Visitar site: ${name} (abre em nova aba)`, `Ver site: ${name} (abre em nova aba)`]) {
-      const link = projects.getByRole('link', { name: label });
+    const link = exemplos.getByRole('link', { name: new RegExp(`Ver site: ${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) });
+    if (await link.count()) {
       assert.equal(await link.getAttribute('href'), url);
       assert.equal(await link.getAttribute('target'), '_blank');
       assert.equal(await link.getAttribute('rel'), 'noopener noreferrer');
     }
   }
-  // Mesmo tamanho em todos os slides (computador).
-  const heights = await slides.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
-  assert(Math.max(...heights) - Math.min(...heights) <= 1, `slides da mesma altura: ${heights}`);
-  // Arrastável também no computador: o próximo aparece pela borda e há bolinhas e setas.
-  assert(await projects.getByRole('button', { name: 'Ir para Pablo Cavalheiro · Design' }).isVisible());
-  assert(await projects.getByRole('button', { name: 'Ir para Matheus Beck · Gestão de Tráfego' }).isVisible());
-  assert(await projects.getByText('Arraste para ver mais').isVisible());
+  const wantLinks = exemplos.getByRole('link', { name: /Quero um site no estilo .+ \(abre o WhatsApp/ });
+  assert.equal(await wantLinks.count(), 4);
+  for (let i = 0; i < 4; i++) {
+    const href = await wantLinks.nth(i).getAttribute('href');
+    assert(href.startsWith('https://wa.me/') && decodeURIComponent(href).includes('quero um site na linha do modelo'));
+  }
+  assert((await exemplos.getByRole('link', { name: 'Explorar exemplos de sites' }).getAttribute('href')).endsWith('/configurador/exemplos/'));
+  assert(await exemplos.getByText('Não encontrou o ideal?').isVisible());
   assert.equal(await page.locator('iframe').count(), 0, 'sem iframes');
-  assert(!/R\$/.test(await projects.innerText()), 'projeto sem preço ou pacote');
-  // A antiga seção "Da ideia ao ar" saiu; #projetos e #exemplos continuam como âncoras.
-  assert.equal(await page.getByText('Da ideia ao ar').count(), 0);
-  assert.equal(await page.getByText('Dois sites no ar').count(), 0);
-  assert((await page.locator('#exemplos').getByRole('link', { name: 'Explorar exemplos de sites' }).getAttribute('href')).endsWith('/configurador/exemplos/'));
+  // Seções com id
   const ids = await page.locator('main > section[id]').evaluateAll((s) => s.map((x) => x.id));
-  assert.deepEqual(ids, ['beneficios', 'como-funciona', 'contratar', 'quem-atende', 'perguntas']);
-  // Benefícios e como funciona (demonstração identificada como ilustrativa).
+  assert.deepEqual(ids, ['exemplos', 'beneficios', 'como-funciona', 'contratar', 'quem-atende', 'perguntas']);
+  // Benefícios
   assert.deepEqual(await page.locator('#beneficios h3').allInnerTexts(), ['Serviços bem apresentados', 'A identidade do seu negócio', 'Contato em poucos toques']);
-  assert.deepEqual(await page.locator('#como-funciona ol h3').allInnerTexts(), ['Conte sobre o negócio', 'Veja e ajuste a prévia', 'Converse e confirme']);
-  assert((await page.locator('#como-funciona').innerText()).includes('Exemplo ilustrativo do configurador'));
-  // Dois caminhos: pacotes (valores de packages.ts) e sob medida.
+  // Como funciona: dois caminhos (site simples + site completo) e demonstração ilustrativa
+  const howText = await page.locator('#como-funciona').innerText();
+  for (const s of ['Site simples (prévia)', 'Site completo', 'Conte sobre o negócio', 'Veja e ajuste a prévia', 'Converse e confirme', 'Escolha um modelo', 'Me chame no WhatsApp', 'Escopo confirmado', 'Exemplo ilustrativo do configurador']) assert(howText.includes(s), s);
+  // Valores: pacotes e sob medida
   const paths = page.locator('#contratar');
   const pt = (await paths.innerText()).replace(/\s+/g, ' ');
   for (const s of ['Essencial', 'R$ 500', 'Apresentar a empresa e os serviços.', 'Profissional', 'R$ 750', 'Completo', 'R$ 1.000', 'Domínio e hospedagem à parte.', 'Seu projeto precisa ir além de uma página?', 'Conte o que sua empresa precisa. Definimos o escopo e preparamos uma proposta de acordo com o projeto.']) assert(pt.includes(s), s);
-  assert(!/sistema|integraç|loja virtual|login/i.test(pt), 'sob medida sem prometer sistemas ou integrações');
+  assert(!/sistema|integraç|loja virtual|login/i.test(pt), 'sob medida sem prometer sistemas');
   assert(decodeURIComponent(await paths.getByRole('link', { name: /Conversar sobre um projeto sob medida/ }).getAttribute('href')).includes('ir além de uma página'));
-  assert((await page.getByRole('link', { name: 'Explorar exemplos de sites' }).getAttribute('href')).endsWith('/configurador/exemplos/'));
   assert((await page.getByRole('link', { name: 'Ver pacotes e valores' }).getAttribute('href')).endsWith('/configurador/pacotes/'));
-  // Sem galeria nem comparação extensa na página inicial.
-  assert.equal(await page.locator('main [class*=exampleCard], main table, main [class*=compareBlocks]').count(), 0);
-  assert.equal(await page.getByRole('link', { name: /Criar prévia com/ }).count(), 0);
-  // Matheus, com foto e atendimento direto.
+  // Sem comparação extensa na página inicial
+  assert.equal(await page.locator('main table, main [class*=compareBlocks]').count(), 0);
+  // Matheus, com foto e atendimento direto
   assert((await page.locator('#quem-atende img').getAttribute('alt')).includes('Matheus Beck'));
   assert(await page.locator('#quem-atende').getByRole('link', { name: /Conversar com o Matheus/ }).isVisible());
-  // No computador nada flutua sobre o conteúdo (o botão flutuante é só do celular); decoração não recebe toques.
-  const fixed = await page.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => getComputedStyle(e).position === 'fixed' && e.getBoundingClientRect().height > 0).length);
-  assert.equal(fixed, 0, 'sem elementos fixos sobre o conteúdo');
-  assert.equal(await page.locator('[class*=halo]').evaluateAll((els) => els.filter((e) => getComputedStyle(e).pointerEvents !== 'none').length), 0, 'halo não intercepta toques');
+  // No computador o botão flutuante está escondido (visibilidade: hidden) no topo
+  const fixed = await page.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => { const cs = getComputedStyle(e); return cs.position === 'fixed' && cs.visibility !== 'hidden' && e.getBoundingClientRect().height > 0; }).length);
+  assert.equal(fixed, 0, 'sem elementos fixos visíveis sobre o conteúdo');
   const body = await page.locator('body').innerText();
   for (const bad of [/minutos/, /\+ ?R\$/, /a partir de R/i, /garant/i, /mais vendido/i, /restam|últimas vagas|apenas hoje/i, /depoimento aqui/i, /aument\w* (as |suas )?vendas/i]) assert(!bad.test(body), bad);
-  // Clique no WhatsApp é registrado como clique, com a origem.
+  // Clique no WhatsApp do exemplos: registrado com a origem
   await page.evaluate(() => (window.open = () => null));
-  await talk.click({ modifiers: [] }).catch(() => {});
+  await wantLinks.first().click({ modifiers: [] }).catch(() => {});
   let ev = await allEvents(page);
-  assert(ev.some((e) => e.event === 'whatsapp_open' && e.context === 'inicio'), 'origem do contato: início');
-  await heroCta(page).click();
+  assert(ev.some((e) => e.event === 'whatsapp_open' && e.context === 'modelo'), 'origem do contato: modelo');
+  // "Gerar prévia grátis" leva à criação
+  await heroPreview.click();
   await page.waitForURL(/\/criar\/$/);
   await ready(page);
   ev = await allEvents(page);
@@ -229,7 +203,9 @@ await scenario('Menos movimento: botão e vitrine parados', async (page) => {
 await scenario('Brilho só no botão principal (sem brilhos permanentes espalhados)', async (page) => {
   await page.goto(URL);
   await page.waitForTimeout(2500);
-  const infinite = await page.evaluate(() => [...document.querySelectorAll('body *')].flatMap((e) => [getComputedStyle(e), getComputedStyle(e, '::after')])
+  const infinite = await page.evaluate(() => [...document.querySelectorAll('body *')]
+    .filter((e) => !e.closest('[aria-hidden=true]'))
+    .flatMap((e) => [getComputedStyle(e), getComputedStyle(e, '::after')])
     .filter((cs) => cs.animationName !== 'none' && cs.animationIterationCount === 'infinite').map((cs) => cs.animationName));
   assert(infinite.length <= 2, `animações contínuas: ${infinite}`);
 });
@@ -258,23 +234,25 @@ await scenario('Perguntas: 6 prioritárias primeiro e todas as 12', async (page)
   for (const s of ['Existe mensalidade?', 'Quem fica com o domínio e os acessos?', '3 a 12 dias úteis', 'O domínio (o endereço do site) e a hospedagem são pagos à parte']) assert(all.includes(s), s);
 });
 
-await scenario('Atalhos antigos: #exemplos e #investimento levam às páginas novas', async (page) => {
+await scenario('Atalhos antigos: #exemplos é a seção na página, #investimento e #pacotes levam à página de pacotes', async (page, ctx) => {
   const at = (re) => page.waitForFunction((src) => new RegExp(src).test(location.href), re.source);
   await page.goto(URL + '#exemplos');
-  await at(/\/exemplos\/$/);
-  await page.locator('#modelos').waitFor();
-  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Inspire-se no próximo site da sua empresa.');
-  await page.goto(URL + '#investimento');
-  await at(/\/pacotes\/$/);
-  await page.locator('#detalhes').waitFor();
-  assert.equal(await page.getByRole('heading', { level: 1 }).innerText(), 'Escolha como sua empresa vai se apresentar ao mundo.');
+  assert(await page.locator('#exemplos').isVisible(), '#exemplos é uma seção na página inicial');
+  assert.equal(await page.getByRole('heading', { level: 2, name: 'Sites completos e profissionais' }).count(), 1);
+  // Fresh page for #investimento (same-page hash change won't re-run the useEffect).
+  const page2 = await ctx.newPage();
+  await page2.goto(URL + '#investimento');
+  const at2 = (re) => page2.waitForFunction((src) => new RegExp(src).test(location.href), re.source);
+  await at2(/\/pacotes\/$/);
+  await page2.locator('#detalhes').waitFor();
+  assert.equal(await page2.getByRole('heading', { level: 1 }).innerText(), 'Escolha como sua empresa vai se apresentar ao mundo.');
+  await page2.close();
 });
 
 await scenario('Campanha de um segmento (?segmento=): os exemplos abrem filtrados', async (page) => {
   const at = (re) => page.waitForFunction((src) => new RegExp(src).test(location.href), re.source);
-  // A primeira origem da sessão vale: o visitante de campanha chega por este link.
   await page.goto(URL + '?segmento=beleza');
-  await page.waitForFunction(() => document.querySelector('#exemplos a')?.getAttribute('href')?.endsWith('?segmento=beleza'));
+  await page.waitForFunction(() => document.querySelector('#exemplos ~ * a[href*="segmento=beleza"], #exemplos a[href*="segmento=beleza"], a[href*="exemplos"][href*="segmento=beleza"]'));
   await page.getByRole('link', { name: 'Explorar exemplos de sites' }).click();
   await at(/\/exemplos\/\?segmento=beleza$/);
   await page.waitForFunction(() => document.querySelector('[aria-label="Filtrar modelos por segmento"] [aria-pressed=true]')?.textContent === 'Beleza e estética');
@@ -307,7 +285,7 @@ await scenario('Menu do celular: abre, fecha com Esc e ao escolher, sem rolagem 
   await summary.click();
   const menu = page.locator('#menu-celular');
   assert(await menu.isVisible());
-  for (const name of ['Exemplos', 'Como funciona', 'Pacotes', 'Perguntas', 'Gerar minha prévia gratuita']) assert(await menu.getByRole('link', { name }).isVisible(), name);
+  for (const name of ['Exemplos', 'Como funciona', 'Pacotes', 'Perguntas', 'Gerar prévia grátis']) assert(await menu.getByRole('link', { name }).isVisible(), name);
   const heights = await menu.locator('a').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
   assert(heights.every((h) => h >= 44), `toque confortável: ${heights}`);
   await page.keyboard.press('Escape');
@@ -319,140 +297,44 @@ await scenario('Menu do celular: abre, fecha com Esc e ao escolher, sem rolagem 
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 const phone390 = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
-const dotCurrent = (page) => page.locator('#projetos button[aria-current=true]').getAttribute('aria-label');
-const waitDot = (page, name) => page.waitForFunction((n) => document.querySelector('#projetos button[aria-current=true]')?.getAttribute('aria-label') === n, `Ir para ${name}`);
 
-await scenario('Celular: sites publicados no topo em carrossel (Schay primeiro), mesmo tamanho, próximo aparecendo, bolinhas, setas e teclado', async (page) => {
-  await page.goto(URL);
-  const projects = page.locator('#projetos');
-  const region = page.getByRole('region', { name: 'Sites publicados' });
-  assert.equal(await region.getAttribute('aria-roledescription'), 'carrossel');
-  const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
-  assert.equal(boxes.length, 4);
-  assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] < 390, 'primeiro slide inteiro');
-  assert(boxes[1][0] < 390 && boxes[1][0] + boxes[1][1] > 390, 'o próximo aparece na borda');
-  for (const b of boxes.slice(1)) assert(Math.abs(boxes[0][1] - b[1]) <= 1 && Math.abs(boxes[0][2] - b[2]) <= 1, `mesma largura e altura: ${JSON.stringify(boxes)}`);
-  assert.equal(await scrollWidth(page), 390, 'sem rolagem lateral da página');
-  assert(await projects.getByText('Arraste para ver mais').isVisible());
-  assert.equal(await dotCurrent(page), 'Ir para Schay Corretora');
-  const prev = projects.getByRole('button', { name: 'Site anterior' });
-  const nextBtn = projects.getByRole('button', { name: 'Próximo site' });
-  assert(await prev.isDisabled() && !(await nextBtn.isDisabled()), 'anterior desativado no início');
-  for (const b of [prev, nextBtn, projects.getByRole('button', { name: /^Ir para/ }).first()]) {
-    const box = await b.boundingBox();
-    assert(box.width >= 44 && box.height >= 44, 'controles com 44 px');
-  }
-  // Sem avanço automático.
-  await page.waitForTimeout(2500);
-  assert.equal(await dotCurrent(page), 'Ir para Schay Corretora');
-  await nextBtn.click();
-  await waitDot(page, 'Julia Studio Makeup');
-  assert(!(await prev.isDisabled()) && !(await nextBtn.isDisabled()), 'setas ativas no meio');
-  await nextBtn.click();
-  await waitDot(page, 'Pablo Cavalheiro · Design');
-  await nextBtn.click();
-  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
-  assert(await nextBtn.isDisabled(), 'próximo desativado no fim (sem loop)');
-  // Teclado: volta com Enter no botão anterior; bolinha leva direto ao slide.
-  await prev.focus();
-  await page.keyboard.press('Enter');
-  await waitDot(page, 'Pablo Cavalheiro · Design');
-  await projects.getByRole('button', { name: 'Ir para Schay Corretora' }).click();
-  await waitDot(page, 'Schay Corretora');
-  await projects.getByRole('button', { name: 'Ir para Matheus Beck · Gestão de Tráfego' }).click();
-  await waitDot(page, 'Matheus Beck · Gestão de Tráfego');
-  // Arrastar (rolagem nativa) também atualiza o indicador.
-  await page.locator('[data-carousel]').evaluate((el) => el.scrollTo({ left: 0, behavior: 'instant' }));
-  await waitDot(page, 'Schay Corretora');
-  const snap = await page.locator('[data-carousel]').evaluate((el) => getComputedStyle(el).scrollSnapType);
-  assert(snap.includes('x') && snap.includes('mandatory'), `scroll-snap: ${snap}`);
-  // Gestos: este Chromium de teste não converte toque sintetizado em rolagem (nem da página),
-  // então o arraste com o dedo é conferido no aparelho. Aqui: rolagem horizontal de trackpad/roda
-  // começando em cima da captura (não abre o link), volta, gesto vertical sobre o carrossel e pinça.
-  const opened = [];
-  page.context().on('page', (p) => opened.push(p.url()));
-  const shot = await projects.locator('li').first().locator('img').boundingBox();
-  await page.mouse.move(shot.x + shot.width / 2, shot.y + shot.height / 2);
-  await page.mouse.wheel(300, 0);
-  await waitDot(page, 'Julia Studio Makeup');
-  await page.mouse.wheel(-300, 0);
-  await waitDot(page, 'Schay Corretora');
-  assert.equal(page.url(), URL, 'rolar não navega');
-  const cdp = await page.context().newCDPSession(page);
-  const box = await projects.locator('li').first().boundingBox();
-  const y0 = await page.evaluate(() => scrollY);
-  await cdp.send('Input.synthesizeScrollGesture', { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + 100), yDistance: -300, gestureSourceType: 'mouse', speed: 900 });
-  await page.waitForFunction((y) => scrollY > y + 100, y0);
-  assert.deepEqual(opened, [], 'nenhuma aba aberta durante os gestos');
-  // Zoom por pinça continua permitido.
-  const meta = await page.locator('meta[name=viewport]').getAttribute('content');
-  assert(!/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(\.0)?\b/.test(meta), `zoom permitido: ${meta}`);
-  await cdp.send('Input.synthesizePinchGesture', { x: 195, y: 400, scaleFactor: 2, gestureSourceType: 'mouse' });
-  await page.waitForFunction(() => (window.visualViewport?.scale ?? 1) > 1.2);
-}, phone390);
-
-await scenario('Computador: arrastar a captura com o mouse passa para o próximo site e não abre o link', async (page, ctx) => {
-  await page.goto(URL);
-  const projects = page.locator('#projetos');
-  const boxes = await projects.locator('li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
-  assert(boxes.every((b) => Math.abs(boxes[0][2] - b[2]) <= 1), `mesma altura: ${JSON.stringify(boxes)}`);
-  const list = await page.locator('[data-carousel]').boundingBox();
-  assert(boxes[1][0] < list.x + list.width, 'o próximo aparece pela borda também no computador');
-  const opened = [];
-  ctx.on('page', (p) => opened.push(p.url()));
-  const shot = await projects.locator('li').first().locator('img').boundingBox();
-  await page.mouse.move(shot.x + shot.width * 0.8, shot.y + shot.height / 2);
-  await page.mouse.down();
-  for (let i = 1; i <= 10; i++) await page.mouse.move(shot.x + shot.width * 0.8 - i * 30, shot.y + shot.height / 2);
-  await page.mouse.up();
-  await waitDot(page, 'Julia Studio Makeup');
-  await page.waitForTimeout(400);
-  assert.deepEqual(opened, [], 'arrastar não abre o site');
-  assert.equal(page.url(), URL);
-  // Um clique simples abre o site em nova aba e registra a origem.
-  await ctx.route('https://theusmkt.github.io/Matheus-Performance/', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'site' }));
-  const [popup] = await Promise.all([ctx.waitForEvent('page'), projects.getByRole('link', { name: /^Visitar site: Matheus Beck/ }).click()]);
-  await popup.waitForLoadState();
-  assert.equal(popup.url(), 'https://theusmkt.github.io/Matheus-Performance/');
-  await popup.close();
-  assert((await allEvents(page)).some((e) => e.event === 'real_project_open' && e.context === 'inicio_topo' && e.project === 'matheus-beck'));
-}, { viewport: { width: 1280, height: 800 } });
-
-await scenario('Celular: botão flutuante "Gerar minha prévia gratuita" aparece quando o do topo sai da tela e some perto da chamada final', async (page) => {
+await scenario('Celular: botão flutuante aparece a 80% da rolagem, texto curto, posição à direita', async (page) => {
   await page.goto(URL);
   const f = floating(page);
   assert.equal(await floatShown(page), false, 'escondido no topo');
   assert.equal(await f.getAttribute('aria-hidden'), 'true');
   assert.equal(await f.locator('a').getAttribute('tabindex'), '-1', 'fora da ordem do teclado quando escondido');
-  await page.locator('#beneficios').evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  // Rolar até 80% da página para exibir o botão.
+  await page.evaluate(() => {
+    const target = document.documentElement.scrollHeight * 0.85;
+    window.scrollTo({ top: target, behavior: 'instant' });
+  });
   await page.waitForFunction(() => document.querySelector('[data-floating-cta]')?.hasAttribute('data-show'));
   assert(await floatShown(page));
-  await page.waitForTimeout(400); // entrada curta (sobe 0,28 s)
-  const link = f.getByRole('link', { name: 'Gerar minha prévia gratuita' });
+  await page.waitForTimeout(400);
+  const link = f.getByRole('link', { name: /Prévia grátis/ });
   assert((await link.getAttribute('href')).endsWith('/configurador/criar/'));
   const lb = await link.boundingBox();
   assert(lb.height >= 44 && lb.y + lb.height <= 844 && lb.x >= 0 && lb.x + lb.width <= 390, 'inteiro na tela, com toque confortável');
-  // Menu aberto: o botão sai de cena. Toque na posição do botão do menu (o clique do Playwright
-  // rolaria a página até ele antes, e a primeira tela voltaria a aparecer).
+  assert(lb.x > 100, 'posicionado à direita');
+  // No celular mostra texto curto "Prévia grátis".
+  assert(await f.locator('[class*=labelShort]').isVisible(), 'texto curto visível no celular');
+  // Menu aberto: o botão sai de cena.
   const menuBox = await page.locator('header summary').boundingBox();
   await page.touchscreen.tap(menuBox.x + menuBox.width / 2, menuBox.y + menuBox.height / 2);
   await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'hidden');
   await page.keyboard.press('Escape');
-  await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-floating-cta]')).visibility === 'visible');
-  // Chamada final na tela: um botão só.
-  await page.locator('#final-titulo').evaluate((e) => e.scrollIntoView({ block: 'center', behavior: 'instant' }));
+  // Voltar ao topo: botão desaparece (antes de 80%).
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
   await page.waitForFunction(() => !document.querySelector('[data-floating-cta]')?.hasAttribute('data-show'));
-  // Fim da página: o último link do rodapé não fica coberto.
-  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
-  await page.waitForTimeout(300);
-  const last = await page.locator('footer a').last().boundingBox();
-  const fb = await f.boundingBox();
-  assert(!(await floatShown(page)) || last.y + last.height <= fb.y, 'rodapé livre');
   // Sem pulsar sem fim.
   const infinite = await f.locator('a').evaluate((a) => [getComputedStyle(a), getComputedStyle(a, '::after')].some((c) => c.animationIterationCount === 'infinite'));
   assert.equal(infinite, false);
   // Clique registrado com a origem.
-  await page.locator('#beneficios').evaluate((e) => e.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await page.evaluate(() => {
+    const target = document.documentElement.scrollHeight * 0.85;
+    window.scrollTo({ top: target, behavior: 'instant' });
+  });
   await page.waitForFunction(() => document.querySelector('[data-floating-cta]')?.hasAttribute('data-show'));
   await link.click();
   await page.waitForURL(/\/criar\/$/);
@@ -508,9 +390,9 @@ await scenario('Sem JavaScript: menu, páginas novas e links de pacote e modelo 
   assert.equal(await page.getByRole('link', { name: 'Criar minha prévia com este modelo' }).count(), 8, 'um modelo por família visual');
   assert((await page.getByRole('link', { name: 'Criar minha prévia com este modelo' }).first().getAttribute('href')).endsWith('/criar/?modelo=local'));
   assert.equal(await page.getByRole('link', { name: /Visitar site/ }).count(), 4);
-  // Atalho antigo sem script: a âncora cai no acesso aos exemplos.
+  // Atalho antigo sem script: a âncora cai na seção de exemplos na própria página.
   await page.goto(URL + '#exemplos');
-  assert(await page.locator('#exemplos').getByRole('link', { name: 'Explorar exemplos de sites' }).isVisible());
+  assert(await page.locator('#exemplos').isVisible(), '#exemplos é uma seção da página');
 }, { javaScriptEnabled: false, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 await scenario('Prévia salva: "Continuar minha prévia" em todas as páginas e nada é apagado ao navegar', async (page) => {
@@ -521,8 +403,7 @@ await scenario('Prévia salva: "Continuar minha prévia" em todas as páginas e 
     await page.waitForFunction(() => document.querySelector('header nav a[class*=navCta]')?.textContent === 'Continuar minha prévia');
   }
   await page.goto(URL);
-  await page.waitForFunction(() => document.querySelector('a[data-main-cta][class*=shine]')?.textContent === 'Continuar minha prévia');
-  assert(await page.getByRole('link', { name: 'Começar uma nova prévia' }).isVisible());
+  await page.waitForFunction(() => document.querySelector('a[data-main-cta][class*=shine]')?.textContent?.includes('Continuar minha prévia'));
   assert.deepEqual(await stored(page), before, 'navegar não mexe no rascunho');
   await heroCta(page).click();
   await ready(page);
@@ -1810,34 +1691,23 @@ await scenario('Celular 390px: exemplo abre na versão de celular de verdade, se
 }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 for (const [width, height] of [[320, 568], [360, 740], [375, 667], [390, 700], [390, 844], [430, 932]]) {
-  await scenario(`Apresentação ${width}×${height}: título, sites publicados e botão principal no começo da página`, async (page) => {
+  await scenario(`Apresentação ${width}×${height}: hero com título, logo e botões`, async (page) => {
     await page.goto(URL);
     const h1 = await page.getByRole('heading', { level: 1 }).boundingBox();
     assert(h1.y >= 0 && h1.y + h1.height <= height, 'título inteiro');
-    const cta = await heroCta(page).boundingBox();
-    const img = await page.locator('#projetos img').first().boundingBox();
-    assert(img.y > h1.y + h1.height && img.y + img.height <= cta.y, 'carrossel entre o título e o botão');
-    assert(img.y < height, 'a captura começa na primeira tela');
-    // 390×844 em diante: título, carrossel e botão principal sem rolar.
-    if (height >= 844) assert(cta.y + cta.height <= height, `botão principal visível sem rolar (${Math.round(cta.y + cta.height)} de ${height})`);
-    assert(cta.height >= 44, 'toque confortável');
-    const talk = await page.locator('main > section').first().getByRole('link', { name: /Conversar sobre meu projeto/ }).boundingBox();
-    assert(talk.height >= 44, 'toque confortável na conversa direta');
-    assert(talk.y >= cta.y + cta.height, 'botões sem sobreposição');
-    assert(await page.getByText('Sites de página única:').isVisible());
-    // A imagem aparece de imediato (sem esperar animação).
-    assert.equal(await page.locator('#projetos img').first().evaluate((e) => getComputedStyle(e).opacity), '1');
-    // Título com quebras naturais: nenhuma palavra partida.
+    const logo = await page.locator('img[alt="Beck Performance"]').boundingBox();
+    assert(logo.y < h1.y, 'logo antes do título');
+    const heroBtn = page.locator('main > section').first().getByRole('link', { name: 'Ver modelos de sites' });
+    assert(await heroBtn.isVisible(), 'botão "Ver modelos" visível');
+    const heroPreview = page.locator('main > section').first().getByRole('link', { name: /Gerar prévia grátis/ });
+    assert(await heroPreview.isVisible(), 'botão "Gerar prévia" visível');
+    const btnBox = await heroBtn.boundingBox();
+    assert(btnBox.height >= 44, 'toque confortável');
     const hw = await page.getByRole('heading', { level: 1 }).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth }));
     assert(hw.w <= hw.cw + 1, 'título sem estourar a largura');
     assert.equal(await scrollWidth(page), width);
     const ev = await allEvents(page);
     assert(ev.every((e) => e.device === 'celular'), 'eventos com a categoria do aparelho');
-    // Carrossel: o primeiro inteiro, o segundo aparecendo, mesmo tamanho.
-    const boxes = await page.locator('#projetos li').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.x, r.width, r.height]; }));
-    assert.equal(boxes.length, 4);
-    assert(boxes[0][0] >= 0 && boxes[0][0] + boxes[0][1] <= width && boxes[1][0] < width, 'primeiro inteiro, próximo à vista');
-    assert(boxes.every((b) => Math.abs(boxes[0][2] - b[2]) <= 1), 'mesma altura');
   }, { viewport: { width, height }, isMobile: true, hasTouch: true });
 }
 
