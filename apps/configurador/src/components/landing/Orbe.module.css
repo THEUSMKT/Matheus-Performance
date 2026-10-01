@@ -1,0 +1,41 @@
+.orbe {
+  width: min(380px, 80vw);
+  margin: 0 auto 1.5rem;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 46%, rgba(0,0,0,.55) 64%, transparent 78%);
+          mask-image: radial-gradient(circle at 50% 50%, #000 46%, rgba(0,0,0,.55) 64%, transparent 78%);
+}
+.svg { width: 100%; display: block; }
+
+.s1, .s2, .s3, .s4, .wob {
+  transform-origin: 200px 200px;
+  transform-box: view-box;
+}
+.s1 { animation: orbeSpin 20s linear infinite; }
+.s2 { animation: orbeSpin 29s linear infinite reverse; }
+.s3 { animation: orbeSpin 38s linear infinite; }
+.s4 { animation: orbeSpin 15s linear infinite reverse; }
+.wob { animation: orbeWob 9s ease-in-out infinite; }
+
+@keyframes orbeSpin { to { transform: rotate(360deg); } }
+@keyframes orbeWob {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  33% { transform: scale(1.04) rotate(2.5deg); }
+  66% { transform: scale(.97) rotate(-2deg); }
+}
+
+/* Active state: faster spin for loading indicator */
+.active .s1 { animation-duration: 3.5s; }
+.active .s2 { animation-duration: 5s; }
+.active .s3 { animation-duration: 6.5s; }
+.active .s4 { animation-duration: 2.5s; }
+.active .s1, .active .s2, .active .s3, .active .s4 { opacity: 0.85; }
+
+@media (max-width: 768px) {
+  .wob { filter: none !important; }
+  .orbe { width: min(300px, 76vw); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .s1, .s2, .s3, .s4, .wob { animation: none; }
+  .wob { filter: none; }
+}

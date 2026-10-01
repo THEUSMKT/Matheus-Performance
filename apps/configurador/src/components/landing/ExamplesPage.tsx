@@ -90,7 +90,7 @@ export default function ExamplesPage() {
         </section>
       </main>
       <Footer where="exemplos" />
-      <FloatingCta label={ctaLabel} />
+      <FloatingCta />
     </div>
   );
 }

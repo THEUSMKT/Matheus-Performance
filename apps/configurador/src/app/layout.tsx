@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 
 import { contact } from '@/config/contact';
-import { priceRange } from '@/config/packages';
 import { isProduction } from '@/config/integrations';
 import { shareImage } from '@/config/share';
 import { AppFallback } from '@/components/AppFallback';
@@ -26,7 +25,7 @@ const titleFont = localFont({
 });
 
 const title = 'Beck Performance | Sites para empresas de todos os portes';
-const description = `Um site profissional para apresentar sua empresa e facilitar novos contatos. Veja uma prévia grátis, sem cadastro. Desenvolvimento de ${priceRange}, pagamento único.`;
+const description = 'Sites profissionais para empresas. Escolha um modelo entre os projetos já publicados ou gere uma prévia grátis, sem cadastro. Desenvolvimento a partir de R$ 500, pagamento único.';
 
 /** Indexa só no build de produção E com a liberação em contact.ts. */
 const indexable = isProduction && contact.indexarNoGoogle;

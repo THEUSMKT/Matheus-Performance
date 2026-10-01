@@ -19,7 +19,7 @@ const prazos = `${Math.min(...numbers)} a ${Math.max(...numbers)} dias úteis`;
 export const projectFaq: [string, string][] = [
   [
     'A prévia grátis já é o meu site?',
-    'Não. A prévia é uma demonstração gratuita, sem cadastro, para você ver como o site pode ficar. O site final é desenvolvido depois que você confirma o pacote, com a sua logo, suas fotos e as informações revisadas com você, e só então é publicado.',
+    'Não. A prévia é uma demonstração gratuita de um site mais simples, sem cadastro, para você ter uma ideia de como o site pode ficar. Projetos mais completos — como os dos exemplos publicados — são desenvolvidos no atendimento direto, a partir da conversa. O site final é desenvolvido depois que você confirma o pacote, com a sua logo, suas fotos e as informações revisadas com você, e só então é publicado.',
   ],
   [
     'O que está incluído no valor?',
