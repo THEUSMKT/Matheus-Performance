@@ -36,7 +36,7 @@ export const contact = {
    * aberto para quem tiver o endereço, mas os buscadores não indexam.
    * Troque para `true` quando o conteúdo estiver aprovado.
    */
-  indexarNoGoogle: false,
+  indexarNoGoogle: true,
 
   /**
    * Endereço público (sem barra no fim), usado em canonical, Open Graph,

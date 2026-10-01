@@ -9,7 +9,7 @@
    nativo — abre e fecha sem script; o script só o fecha ao escolher um
    item ou apertar Esc.
    ========================================================================== */
-import { useEffect, useRef, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { contact } from '@/config/contact';
 import { priceRange } from '@/config/packages';
 import { whatsappLink } from '@/lib/whatsapp';
@@ -70,6 +70,19 @@ export function Header({
   onStart?: (ev: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const menu = useRef<HTMLDetailsElement>(null);
+  const [pastHero, setPastHero] = useState(false);
+
+  useEffect(() => {
+    function checkScroll() {
+      const hero = document.querySelector('[data-cta-zone]');
+      if (!hero) { setPastHero(true); return; }
+      const rect = hero.getBoundingClientRect();
+      setPastHero(rect.bottom < 0);
+    }
+    checkScroll();
+    window.addEventListener('scroll', checkScroll, { passive: true });
+    return () => window.removeEventListener('scroll', checkScroll);
+  }, []);
 
   // Melhorias com script: Esc e toque fora fecham o menu.
   useEffect(() => {
@@ -109,7 +122,7 @@ export function Header({
         <nav className={s.nav} aria-label="Navegação principal">
           <Brand where={where} />
           <div className={s.navLinks}>{links(false)}</div>
-          <a href={ctaHref} className={`${s.primary} ${s.small} ${s.navCta}`} onClick={onStart}>
+          <a href={ctaHref} className={`${pastHero ? s.primary : s.secondary} ${s.small} ${s.navCta}`} onClick={onStart}>
             {ctaLabel}
           </a>
           {/* Com o menu aberto, o botão flutuante sai de cena (html[data-menu-open]). */}

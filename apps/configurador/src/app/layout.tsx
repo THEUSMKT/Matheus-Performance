@@ -25,7 +25,7 @@ const titleFont = localFont({
 });
 
 const title = 'Beck Performance | Sites para empresas de todos os portes';
-const description = 'Sites profissionais para empresas. Escolha um modelo entre os projetos já publicados ou gere uma prévia grátis, sem cadastro. Desenvolvimento a partir de R$ 500, pagamento único.';
+const description = 'Veja o site da sua empresa montado antes de pagar. Prévia grátis, sem cadastro. Sites profissionais a partir de R$ 500, pagamento único.';
 
 /** Indexa só no build de produção E com a liberação em contact.ts. */
 const indexable = isProduction && contact.indexarNoGoogle;
