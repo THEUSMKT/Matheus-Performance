@@ -1,0 +1,107 @@
+/* Carousel: scroll-snap nativo, sem biblioteca */
+.carousel {
+  position: relative;
+  outline: none;
+}
+.carousel:focus-visible {
+  outline: 3px solid var(--c-btn, #2563eb);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 16px 20px;
+  /* Prevent vertical scroll capture on mobile */
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  cursor: grab;
+  user-select: none;
+}
+.track::-webkit-scrollbar { display: none; }
+
+.slide {
+  flex: none;
+  width: 82%;
+  max-width: 360px;
+  scroll-snap-align: center;
+  transform: scale(0.94);
+  opacity: 0.6;
+  transition: transform 0.3s, opacity 0.3s;
+}
+.slide[data-active] {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* Arrows – desktop only */
+.arrow {
+  display: none;
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  transform: translateY(calc(-50% - 20px));
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border, #d6e2f8);
+  background: #fff;
+  color: var(--c-strong, #1e293b);
+  box-shadow: 0 4px 12px -4px rgb(0 0 0 / 0.15);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+.arrow:hover { border-color: var(--c-btn, #2563eb); }
+.arrow:disabled { opacity: 0.3; pointer-events: none; }
+.arrow svg { width: 22px; height: 22px; }
+.arrowPrev { left: -8px; }
+.arrowNext { right: -8px; }
+
+/* Dots */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--c-border, #d6e2f8);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s, transform 0.2s;
+}
+.dot[aria-selected='true'] {
+  background: var(--c-btn, #2563eb);
+  transform: scale(1.25);
+}
+
+@media (min-width: 760px) {
+  .arrow { display: flex; }
+  .slide { width: 44%; max-width: 400px; }
+}
+@media (min-width: 1000px) {
+  .slide { width: 33%; max-width: 420px; }
+  .arrowPrev { left: -22px; }
+  .arrowNext { right: -22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+  .track { scroll-behavior: auto; }
+}

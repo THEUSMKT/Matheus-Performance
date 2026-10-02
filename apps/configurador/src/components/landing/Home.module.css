@@ -273,6 +273,20 @@
   text-align: center;
 }
 
+/* Carousel labels above example cards */
+.exCarousel { }
+.exLabel {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-link);
+}
+.exLabel[data-simple] {
+  color: var(--c-text);
+}
+
 /* Shared */
 .pill {
   display: inline-flex;
@@ -546,6 +560,142 @@
 .pathActions { margin-top: auto; padding-top: 18px; display: grid; gap: 8px; width: 100%; }
 .pathActions > * { width: 100%; }
 .pathActions svg { width: 20px; height: 20px; flex: none; }
+
+/* Package carousel + cards */
+.pkgCarousel { }
+.pkgCard {
+  display: flex;
+  flex-direction: column;
+  padding: 22px 20px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid var(--c-border);
+  box-shadow: var(--c-card-shadow);
+  height: 100%;
+}
+.pkgCard[data-popular] {
+  border-color: var(--c-btn);
+  box-shadow: 0 0 0 1px var(--c-btn), var(--c-card-shadow);
+}
+.pkgBadge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--c-btn);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.pkgName {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--c-title);
+}
+.pkgFor {
+  margin-top: 4px;
+  font-size: 15px;
+  color: var(--c-text);
+  line-height: 1.35;
+}
+.pkgPrice {
+  margin-top: 12px;
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--c-title);
+  letter-spacing: -0.02em;
+}
+.pkgPoints {
+  margin-top: 14px;
+  display: grid;
+  gap: 8px;
+  flex: 1;
+}
+.pkgPoints li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 14.5px;
+  color: var(--c-text);
+  line-height: 1.4;
+}
+.pkgPoints svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: #0ea5e9;
+  margin-top: 1px;
+}
+.pkgDeadline {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-border);
+  font-size: 14px;
+  color: var(--c-text);
+}
+.pkgAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--c-btn);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.pkgAction:hover { background: var(--c-btn-hover); }
+.pkgAction svg { width: 18px; height: 18px; flex: none; }
+
+/* Sob medida */
+.customPath {
+  margin-top: 24px;
+  padding: 22px 20px;
+  border-radius: 18px;
+  background: linear-gradient(165deg, #fff 0%, #f6f3ff 55%, var(--c-alt-2) 100%);
+  border: 1px solid #ddd5fb;
+  box-shadow: var(--c-card-shadow);
+}
+.customPath h3 {
+  margin-top: 10px;
+  font-size: clamp(20px, 4vw, 24px);
+  font-weight: 800;
+  color: var(--c-title);
+}
+.customPath > p:not([class]) {
+  margin-top: 8px;
+  color: var(--c-text);
+}
+
+/* Entry animation: stagger per card */
+.pkgCarousel .pkgCard {
+  opacity: 0;
+  transform: translateY(18px);
+}
+.pkgCarousel[data-visible] .pkgCard {
+  animation: pkgEnter 0.4s ease-out forwards;
+}
+.pkgCarousel[data-visible] :global(li):nth-child(1) .pkgCard { animation-delay: 0ms; }
+.pkgCarousel[data-visible] :global(li):nth-child(2) .pkgCard { animation-delay: 80ms; }
+.pkgCarousel[data-visible] :global(li):nth-child(3) .pkgCard { animation-delay: 160ms; }
+@keyframes pkgEnter {
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pkgCarousel .pkgCard {
+    opacity: 1;
+    transform: none;
+  }
+  .pkgCarousel[data-visible] .pkgCard {
+    animation: none;
+  }
+}
 
 /* Matheus Beck */
 .about { display: grid; gap: 24px; align-items: center; }

@@ -10,14 +10,15 @@
    são links comuns: funcionam mesmo se o JavaScript não carregar.
    ========================================================================== */
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BadgeCheck, ChevronDown, ExternalLink, LayoutList, MessageCircle, MessagesSquare, MoveRight, Palette, Sparkles } from 'lucide-react';
-import { contact } from '@/config/contact';
-import { brl, packages, priceRange } from '@/config/packages';
+import { BadgeCheck, Check, ChevronDown, ExternalLink, LayoutList, MessageCircle, MessagesSquare, MoveRight, Palette, Sparkles } from 'lucide-react';
+import { contact, packageInterestMessage } from '@/config/contact';
+import { brl, packageKeyPoints, packages, priceRange, type Package } from '@/config/packages';
 import { projectFaq } from '@/config/projectFaq';
 import { realProjects, testimonials, SHOW_TESTIMONIALS, type RealProject } from '@/config/proof';
 import { track } from '@/lib/analytics';
 import { whatsappLink } from '@/lib/whatsapp';
-import { Footer, Header, asset, builderHref, examplesHref, packagesHref } from './Chrome';
+import { Carousel } from './Carousel';
+import { Footer, Header, asset, builderHref, packagesHref } from './Chrome';
 import { FloatingCta } from './FloatingCta';
 import { HeroShowcase } from './HeroShowcase';
 import { Orbe } from './Orbe';
@@ -74,8 +75,8 @@ export default function Landing() {
   const state = useProject({ readHash: false });
   const { resumable } = state;
   const start = (context: string) => () => track('start_click', { context });
-  const examplesLink = state.origin.segment && state.origin.segment !== 'outro' ? `${examplesHref}?segmento=${state.origin.segment}` : examplesHref;
-
+  const pkgRef = useRef<HTMLDivElement>(null);
+  const [pkgVisible, setPkgVisible] = useState(false);
   useEffect(() => {
     const hash = location.hash;
     if (hash.startsWith('#projeto=')) location.replace(builderHref + hash);
@@ -83,12 +84,30 @@ export default function Landing() {
     else if (hash === '#investimento' || hash === '#pacotes') location.replace(packagesHref);
   }, []);
 
+  useEffect(() => {
+    const el = pkgRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setPkgVisible(true); io.disconnect(); } },
+      { threshold: 0.15 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const modelMessage = (name: string) =>
     `Olá, Matheus! Vi o site da Beck Performance e quero um site na linha do modelo da ${name} para a minha empresa.`;
 
+  const projectOrder: RealProject[] = [
+    realProjects.find((p) => p.id === 'pablo-design')!,
+    realProjects.find((p) => p.id === 'matheus-beck')!,
+    realProjects.find((p) => p.id === 'julia-studio')!,
+    realProjects.find((p) => p.id === 'schay-corretora')!,
+  ];
+
   return (
     <div className={`${s.page} ${s.bright}`} id="topo">
-      <Header ctaLabel={resumable ? 'Continuar minha prévia' : 'Gerar prévia grátis'} onStart={start('cabecalho')} />
+      <Header ctaLabel="Ver modelos de sites" ctaHref="#exemplos" onStart={() => track('nav_click', { target: 'exemplos', context: 'cabecalho' })} />
       <main id="conteudo">
         {/* 1. Hero: logo, orbe, título, dois caminhos */}
         <section className={h.hero} aria-labelledby="hero-titulo" data-cta-zone="">
@@ -98,17 +117,16 @@ export default function Landing() {
             <h1 id="hero-titulo" className={h.heroTitle}>
               Um site <em className={h.mark}>à altura</em> da sua empresa.
             </h1>
-            <p className={h.lead}>Veja o site da sua empresa montado antes de pagar qualquer coisa. Gere uma prévia grátis em minutos ou escolha um dos modelos que já desenvolvi.</p>
+            <p className={h.lead}>Escolha um modelo e eu monto o seu.</p>
             <div className={h.heroBtns}>
-              <a className={`${s.primary} ${h.heroBtn} ${h.heroPrimary}`} href={builderHref} onClick={start('hero')}>
-                Gerar prévia grátis <MoveRight className={h.heroArrow} aria-hidden="true" />
+              <a className={`${s.primary} ${h.heroBtn} ${h.heroPrimary}`} href="#exemplos" onClick={() => track('nav_click', { target: 'exemplos', context: 'hero' })}>
+                Ver modelos de sites <MoveRight className={h.heroArrow} aria-hidden="true" />
               </a>
-              <a className={`${s.secondary} ${h.heroBtn} ${h.heroBtnOutline}`} href="#exemplos" onClick={() => track('nav_click', { target: 'exemplos', context: 'hero' })}>
-                Ver modelos de sites
+              <a className={`${s.secondary} ${h.heroBtn} ${h.heroBtnOutline}`} href={builderHref} onClick={start('hero')}>
+                Prévia grátis de site simples
               </a>
             </div>
-            <p className={h.safe}>Pronta em poucos minutos. Sem cadastro, sem compromisso.</p>
-            <p className={h.reassurance}>Quem responde sou eu, normalmente no mesmo dia.</p>
+            <p className={h.safe}>Sem cadastro. Respondo no mesmo dia.</p>
             <a className={h.scrollHint} href="#exemplos" aria-label="Rolar até os exemplos de sites">
               <span>Veja os sites que já criei</span>
               <ChevronDown aria-hidden="true" />
@@ -121,16 +139,18 @@ export default function Landing() {
           <div className={s.wrap}>
             <div className={h.head}>
               <h2 id="exemplos-titulo">Sites completos e profissionais</h2>
-              <p>Veja o que já desenvolvi, escolha o modelo que mais combina com a sua empresa e me chame no WhatsApp. Eu monto o seu com a identidade do seu negócio.</p>
+              <p>Escolha o modelo que combina com a sua empresa e me chame no WhatsApp.</p>
             </div>
-            <ul className={h.exGrid}>
-              {realProjects.map((p) => (
-                <li key={p.id} className={h.exCard}>
+            <Carousel label="Modelos de sites" className={h.exCarousel}>
+              {projectOrder.map((p, i) => (
+                <div key={p.id} className={h.exCard}>
+                  {i === 0 && <p className={h.exLabel}>Sites completos</p>}
+                  {i === 3 && <p className={h.exLabel} data-simple="">Exemplo de site simples</p>}
                   <a className={h.exShot} href={p.url} target="_blank" rel="noopener noreferrer" draggable={false} onClick={() => track('real_project_open', { project: p.id, context: 'exemplos_home' })} aria-label={`Ver site: ${p.name} (abre em nova aba)`}>
                     <img
                       src={asset(`${p.image}-640.webp`)}
                       srcSet={`${asset(`${p.image}-640.webp`)} 640w, ${asset(`${p.image}-1080.webp`)} 1080w`}
-                      sizes="(min-width: 1000px) 280px, (min-width: 560px) 45vw, 86vw"
+                      sizes="(min-width: 1000px) 340px, 82vw"
                       width={640}
                       height={400}
                       alt={p.alt}
@@ -157,18 +177,13 @@ export default function Landing() {
                       <MessageCircle aria-hidden="true" /> Quero um site nesse estilo
                     </a>
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </Carousel>
             <p className={h.exFooter}>
               <Talk className={h.talkLink} message={contact.whatsappConversa} context="exemplos_home_footer">
                 <MessageCircle aria-hidden="true" /> Não encontrou o ideal? Conte sua ideia no WhatsApp.
               </Talk>
-            </p>
-            <p className={h.more}>
-              <a href={examplesLink} onClick={() => track('nav_click', { target: 'exemplos', context: 'inicio' })}>
-                Explorar exemplos de sites <ArrowRight aria-hidden="true" />
-              </a>
             </p>
           </div>
         </section>
@@ -274,45 +289,26 @@ export default function Landing() {
               <h2 id="valores-titulo">Valores</h2>
               <p>Escolha pelo que o site precisa fazer, não pelo tamanho da empresa.</p>
             </div>
-            <div className={h.paths}>
-              <article className={h.path} data-kind="pacotes" aria-labelledby="pacotes-resumo">
-                <p className={h.pill}>Página única · valor fechado</p>
-                <h3 id="pacotes-resumo">Pacotes com preço definido</h3>
-                <ul className={h.pkgList}>
-                  {packages.map((pkg) => (
-                    <li key={pkg.id}>
-                      <span className={h.pkgName}>{pkg.name}</span>
-                      <span className={h.pkgPurpose}>{pkg.purpose}</span>
-                      <span className={h.pkgPrice}>{brl(pkg.price)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className={h.pathNote}>Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.</p>
-                <div className={h.pathActions}>
-                  <a className={s.primary} href={packagesHref} onClick={() => track('nav_click', { target: 'pacotes', context: 'inicio' })}>
-                    Ver pacotes e valores
-                  </a>
-                </div>
-              </article>
-              <article className={h.path} data-kind="custom" aria-labelledby="sob-medida-titulo">
-                <p className={h.pill} data-tone="lavender">
-                  Sob medida
-                </p>
-                <h3 id="sob-medida-titulo">Seu projeto precisa ir além de uma página?</h3>
-                <p>Conte o que sua empresa precisa. Definimos o escopo e preparamos uma proposta de acordo com o projeto.</p>
-                <ul className={h.needList}>
-                  <li>Um site com mais de uma página</li>
-                  <li>Informações de várias unidades ou equipes</li>
-                  <li>Um conteúdo que não cabe nos limites dos pacotes</li>
-                </ul>
-                <p className={h.pathNote}>O que é possível fazer e o valor são definidos na conversa, antes de qualquer compromisso.</p>
-                <div className={h.pathActions}>
-                  <Talk className={s.secondary} message={contact.whatsappSobMedida} context="sob_medida">
-                    <MessagesSquare aria-hidden="true" /> Conversar sobre um projeto sob medida
-                  </Talk>
-                </div>
-              </article>
+            <div ref={pkgRef} className={h.pkgCarousel} data-visible={pkgVisible ? '' : undefined}>
+              <Carousel label="Pacotes de desenvolvimento">
+                {packages.map((pkg) => (
+                  <PackageCard key={pkg.id} pkg={pkg} />
+                ))}
+              </Carousel>
             </div>
+            <p className={h.pathNote}>Pagamento único pelo desenvolvimento. Domínio e hospedagem à parte.</p>
+            <article className={h.customPath} aria-labelledby="sob-medida-titulo">
+              <p className={h.pill} data-tone="lavender">
+                Sob medida
+              </p>
+              <h3 id="sob-medida-titulo">Seu projeto precisa ir além de uma página?</h3>
+              <p>Conte o que sua empresa precisa. Definimos o escopo e preparamos uma proposta.</p>
+              <div className={h.pathActions}>
+                <Talk className={s.secondary} message={contact.whatsappSobMedida} context="sob_medida">
+                  <MessagesSquare aria-hidden="true" /> Conversar sobre um projeto sob medida
+                </Talk>
+              </div>
+            </article>
           </div>
         </section>
 
@@ -362,10 +358,13 @@ export default function Landing() {
             <h2 id="final-titulo" className={h.finalTitle}>
               Veja o site da sua empresa <em className={h.mark}>antes de contratar.</em>
             </h2>
-            <p>Crie uma prévia grátis, sem cadastro, ou converse direto sobre o seu projeto.</p>
+            <p>Escolha um modelo ou gere uma prévia de site simples, sem cadastro.</p>
             <div className={`${s.finalActions} ${h.finalActions}`}>
-              <a className={`${s.primary} ${s.shine}`} href={builderHref} onClick={start('final')} data-main-cta="">
-                {resumable ? 'Continuar minha prévia' : 'Gerar prévia grátis'} <MoveRight aria-hidden="true" />
+              <a className={`${s.primary} ${s.shine}`} href="#exemplos" onClick={() => track('nav_click', { target: 'exemplos', context: 'final' })} data-main-cta="">
+                Ver modelos de sites <MoveRight aria-hidden="true" />
+              </a>
+              <a className={s.secondary} href={builderHref} onClick={start('final')}>
+                Prévia grátis de site simples
               </a>
               <Talk className={s.secondary} message={contact.whatsappConversa} context="final">
                 <MessageCircle aria-hidden="true" /> Conversar sobre meu projeto
@@ -391,6 +390,36 @@ function Marked({ text, mark }: { text: string; mark: string }) {
       <em className={h.mark}>{mark}</em>
       {text.slice(at + mark.length)}
     </>
+  );
+}
+
+function PackageCard({ pkg }: { pkg: Package }) {
+  const points = packageKeyPoints(pkg);
+  const popular = pkg.id === 'profissional';
+  return (
+    <article className={h.pkgCard} data-popular={popular ? '' : undefined}>
+      {popular && <span className={h.pkgBadge}>Mais escolhido</span>}
+      <h3 className={h.pkgName}>{pkg.name}</h3>
+      <p className={h.pkgFor}>{pkg.forWhom}</p>
+      <p className={h.pkgPrice}>{brl(pkg.price)}</p>
+      <ul className={h.pkgPoints}>
+        {points.map((pt) => (
+          <li key={pt}>
+            <Check aria-hidden="true" /> {pt}
+          </li>
+        ))}
+      </ul>
+      <p className={h.pkgDeadline}>Prazo: {pkg.deadline}</p>
+      <a
+        className={h.pkgAction}
+        href={whatsappLink(packageInterestMessage(pkg.name, brl(pkg.price)))}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => track('whatsapp_open', { context: 'pacote', package: pkg.id })}
+      >
+        <MessageCircle aria-hidden="true" /> Falar sobre o pacote {pkg.name}
+      </a>
+    </article>
   );
 }
 
