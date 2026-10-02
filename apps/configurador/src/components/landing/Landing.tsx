@@ -93,7 +93,7 @@ export default function Landing() {
         {/* 1. Hero: logo, orbe, título, dois caminhos */}
         <section className={h.hero} aria-labelledby="hero-titulo" data-cta-zone="">
           <div className={`${s.wrap} ${h.heroCenter}`}>
-            <img className={h.heroLogo} src={asset('/brand/logo-beck-performance.png')} alt="Beck Performance" width={340} height={71} />
+            <img className={h.heroLogo} src={asset('/brand/logo-beck-performance.png')} alt="Beck Performance" width={340} height={83} />
             <Orbe />
             <h1 id="hero-titulo" className={h.heroTitle}>
               Um site <em className={h.mark}>à altura</em> da sua empresa.
