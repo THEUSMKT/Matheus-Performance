@@ -174,7 +174,7 @@ export function Footer({ where = 'inicio' }: { where?: Where }) {
                 </li>
               ))}
               <li>
-                <a href={builderHref}>Gerar minha prévia gratuita</a>
+                <a href={builderHref}>Gerar prévia grátis</a>
               </li>
             </ul>
           </div>

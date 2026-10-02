@@ -89,15 +89,9 @@
     transform: translateX(340%) skewX(-22deg);
   }
 }
-.labelFull { display: none; }
-.labelShort { display: inline; }
 .spacer {
   height: calc(76px + env(safe-area-inset-bottom));
   background: #06144a;
-}
-@media (min-width: 640px) {
-  .labelFull { display: inline; }
-  .labelShort { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .float,

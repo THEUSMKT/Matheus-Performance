@@ -7,6 +7,15 @@ import f from "./FloatingCta.module.css";
 
 export function FloatingCta() {
   const [show, setShow] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    setIsDesktop(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     function check() {
@@ -37,8 +46,7 @@ export function FloatingCta() {
           onClick={() => track("start_click", { context: "flutuante" })}
         >
           <Sparkles aria-hidden="true" />
-          <span className={f.labelFull}>Site simples? Crie uma prévia grátis</span>
-          <span className={f.labelShort}>Prévia grátis</span>
+          <span>{isDesktop ? "Prévia de site simples" : "Prévia grátis"}</span>
         </a>
       </div>
       <div className={f.spacer} aria-hidden="true" />
