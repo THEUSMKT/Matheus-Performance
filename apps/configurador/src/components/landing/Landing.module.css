@@ -818,9 +818,19 @@
 }
 
 .final .secondary {
-  background: transparent;
-  color: #fff;
-  border-color: rgb(255 255 255 / 0.5);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.final .secondary:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+.final .secondary:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
 }
 .footer {
   background: #06144a;

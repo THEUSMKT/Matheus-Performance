@@ -117,16 +117,26 @@
   25% { transform: translateX(310%) skewX(-22deg); }
 }
 
-.heroBtnOutline {
-  background: rgb(255 255 255 / 0.1);
-  color: #fff;
-  border-color: rgb(255 255 255 / 0.5);
+.heroBtn.heroBtnOutline {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  font-weight: 600;
+  font-size: 17px;
+  padding: 18px 36px;
 }
-.heroBtnOutline:hover {
-  background: rgb(255 255 255 / 0.18);
-  border-color: rgb(255 255 255 / 0.7);
+.heroBtn.heroBtnOutline:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+.heroBtn.heroBtnOutline:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+.heroBtn.heroBtnOutline:active {
+  box-shadow: none;
 }
 .heroBtnOutline svg {
   width: 18px;
@@ -145,7 +155,12 @@
   font-style: italic;
 }
 
-/* Celular: botão primário ocupa 100% */
+/* Celular: botão primário ocupa 100%, seta some */
+@media (max-width: 767px) {
+  .heroArrow {
+    display: none;
+  }
+}
 @media (max-width: 559px) {
   .heroPrimary {
     width: 100%;
